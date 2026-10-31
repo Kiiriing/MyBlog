@@ -100,29 +100,19 @@ export const experience = [
 
 export const awards = [
   {
-    date: '2025.06',
-    title: '第三届全国技能大赛 · 北京市移动应用开发赛项',
-    level: '二等奖'
-  },
-  {
     date: '2025.04',
     title: '国际大学生创新大赛（北京赛区）学校选拔赛',
     level: '一等奖'
   },
   {
-    date: '2025.02',
-    title: '北京市昌平职业学校「学习标兵」',
-    level: '称号'
+    date: '2025.06',
+    title: '第三届全国技能大赛 · 北京市移动应用开发赛项',
+    level: '二等奖'
   },
   {
-    date: '2024.12',
-    title: '「北京市昌平职业学校课程超市」',
-    level: '课程学习达人'
-  },
-  {
-    date: '2024.12',
-    title: '交通运输杯秋季运动会',
-    level: '最佳表现奖'
+    date: '2024.07',
+    title: '北京市职业院校学生技能比赛(大数据技术服务赛项)',
+    level: '二等奖'
   },
   {
     date: '2024.07',
@@ -138,7 +128,12 @@ export const awards = [
     date: '2024.04',
     title: '第四届全国青科赛北京市区域赛 · ICode 未来编程',
     level: '二等奖'
-  }
+  },
+  {
+    date: '2024.12',
+    title: '「被评选为学习标兵」',
+    level: '荣誉称号'
+  },
 ]
 
 export const certificates = [
