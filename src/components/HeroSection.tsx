@@ -1,9 +1,12 @@
-import { useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { gsap, SplitText } from '../lib/gsap'
 import { prefersReducedMotion, scrollToSection } from '../composables/useSmoothScroll'
 import { useUi } from '../store/ui'
 import { site } from '../data/site'
 import '../styles/components/HeroSection.css'
+
+/* WebGL 抖动之幕只在桌面端渲染，懒加载让移动端完全不下载 ogl */
+const DitherVeil = lazy(() => import('./DitherVeil'))
 
 export default function HeroSection() {
   const ui = useUi()
@@ -11,10 +14,22 @@ export default function HeroSection() {
   const title = useRef<HTMLHeadingElement>(null)
 
   const [ready, setReady] = useState(false)
+  const [showVeil, setShowVeil] = useState(() =>
+    typeof window === 'undefined' ? false : window.matchMedia('(min-width: 901px)').matches
+  )
 
   const splits = useRef<any[]>([])
   const timeline = useRef<gsap.core.Timeline | null>(null)
   const hasPlayed = useRef(false)
+
+  /* Veil ---------------------------------------------------------------- */
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 901px)')
+    const onChange = () => setShowVeil(mq.matches)
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
+  }, [])
 
   /* Scroll ---------------------------------------------------------------- */
 
@@ -181,6 +196,38 @@ export default function HeroSection() {
               ))}
             </p>
           </div>
+        </div>
+
+        <div className="hero__veil hero-fade" aria-hidden="true" data-cursor="Reveal">
+          {showVeil ? (
+            <>
+              <div className="hero__veil-head">
+                <span className="mono">Veil / Portrait</span>
+                <span className="mono">Move to reveal</span>
+              </div>
+              <div className="hero__veil-stage">
+                <Suspense fallback={null}>
+                  <DitherVeil
+                    src="/art/portrait.svg"
+                    pattern="floyd"
+                    pixelSize={2}
+                    levels={2}
+                    palette="duotone"
+                    inkColor="#08080a"
+                    paperColor="#f4efe6"
+                    contrast={1.18}
+                    brightness={0.02}
+                    revealRadius={190}
+                    softness={0.55}
+                    linger={1.15}
+                    rim={0.16}
+                    rimColor="#ff5a2f"
+                    wander
+                  />
+                </Suspense>
+              </div>
+            </>
+          ) : null}
         </div>
       </div>
 

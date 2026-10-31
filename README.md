@@ -7,10 +7,11 @@
 - **React 19** + **TypeScript**，路由使用 **react-router-dom 7**
 - **Vite 8**（`@vitejs/plugin-react`）
 - **GSAP 3.15**（ScrollTrigger / SplitText / quickTo）
+- **ogl 1.0**：承载 React Bits `DitherVeil` 抖动之幕（WebGL2）
 - **Tailwind CSS v4**（`@tailwindcss/vite`）与 **shadcn**（`components.json`），仅用于接入 registry 组件；项目自有 CSS 不分层，优先级更高
 - **Lenis** 平滑滚动，与 GSAP ticker 同步
 - 组件样式集中在 `src/styles/components/*.css`，由入口按需引入
-- 首屏为单列排版，标题区占满宽度，右侧不再有面板；动效集中在标题拆字、滚动视差与底部提示
+- 首屏为「左侧排版 + 右侧 DitherVeil 抖动之幕」双列布局（≤900px 隐藏面板），动效集中在标题拆字、滚动视差与底部提示
 - 原生 SVG 程序化视觉素材（`public/art`），无外部图片依赖
 
 运行时要求 **Node.js ≥ 22.12**（当前已验证 Node 26 / npm 11）。
@@ -60,7 +61,7 @@ Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 ## 交互与可访问性
 
 - 自定义光标（仅在光标实际可见时隐藏系统光标，离开窗口 / 失焦自动恢复）、预加载揭幕、全屏菜单、颗粒质感、页面过渡
-- 首页 Hero：已移除右侧面板，标题区单列占满宽度，负空间交给背景网格与环境光；标题逐字入场、`hero__lead` 与底部提示随滚动产生视差
+- 首页 Hero：左侧标题逐字入场、`hero__lead` 与底部提示随滚动产生视差；右侧 DitherVeil 以 `floyd` 抖动渲染自画像，鼠标拖尾揭示原色、点击触发冲击波、空闲时自动巡游
 - 进入首页（无 hash）时始终落在顶部：接管 `history.scrollRestoration` 并在预加载结束后回滚到 0，修复刷新后「自动跳到关于我」的问题
 - 路由切换时以橙色幕布进行擦除式转场（含目标页面标签与路径）
 - 项目索引：分类筛选、计数过渡、整行 paper 色块从中心揭幕、项目数字变实色、光标跟随案例预览卡，键盘 focus 同样触发揭幕
@@ -97,6 +98,14 @@ public/art/     本地 SVG 视觉素材
 ```
 
 ## 更新日志
+
+### 2026-10-31 — 首页右侧接入 React Bits DitherVeil 抖动之幕
+
+- 新增 `src/components/DitherVeil.jsx`（React Bits 官方 JS/CSS 版）：WebGL2 抖动渲染，支持 `bayer / noise / lines / floyd / atkinson` 图案、鼠标拖尾揭示彩色原图、点击冲击波、`wander` 空闲巡游与入场展开；样式抽到 `src/styles/components/DitherVeil.css`，组件文件里 `style` 补默认值以便 TypeScript 调用。
+- 新增运行时依赖 `ogl ^1.0.11`，并补齐上次被 npm 剪掉的 `@gsap/react ^2.1.2`（`SplitText.jsx` 需要）。
+- `src/components/HeroSection.tsx`：`.hero__body` 改为双列，右侧新增 `hero__veil` 面板（`/art/portrait.svg`、`floyd`、`duotone`、橙色 `rim`），顶部标注 `Veil / Portrait` 与 `Move to reveal`；组件用 `React.lazy` 懒加载 + `matchMedia('(min-width: 901px)')` 条件渲染，移动端既不渲染也不下载 `ogl`。
+- `src/styles/components/HeroSection.css`：新增 `.hero__veil` / `.hero__veil-head` / `.hero__veil-stage`，桌面列宽 `clamp(280px, 34vw, 440px)`，≤900px 隐藏，短屏降低面板最小高度。
+- 验证：`npm run build` 通过；`npm run preview` 下 headless Chrome 截图确认 1440×900 面板渲染、指针揭示与排版正常，390×844 面板隐藏、首屏无裁切。
 
 ### 2026-10-31 — 忽略 skills 的通用目录 `.agents/`
 
