@@ -166,12 +166,11 @@ onBeforeUnmount(() => {
 .preloader__mask {
   display: block;
   overflow: hidden;
-  /* line-height is tighter than the glyph height, so padding-top keeps the
-     italic ascenders visible inside the reveal mask; the equal negative
-     margin leaves the block's footprint unchanged. */
-  margin-top: -0.16em;
-  padding-top: 0.16em;
-  padding-bottom: 0.08em;
+  /* line-height is tighter than the glyph box and the italic overhang is wider
+     than the text advance width, so padding keeps the full glyph inside the
+     reveal mask; the equal negative margins leave layout unchanged. */
+  margin: -0.16em -0.16em 0;
+  padding: 0.16em 0.16em 0.08em;
 }
 
 .preloader__mask > span {
