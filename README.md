@@ -98,6 +98,10 @@ public/art/     本地 SVG 视觉素材
 
 ## 更新日志
 
+### 2026-10-31 — 忽略 skills 的通用目录 `.agents/`
+
+- `.gitignore` 新增 `.agents/`，并用 `git rm --cached` 取消其跟踪（本地文件保留）；skills 源码仍由 `.trae/skills/` 与 `skills-lock.json` 提供。
+
 ### 2026-10-31 — 忽略本地工具产物目录
 
 - `.gitignore` 新增 `.trae-html-share-packages/`（Trae 本地 HTML 分享产物的缓存目录），避免误提交。
