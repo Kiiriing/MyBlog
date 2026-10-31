@@ -7,7 +7,7 @@ export const site = {
   coords: '39.9042° N / 116.4074° E',
   availability: 'Available for full-stack work — 2026',
   intro: '把复杂系统，做成有手感的网页。',
-  stack: ['Vue 3', 'React', 'TypeScript', 'Node.js', 'PostgreSQL', 'Three.js'],
+  stack: ['React 19', 'TypeScript', 'Node.js', 'PostgreSQL', 'GSAP', 'Three.js'],
   socials: [
     { label: 'GitHub', handle: '@luyu-dev', href: 'https://github.com' },
     { label: 'LinkedIn', handle: '/in/luyu-dev', href: 'https://www.linkedin.com' },

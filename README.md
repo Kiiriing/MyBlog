@@ -1,14 +1,14 @@
 # LU YU — Full-stack Web Developer
 
-陆屿 — 个人博客 / 作品集。静态前端，Vue 3 单页应用，强调滚动叙事、视差与细节交互；内容定位为全栈网页开发者，展示从界面、动效到 API 与数据库的完整项目。
+陆屿 — 个人博客 / 作品集。静态前端，React 19 单页应用，强调滚动叙事、视差与细节交互；内容定位为全栈网页开发者，展示从界面、动效到 API 与数据库的完整项目。
 
 ## 技术栈
 
-- **Vue 3.5**（`<script setup>`）+ **Vue Router 5**
-- **Vite 8**
+- **React 19** + **TypeScript**，路由使用 **react-router-dom 7**
+- **Vite 8**（`@vitejs/plugin-react`）
 - **GSAP 3.15**（ScrollTrigger / SplitText / quickTo）
 - **Lenis** 平滑滚动，与 GSAP ticker 同步
-- 逐字动画组件 `src/components/SplitText.vue`：React Bits `SplitText` 的 Vue 移植（GSAP 实现，无需 React / Tailwind）
+- 组件样式集中在 `src/styles/components/*.css`，由入口按需引入
 - 首屏为单列排版，标题区占满宽度，右侧不再有面板；动效集中在标题拆字、滚动视差与底部提示
 - 原生 SVG 程序化视觉素材（`public/art`），无外部图片依赖
 
@@ -19,7 +19,7 @@
 ```bash
 npm install
 npm run dev       # http://localhost:5173
-npm run build     # 输出 dist/
+npm run build     # tsc --noEmit + 输出 dist/
 npm run preview   # 预览生产构建
 ```
 
@@ -44,23 +44,17 @@ Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 | `/work/:slug` | 作品详情（项目信息、笔记、画廊、下一项目） |
 | `/journal` | 手记索引（分类筛选 + 悬浮预览） |
 | `/journal/:slug` | 文章详情（阅读进度、正文排版、上一篇 / 下一篇） |
-| `/:pathMatch(.*)*` | 404 |
+| `*` | 404 |
 
 站内锚点：`/#manifesto`、`/#work`、`/#journal`、`/#contact`。直接访问时会等待预加载与滚动解锁后再定位。不带 hash 进入首页（含刷新）始终从顶部开始，不会恢复上一次的滚动位置。
 
 ## 内容与替换
 
-- `src/components/SplitText.vue`：把文字拆成字符 / 单词 / 行并逐字入场，支持 `effect`（`rise` / `fade` / `blur` / `flip` / `pop` / `skew` / `wave`）、`trigger`（`view` / `load` / `hover` / `click`）、`mask`、`loop`、`hoverEffect`（`lift` / `wave`）。用法示例：
-  ```vue
-  <SplitText text="Full-stack" split-type="chars" effect="wave" trigger="view" />
-  ```
-  React Bits 的原始组件是 React + Tailwind + shadcn registry，无法直接装进本项目的 Vue + Vite 环境，这里用项目已有的 GSAP `SplitText` 复刻了同样的 props 与效果。
+- `src/data/site.ts`：姓名、职位、邮箱、社交链接、技术栈与菜单文案。
+- `src/data/works.ts`：五个全栈项目。每个项目包含 `stack`（技术栈）、`status`（上线状态）、`links`（Live / 源码 / 预约演示）与工程向的 `intro`、`notes`、`gallery`。
+- `src/data/posts.ts`：手记文章与分类。
 
-- `src/data/site.js`：姓名、职位、邮箱、社交链接、技术栈与菜单文案。
-- `src/data/works.js`：五个全栈项目。每个项目包含 `stack`（技术栈）、`status`（上线状态）、`links`（Live / 源码 / 预约演示）与工程向的 `intro`、`notes`、`gallery`。
-- `src/data/posts.js`：手记文章与分类。
-
-> 项目里的 `https://example.com/...` 与 `https://github.com` 是演示占位地址，上线前请替换为真实站点或仓库；`mailto:hello@luyu.dev` 也需要改成你的实际邮箱（同时修改 `site.js`）。
+> 项目里的 `https://example.com/...` 与 `https://github.com` 是演示占位地址，上线前请替换为真实站点或仓库；`mailto:hello@luyu.dev` 也需要改成你的实际邮箱（同时修改 `site.ts`）。
 
 ## 交互与可访问性
 
@@ -87,19 +81,31 @@ Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 
 ```text
 src/
-  components/   页面区块与通用组件
-  composables/  平滑滚动、时钟
+  App.tsx       应用外壳：预加载、菜单、页面过渡、滚动重置
+  main.tsx      React 入口（createRoot + BrowserRouter）
+  router.tsx    路由表与路由名映射
+  components/   页面区块与通用组件（.tsx）
+  composables/  平滑滚动（GSAP + Lenis）
+  hooks/        时钟、进场 reveal
   data/         站点、作品、文章内容
-  directives/   reveal 进场指令
   lib/          GSAP 注册
-  router/       路由与滚动行为
-  stores/       UI 状态（菜单 / 启动 / 触屏）
-  styles/       主题变量、全局排版、过渡
+  store/        UI 状态（菜单 / 启动 / 触屏）
+  styles/       主题变量、全局排版；components/ 下为各组件样式
   views/        首页、手记、文章、作品、404
 public/art/     本地 SVG 视觉素材
 ```
 
 ## 更新日志
+
+### 2026-10-31 — 从 Vue 3 迁移到 React 19 + Vite + TypeScript
+
+- 技术栈切换：移除 `vue` / `vue-router` / `@vitejs/plugin-vue`，改用 `react` 19 + `react-dom` 19 + `react-router-dom` 7 + `@vitejs/plugin-react` + TypeScript。
+- 入口与构建：`index.html` 改为 `/src/main.tsx`；新增 `src/main.tsx`、`src/App.tsx`、`src/router.tsx`、`tsconfig.json`，`vite.config.ts` 只保留 React 插件；`npm run build` 现在先执行 `tsc --noEmit`。
+- 组件迁移：全部 `.vue` 单文件组件改写为 `.tsx`（Preloader、CustomCursor、MenuOverlay、SiteHeader、SiteFooter、RouteWipe、ScrollProgress、HeroSection、MarqueeBand、ManifestoSection、AboutSection、WorksSection、JournalSection、JournalList、ArtworkFrame、CircleButton、GrainOverlay）。
+- 页面迁移：`HomeView`、`WorkIndexView`、`WorkView`、`JournalView`、`PostView`、`NotFoundView` 全部改写，路由与懒加载行为等价。
+- 状态与 hooks：用 `useSyncExternalStore` 的 `src/store/ui.ts` 替代 Vue 响应式 store；新增 `useReveal`（替代 `v-reveal` 指令）、`useClock`；数据与 GSAP 模块改为 `.ts`。
+- 样式：各组件 `<style scoped>` 提取为 `src/styles/components/*.css`；Vue `<Transition>` 改为 React 下的 keyframe 动画（页面、菜单预览、手记列表与作品行）。
+- 内容：首屏技术栈文案更新为 `React 19 / TypeScript / Node.js / PostgreSQL / GSAP / Three.js`；移除不再使用的 `SplitText.vue` 及其样式。
 
 ### 2026-10-31 — 新增 SplitText 的 Vue 版（替代 React Bits 安装）
 

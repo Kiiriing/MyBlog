@@ -1,0 +1,269 @@
+import { useEffect } from 'react'
+import { Link, useParams } from 'react-router-dom'
+import { getWork, works } from '../data/works'
+import ArtworkFrame from '../components/ArtworkFrame'
+import SiteFooter from '../components/SiteFooter'
+import { useReveal } from '../hooks/useReveal'
+import '../styles/components/WorkView.css'
+
+function RevealIntro({ delay, children }: { delay?: number; children: React.ReactNode }) {
+  const ref = useReveal<HTMLParagraphElement>({ delay })
+  return (
+    <p ref={ref} className="work-intro">
+      {children}
+    </p>
+  )
+}
+
+function RevealNote({
+  delay,
+  label,
+  children
+}: {
+  delay?: number
+  label: string
+  children: React.ReactNode
+}) {
+  const ref = useReveal<HTMLElement>({ delay })
+  return (
+    <article ref={ref} className="work-note">
+      <span className="mono work-note__label">{label}</span>
+      <p>{children}</p>
+    </article>
+  )
+}
+
+function RevealGalleryItem({
+  delay,
+  index,
+  item
+}: {
+  delay?: number
+  index: number
+  item: { src: string; caption: string }
+}) {
+  const ref = useReveal<HTMLElement>({ delay })
+  return (
+    <figure ref={ref} className="work-gallery__item">
+      <ArtworkFrame
+        src={item.src}
+        alt={item.caption}
+        ratio="4 / 5"
+        parallax={6}
+        imageClass={`work-gallery__img work-gallery__img--${index}`}
+      />
+      <figcaption className="mono">
+        <span>{String(index + 1).padStart(2, '0')}</span>
+        <span>{item.caption}</span>
+      </figcaption>
+    </figure>
+  )
+}
+
+export default function WorkView() {
+  const { slug = '' } = useParams()
+  const work = getWork(slug)
+  const nextWork = work ? getWork(work.next) : null
+  const total = String(works.length).padStart(2, '0')
+
+  useEffect(() => {
+    document.title = work
+      ? `${work.title} ${work.cn} — 陆屿 LU YU`
+      : '未找到这个项目 — 陆屿 LU YU'
+  }, [slug])
+
+  if (!work) {
+    return (
+      <div className="work-missing">
+        <div className="shell work-missing__inner">
+          <span className="eyebrow">404 / Work</span>
+          <h1 className="work-missing__title">
+            This project
+            <br />
+            <em>is out of frame.</em>
+          </h1>
+          <p>这个项目可能暂时不在展出中。</p>
+          <Link to="/work" className="work-missing__link" data-cursor="Index">
+            返回作品索引 ↗
+          </Link>
+        </div>
+        <SiteFooter />
+      </div>
+    )
+  }
+
+  return (
+    <div
+      className="work-page"
+      style={{ '--project-accent': work.accent } as React.CSSProperties}
+    >
+      <header className="work-hero">
+        <div className="work-hero__ambient" aria-hidden="true" />
+
+        <div className="shell work-hero__head">
+          <div className="work-hero__top">
+            <Link to="/work" className="work-hero__back mono" data-cursor="Index">
+              <span aria-hidden="true">←</span>
+              <span>All projects</span>
+            </Link>
+            <span className="mono work-hero__index">
+              {work.index} / {total} — {work.year}
+            </span>
+          </div>
+
+          <div className="work-hero__title-row">
+            <h1 className="work-hero__title">
+              <span>{work.title}</span>
+              <em>{work.cn}</em>
+            </h1>
+            <div className="work-hero__aside">
+              <p className="work-hero__tagline">{work.tagline}</p>
+              <div className="work-hero__class mono">
+                <span>{work.category}</span>
+                <span>{work.client}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="shell work-hero__cover">
+          <ArtworkFrame
+            src={work.art}
+            alt={`${work.title} 项目视觉`}
+            ratio="16 / 9"
+            parallax={6}
+            eager
+          >
+            <div className="work-hero__cover-meta mono">
+              <span>Project {work.index}</span>
+              <span>{work.role}</span>
+            </div>
+          </ArtworkFrame>
+        </div>
+      </header>
+
+      <section className="work-content shell">
+        <aside className="work-content__side">
+          <span className="eyebrow">The build / 构建</span>
+          <dl className="work-content__details">
+            {work.details.map((detail) => (
+              <div key={detail.label}>
+                <dt className="mono">{detail.label}</dt>
+                <dd>{detail.value}</dd>
+              </div>
+            ))}
+          </dl>
+
+          <div className="work-content__stack">
+            <span className="mono work-content__label">Stack / 技术栈</span>
+            <ul>
+              {work.stack.map((tech) => (
+                <li key={tech} className="mono">
+                  {tech}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {work.links?.length ? (
+            <div className="work-content__links">
+              <span className="mono work-content__label">Links / 链接</span>
+              {work.links.map((link) =>
+                link.href.startsWith('/') ? (
+                  <Link key={link.label} to={link.href} className="work-content__link mono">
+                    <span className="work-content__link-main">
+                      <span>{link.label}</span>
+                      <span className="work-content__link-hint">{link.hint}</span>
+                    </span>
+                    <span className="work-content__link-arrow" aria-hidden="true">
+                      →
+                    </span>
+                  </Link>
+                ) : (
+                  <a
+                    key={link.label}
+                    href={link.href}
+                    target={link.href.startsWith('http') ? '_blank' : undefined}
+                    rel={link.href.startsWith('http') ? 'noreferrer' : undefined}
+                    className="work-content__link mono"
+                  >
+                    <span className="work-content__link-main">
+                      <span>{link.label}</span>
+                      <span className="work-content__link-hint">{link.hint}</span>
+                    </span>
+                    <span className="work-content__link-arrow" aria-hidden="true">
+                      ↗
+                    </span>
+                  </a>
+                )
+              )}
+            </div>
+          ) : null}
+
+          <div className="work-content__status mono">
+            <span className="dot" />
+            {work.status} — {work.year}
+          </div>
+        </aside>
+
+        <div className="work-content__main">
+          {work.intro.map((paragraph, index) => (
+            <RevealIntro key={index} delay={index * 70}>
+              {paragraph}
+            </RevealIntro>
+          ))}
+
+          <div className="work-notes">
+            <div className="work-notes__head">
+              <span className="eyebrow">Build notes / 实现</span>
+              <span className="mono">Three decisions</span>
+            </div>
+            <div className="work-notes__grid">
+              {work.notes.map((note, index) => (
+                <RevealNote key={note.label} delay={index * 80} label={note.label}>
+                  {note.value}
+                </RevealNote>
+              ))}
+            </div>
+          </div>
+
+          <div className="work-gallery">
+            {work.gallery.map((item, index) => (
+              <RevealGalleryItem
+                key={`${item.src}-${index}`}
+                delay={index * 100}
+                index={index}
+                item={item}
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {nextWork ? (
+        <section className="work-next">
+          <Link to={`/work/${nextWork.slug}`} className="work-next__link shell" data-cursor="Next">
+            <div className="work-next__copy">
+              <span className="eyebrow">Next project</span>
+              <h2 className="work-next__title">
+                <span>{nextWork.title}</span>
+                <em>{nextWork.cn}</em>
+              </h2>
+              <p className="work-next__summary">{nextWork.tagline}</p>
+              <span className="work-next__more mono">
+                View project
+                <span aria-hidden="true">↗</span>
+              </span>
+            </div>
+
+            <div className="work-next__visual">
+              <ArtworkFrame src={nextWork.art} alt={`${nextWork.title} 项目预览`} ratio="4 / 5" parallax={4} />
+            </div>
+          </Link>
+        </section>
+      ) : null}
+
+      <SiteFooter />
+    </div>
+  )
+}
