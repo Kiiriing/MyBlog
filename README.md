@@ -110,6 +110,14 @@ public/art/     本地视觉素材（SVG / PNG；art/logo 为技术栈品牌图�
 
 ## 更新日志
 
+### 2026-11-01 — 消除首屏强制布局与逐帧布局读取
+
+- 来源：浏览器控制台持续报 `[Violation] Forced reflow while executing JavaScript took 144ms`、`'requestAnimationFrame' handler took 107ms`、`'touchstart' input event was delayed for 540ms`。用 CDP 注入探针（`PerformanceObserver` longtask、包装 `SVGTextElement.prototype.getBBox`、`Element.prototype.scrollWidth` getter、`HTMLCanvasElement.prototype.getContext` + CPU Profile）定位到三处主线程开销。
+- `src/components/StrokeText.tsx`：`getBBox` 原先在 `useLayoutEffect` 里同步执行，首屏第一次测量会强制整页布局（实测 414–569ms）。改为 rAF 调度，并把「挂载 / `document.fonts.ready` / `ResizeObserver` / `window resize`」四种触发合并成同一帧内只测一次；卸载时取消未执行的帧并断开观察。实测 8 次 `getBBox` 全部 0ms，`viewBox` 与描边擦除动画不受影响。
+- `src/components/MarqueeBand.tsx`：GSAP ticker 原先每帧读 `el.scrollWidth` 判断循环回绕点（6 秒约 500 次，每次都可能强制布局）。改为在挂载、`ResizeObserver` 与 `window resize` 时缓存半宽，ticker 只读缓存。实测 6 秒内 `scrollWidth` 读取 500 → 6 次，`translate3d` 位移与回绕正常。
+- `src/components/LetterGlitch.tsx`：WebGL2 上下文、着色器编译与字形图集生成原先在 React 首次提交时同步启动，挤占首帧。改为双 rAF（首帧绘制后）再建上下文，既不拖慢首次提交与首屏布局，又能在预加载揭幕前准备完成，揭幕时不会先空一拍。
+- 验证：`npm run build` 通过；`npm run preview` + headless Chrome 1440×900 实测首屏标题 `viewBox` 正常、`visibility: visible`，字符场 1.2s 仍为初始尺寸、1.8s 已到 2880×1800（DPR 2），早于预加载揭幕；marquee 持续位移（1.8 / 3.2 / 4.8s 分别为 -73.26 / -178.93 / -297.78px）且无横向溢出，截图无视觉回归；dev 探针复核 `firstBBoxAt 1258ms`、`glitchCtxAt 2038ms`、`bbox` 8 次全部 0ms。
+
 ### 2026-11-01 — 技术栈图标放大到 1.7 倍
 
 - `src/components/AboutSection.tsx`：LogoLoop 的图标尺寸 `logoHeight 42 → 71`、间距 `gap 54 → 92`，按 1.7 倍同步放大，图标与留白保持原比例。

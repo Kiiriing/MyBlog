@@ -124,8 +124,10 @@ export default function StrokeText({
     if (!root || !strokeTextRef.current) return undefined
 
     let cancelled = false
+    let frame = 0
 
-    const measure = () => {
+    const run = () => {
+      frame = 0
       if (cancelled || !strokeTextRef.current) return
       let bbox
       try {
@@ -154,15 +156,26 @@ export default function StrokeText({
       )
     }
 
-    measure()
-    document.fonts?.ready?.then(measure).catch(() => {})
+    /* getBBox 会强制一次全页布局（首屏上第一次可达数百毫秒），
+       放到下一帧执行，避免卡住 React 提交与首个输入事件；
+       挂载、字体就绪、尺寸变化三种触发合并成同一帧内只测一次 */
+    const schedule = () => {
+      if (cancelled || frame) return
+      frame = requestAnimationFrame(run)
+    }
 
-    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure)
+    schedule()
+    document.fonts?.ready?.then(schedule).catch(() => {})
+
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(schedule)
     observer?.observe(root)
+    window.addEventListener('resize', schedule)
 
     return () => {
       cancelled = true
+      if (frame) cancelAnimationFrame(frame)
       observer?.disconnect()
+      window.removeEventListener('resize', schedule)
     }
   }, [characters, fontFamily, fontSize, fontWeight, letterSpacing, strokeWidth])
 

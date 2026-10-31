@@ -36,6 +36,17 @@ export default function MarqueeBand() {
     let lastScroll =
       typeof window !== 'undefined' ? window.scrollY : 0
 
+    /* 轨道半宽只在尺寸变化时量一次：ticker 里逐帧读 scrollWidth 会反复触发强制布局 */
+    let halfWidth = 0
+    const measure = () => {
+      halfWidth = el.scrollWidth / 2
+    }
+    measure()
+    const observer =
+      typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure)
+    observer?.observe(el)
+    window.addEventListener('resize', measure)
+
     /* GSAP ticker 驱动的滚动速度响应：滚动越快，横向速度与倾斜越大 */
     const tick = (time: number) => {
       const delta = Math.min(0.05, time - lastTime)
@@ -52,8 +63,7 @@ export default function MarqueeBand() {
         (hovered.value ? 0.4 : 1) * (74 + Math.abs(skew.value) * 6) * delta
       x -= speed
 
-      const width = el.scrollWidth / 2
-      while (width > 0 && x <= -width) x += width
+      while (halfWidth > 0 && x <= -halfWidth) x += halfWidth
 
       el.style.transform = `translate3d(${x}px, 0, 0) skewX(${skew.value}deg)`
     }
@@ -71,6 +81,8 @@ export default function MarqueeBand() {
 
     return () => {
       gsap.ticker.remove(tick)
+      observer?.disconnect()
+      window.removeEventListener('resize', measure)
       band.current?.removeEventListener('pointerenter', onEnter)
       band.current?.removeEventListener('pointerleave', onLeave)
       el.style.transform = ''

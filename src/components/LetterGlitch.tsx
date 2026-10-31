@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties, HTMLAttributes } from 'react'
 import '../styles/components/LetterGlitch.css'
 
@@ -223,6 +223,7 @@ export default function LetterGlitch({
   const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const wakeRef = useRef<(() => void) | null>(null)
+  const [ready, setReady] = useState(false)
   const customColors = Array.isArray(glitchColors) && glitchColors.length ? glitchColors : null
   const settings = {
     colors: (customColors || (lightMode ? LIGHT_COLORS : DARK_COLORS)).slice(0, MAX_COLORS),
@@ -249,7 +250,24 @@ export default function LetterGlitch({
   const settingsRef = useRef(settings)
   settingsRef.current = settings
 
+  /* 建上下文、编译着色器、生成字形图集都很吃主线程。
+     放到第二帧（首帧绘制之后）再启动：既不挤占 React 首次提交与首屏布局，
+     又能在预加载揭幕之前把背景准备好，避免揭幕时先空一拍 */
   useEffect(() => {
+    let first = 0
+    let second = 0
+    const start = () => setReady(true)
+    first = requestAnimationFrame(() => {
+      second = requestAnimationFrame(start)
+    })
+    return () => {
+      cancelAnimationFrame(first)
+      cancelAnimationFrame(second)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!ready) return undefined
     const container = containerRef.current
     const canvas = canvasRef.current
     const gl = canvas?.getContext('webgl2', {
@@ -1001,7 +1019,7 @@ export default function LetterGlitch({
       gl.deleteProgram(program.program)
       gl.getExtension('WEBGL_lose_context')?.loseContext()
     }
-  }, [])
+  }, [ready])
 
   useEffect(() => {
     wakeRef.current?.()
