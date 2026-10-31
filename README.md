@@ -103,6 +103,13 @@ public/art/     本地视觉素材（SVG / PNG）
 
 ## 更新日志
 
+### 2026-10-31 — 忽略临时截图产物，消除 Vite 监听 EBUSY
+
+- 原因：本地 headless Chrome 截图脚本会创建 `.tmp-chrome-profile/`，Chrome 占用 `Cookies`、`Session` 等文件时，Vite 的文件监听在 Windows 上抛出 `EBUSY: resource busy or locked`。
+- `vite.config.ts`：`server.watch.ignored` 增加 `**/.tmp-*/**` 与 `**/.tmp-*`，与 Vite 默认忽略项合并，不影响 `src/` 监听。
+- `.gitignore`：新增 `.tmp-*`，临时截图 / Chrome profile 不再进入版本库。
+- 已确认临时目录与脚本删除、无残留 headless Chrome 进程；当前 dev server 无需重启即可消除该报错。
+
 ### 2026-10-31 — 按真实简历重写内容，新增经历与荣誉章节
 
 - 内容数据：重写 `src/data/site.ts`（真实邮箱 / GitHub / 技术栈 / 菜单）、`src/data/works.ts`（QianVerse、签到考勤、数据大屏、校企协作四个项目）、`src/data/posts.ts`（四篇真实项目手记）；新增 `src/data/profile.ts`（能力、数字、经历、荣誉、证书与志愿）。
