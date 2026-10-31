@@ -13,9 +13,9 @@ const items = [
   'uni-app',
   'Docker',
   'ECharts',
-  '全栈交付',
-  '接口设计',
-  '动效工程'
+  'Full-stack',
+  'Interface',
+  'Interaction'
 ]
 
 export default function MarqueeBand() {
