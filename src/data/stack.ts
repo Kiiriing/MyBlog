@@ -5,11 +5,12 @@
 export type TechGroup =
   | '语言'
   | '前端框架'
-  | '运行时'
+  | '后端框架'
   | '数据库'
   | '构建与工具'
   | '部署与系统'
   | '编辑器'
+  | '运行时'
 
 export type TechItem = {
   name: string
@@ -29,12 +30,12 @@ export const techStack: TechItem[] = [
 
   /* 前端框架 -------------------------------------------------------------- */
   { name: 'Vue.js', icon: '/art/logo/vue.png', group: '前端框架' },
-  { name: 'Next.js', icon: '/art/logo/nextjs.png', group: '前端框架' },
   { name: 'Bootstrap', icon: '/art/logo/bootstrap.png', group: '前端框架' },
   { name: 'Sass', icon: '/art/logo/sass.png', group: '前端框架' },
 
   /* 运行时 ---------------------------------------------------------------- */
   { name: 'Node.js', icon: '/art/logo/nodejs.png', group: '运行时' },
+    { name: 'Next.js', icon: '/art/logo/nextjs.png', group:'后端框架' },
 
   /* 数据库 ---------------------------------------------------------------- */
   { name: 'PostgreSQL', icon: '/art/logo/postgresql.png', group: '数据库' },
