@@ -83,7 +83,7 @@
 .hero__body {
   display: grid;
   flex: 1;
-  grid-template-columns: minmax(0, 1fr) clamp(280px, 34vw, 440px);
+  grid-template-columns: minmax(0, 1fr) clamp(300px, 36vw, 480px);
   gap: clamp(30px, 4.5vw, 80px);
   align-items: center;
   padding-block: clamp(16px, 2.6vh, 34px);
@@ -183,40 +183,16 @@
   color: var(--line-strong);
 }
 
-/* Dither veil panel ------------------------------------------------------ */
+/* Dither veil ------------------------------------------------------------ */
 
+/* 画布自带 ink 底色，并与页面底色一致：无边框、无标签，只留点阵本身 */
 .hero__veil {
-  display: flex;
-  flex-direction: column;
+  position: relative;
   align-self: stretch;
   justify-self: end;
-  gap: 10px;
   width: 100%;
   min-width: 0;
   min-height: 0;
-}
-
-.hero__veil-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  color: var(--fg-faint);
-  font-size: 8px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  transition: color 0.45s var(--ease-out);
-}
-
-.hero__veil:hover .hero__veil-head {
-  color: var(--fg-dim);
-}
-
-.hero__veil-stage {
-  position: relative;
-  flex: 1;
-  min-height: 220px;
-  overflow: hidden;
 }
 
 .hero-fade {
@@ -384,14 +360,6 @@
 
   .hero__lead {
     gap: 10px;
-  }
-
-  .hero__veil {
-    gap: 8px;
-  }
-
-  .hero__veil-stage {
-    min-height: 180px;
   }
 
   .scroll-badge {

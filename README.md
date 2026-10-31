@@ -61,7 +61,7 @@ Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 ## 交互与可访问性
 
 - 自定义光标（仅在光标实际可见时隐藏系统光标，离开窗口 / 失焦自动恢复）、预加载揭幕、全屏菜单、颗粒质感、页面过渡
-- 首页 Hero：左侧标题逐字入场、`hero__lead` 与底部提示随滚动产生视差；右侧 DitherVeil 以 `floyd` 抖动渲染自画像，鼠标拖尾揭示原色、点击触发冲击波、空闲时自动巡游
+- 首页 Hero：左侧标题逐字入场、`hero__lead` 与底部提示随滚动产生视差；右侧 DitherVeil 用 `floyd` 抖动把镀铬头像压成 1-bit 点阵，鼠标划过的拖尾会烧穿成全彩、松开后逐格编织回点阵，点击产生冲击波
 - 进入首页（无 hash）时始终落在顶部：接管 `history.scrollRestoration` 并在预加载结束后回滚到 0，修复刷新后「自动跳到关于我」的问题
 - 路由切换时以橙色幕布进行擦除式转场（含目标页面标签与路径）
 - 项目索引：分类筛选、计数过渡、整行 paper 色块从中心揭幕、项目数字变实色、光标跟随案例预览卡，键盘 focus 同样触发揭幕
@@ -94,10 +94,18 @@ src/
   store/        UI 状态（菜单 / 启动 / 触屏）
   styles/       主题变量、全局排版；components/ 下为各组件样式
   views/        首页、手记、文章、作品、404
-public/art/     本地 SVG 视觉素材
+public/art/     本地视觉素材（SVG / PNG）
 ```
 
 ## 更新日志
+
+### 2026-10-31 — 抖动面板按 React Bits 官方示例还原
+
+- 换成官方示例使用的镀铬仿生人头像：新增 `public/art/chrome-head.png`（1234×1275 透明底原图缩放到 1000×1033）。
+- 参数改用官方默认值：`fit="contain"`、`pattern="floyd"`、`palette="duotone"`、`pixelSize={2}`、`levels={2}`、`revealRadius={200}`、`softness={0.6}`、`linger={1}`、`rim={0}`、`wander={false}`、`clickBurst` 默认开启；只把 `inkColor` 设为页面底色 `#08080a`，画布背景与页面无缝，仅留浅色点阵。
+- `HeroSection.tsx`：去掉 `Veil / Portrait`、`Move to reveal` 标签与 `data-cursor`，面板只保留一块无边框画布。
+- `HeroSection.css`：列宽改为 `clamp(300px, 36vw, 480px)`，删除 `hero__veil-head`、`hero__veil-stage` 及其短屏规则。
+- 验证：`npm run build` 通过；preview 截图确认 1440×900 / 1280×800 下点阵头像与指针全彩揭示正常，390×844 仍不渲染。
 
 ### 2026-10-31 — 首页右侧接入 React Bits DitherVeil 抖动之幕
 

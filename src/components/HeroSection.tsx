@@ -198,35 +198,11 @@ export default function HeroSection() {
           </div>
         </div>
 
-        <div className="hero__veil hero-fade" aria-hidden="true" data-cursor="Reveal">
+        <div className="hero__veil hero-fade" aria-hidden="true">
           {showVeil ? (
-            <>
-              <div className="hero__veil-head">
-                <span className="mono">Veil / Portrait</span>
-                <span className="mono">Move to reveal</span>
-              </div>
-              <div className="hero__veil-stage">
-                <Suspense fallback={null}>
-                  <DitherVeil
-                    src="/art/portrait.svg"
-                    pattern="floyd"
-                    pixelSize={2}
-                    levels={2}
-                    palette="duotone"
-                    inkColor="#08080a"
-                    paperColor="#f4efe6"
-                    contrast={1.18}
-                    brightness={0.02}
-                    revealRadius={190}
-                    softness={0.55}
-                    linger={1.15}
-                    rim={0.16}
-                    rimColor="#ff5a2f"
-                    wander
-                  />
-                </Suspense>
-              </div>
-            </>
+            <Suspense fallback={null}>
+              <DitherVeil src="/art/chrome-head.png" fit="contain" inkColor="#08080a" />
+            </Suspense>
           ) : null}
         </div>
       </div>
