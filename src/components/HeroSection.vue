@@ -258,7 +258,7 @@ onBeforeUnmount(() => {
       </div>
 
       <div class="hero__bottom-meta hero-fade">
-        <span class="mono">Hangzhou, CN</span>
+        <span class="mono">Beijing, CN</span>
         <span class="mono">{{ site.coords }}</span>
       </div>
 

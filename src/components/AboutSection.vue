@@ -106,7 +106,7 @@ onBeforeUnmount(() => {
       <div class="about__head">
         <span class="eyebrow">03 / About · 关于</span>
         <div class="about__head-note mono">
-          <span>Hangzhou, CN</span>
+          <span>Beijing, CN</span>
           <span>Working everywhere</span>
         </div>
       </div>

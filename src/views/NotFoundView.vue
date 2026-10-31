@@ -16,7 +16,7 @@ onMounted(() => {
     <div class="shell notfound__inner">
       <div class="notfound__top">
         <span class="eyebrow">404 / Lost signal</span>
-        <span class="mono">Hangzhou, CN — {{ new Date().getFullYear() }}</span>
+        <span class="mono">Beijing, CN — {{ new Date().getFullYear() }}</span>
       </div>
 
       <div class="notfound__main">

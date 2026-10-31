@@ -125,7 +125,7 @@ onBeforeUnmount(() => {
             <div class="manifesto__signoff">
               <span class="mono">A note to self</span>
               <span class="manifesto__line"></span>
-              <span class="mono">Hangzhou · 2026</span>
+              <span class="mono">Beijing · 2026</span>
             </div>
           </div>
         </div>

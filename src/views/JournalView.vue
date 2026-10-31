@@ -46,7 +46,7 @@ onMounted(() => {
           <div class="journal-page__index mono">
             <span>{{ total }} entries</span>
             <span>2026 — ongoing</span>
-            <span>Hangzhou</span>
+            <span>Beijing</span>
           </div>
         </div>
       </div>

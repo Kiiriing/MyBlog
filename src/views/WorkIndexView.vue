@@ -158,7 +158,7 @@ onBeforeUnmount(() => {
         </div>
 
         <div class="work-index__hero-meta mono">
-          <span>Based in Hangzhou</span>
+          <span>Based in Beijing</span>
           <span>Commerce / Data / Platform / Experiment</span>
           <span>Scroll to browse ↓</span>
         </div>

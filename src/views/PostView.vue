@@ -120,7 +120,7 @@ onBeforeUnmount(() => {
           <div class="post-aside__meta mono">
             <span>Words — LU YU</span>
             <span>Images — LU YU</span>
-            <span>Hangzhou, CN</span>
+            <span>Beijing, CN</span>
           </div>
         </div>
       </aside>

@@ -82,7 +82,7 @@ onBeforeUnmount(() => {
     <div class="preloader__inner">
       <div class="preloader__top">
         <span class="mono">LU YU® / Portfolio 2026</span>
-        <span class="mono">Hangzhou, CN</span>
+        <span class="mono">Beijing, CN</span>
       </div>
 
       <div class="preloader__copy">
@@ -166,6 +166,11 @@ onBeforeUnmount(() => {
 .preloader__mask {
   display: block;
   overflow: hidden;
+  /* line-height is tighter than the glyph height, so padding-top keeps the
+     italic ascenders visible inside the reveal mask; the equal negative
+     margin leaves the block's footprint unchanged. */
+  margin-top: -0.16em;
+  padding-top: 0.16em;
   padding-bottom: 0.08em;
 }
 
@@ -174,7 +179,7 @@ onBeforeUnmount(() => {
 }
 
 .preloader__mask--offset {
-  padding-top: 0.22em;
+  padding-top: 0.38em;
 }
 
 .preloader__sub {

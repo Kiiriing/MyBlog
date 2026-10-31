@@ -155,7 +155,7 @@ onBeforeUnmount(() => {
         </div>
         <div class="menu__clock mono">
           <span class="dot"></span>
-          Hangzhou · {{ time }}
+          Beijing · {{ time }}
         </div>
       </footer>
     </div>
