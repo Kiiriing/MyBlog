@@ -98,6 +98,10 @@ public/art/     本地 SVG 视觉素材
 
 ## 更新日志
 
+### 2026-10-31 — 忽略本地工具产物目录
+
+- `.gitignore` 新增 `.trae-html-share-packages/`（Trae 本地 HTML 分享产物的缓存目录），避免误提交。
+
 ### 2026-10-31 — 接入 Tailwind / shadcn，安装 React Bits SplitText 与 GSAP skills
 
 - 前置配置：安装 `tailwindcss` + `@tailwindcss/vite`（v4），新增 `src/styles/tailwind.css`（`@import 'tailwindcss';`）并在 `src/main.tsx` 里先于 `main.css` 引入；`vite.config.ts` 加入 `tailwindcss()` 插件与 `@` → `src` 别名；`tsconfig.json` 增加 `paths` 与 `allowJs`（TypeScript 7 已移除 `baseUrl`，因此只用相对 `paths`）。

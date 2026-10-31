@@ -21,3 +21,6 @@ pnpm-debug.log*
 !.vscode/extensions.json
 .idea/
 .history/
+
+# local tooling artifacts
+.trae-html-share-packages/
