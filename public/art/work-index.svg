@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1500" width="1200" height="1500">
+  <defs>
+    <linearGradient id="paper" x1="0" y1="0" x2="1" y2="0.6">
+      <stop offset="0" stop-color="#f2ece0"/>
+      <stop offset=".58" stop-color="#e8e1d2"/>
+      <stop offset="1" stop-color="#d9d1c0"/>
+    </linearGradient>
+    <filter id="warp" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency=".0035 .012" numOctaves="3" seed="9" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="95" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="grain">
+      <feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="1500" fill="url(#paper)"/>
+  <g filter="url(#warp)" fill="none" stroke="#17150f" opacity=".8">
+    <g stroke-width="1.1">
+      <path d="M-100 120 H1300"/><path d="M-100 160 H1300"/><path d="M-100 200 H1300"/>
+      <path d="M-100 240 H1300"/><path d="M-100 280 H1300"/><path d="M-100 320 H1300"/>
+      <path d="M-100 360 H1300"/><path d="M-100 400 H1300"/><path d="M-100 440 H1300"/>
+      <path d="M-100 480 H1300"/><path d="M-100 520 H1300"/><path d="M-100 560 H1300"/>
+      <path d="M-100 600 H1300"/><path d="M-100 640 H1300"/><path d="M-100 680 H1300"/>
+      <path d="M-100 720 H1300"/><path d="M-100 760 H1300"/><path d="M-100 800 H1300"/>
+      <path d="M-100 840 H1300"/><path d="M-100 880 H1300"/><path d="M-100 920 H1300"/>
+      <path d="M-100 960 H1300"/><path d="M-100 1000 H1300"/><path d="M-100 1040 H1300"/>
+      <path d="M-100 1080 H1300"/><path d="M-100 1120 H1300"/><path d="M-100 1160 H1300"/>
+      <path d="M-100 1200 H1300"/><path d="M-100 1240 H1300"/><path d="M-100 1280 H1300"/>
+      <path d="M-100 1320 H1300"/><path d="M-100 1360 H1300"/><path d="M-100 1400 H1300"/>
+      <path d="M-100 1440 H1300"/>
+    </g>
+  </g>
+
+  <g filter="url(#warp)">
+    <rect x="805" y="0" width="54" height="1500" fill="#e0431d" opacity=".9"/>
+  </g>
+
+  <text x="140" y="1050" font-family="Georgia, 'Times New Roman', serif" font-size="780" fill="#14120e" opacity=".94">I</text>
+  <text x="140" y="1160" font-family="Georgia, serif" font-style="italic" font-size="110" fill="#14120e" opacity=".6">index</text>
+
+  <g font-family="'JetBrains Mono', Consolas, monospace" fill="#17150f" opacity=".8">
+    <text x="72" y="92" font-size="16" letter-spacing="4">MONOCHROME INDEX / 单体索引</text>
+    <text x="72" y="120" font-size="12" letter-spacing="2" opacity=".55">EDITORIAL &amp; TYPOGRAPHY — 2023</text>
+    <text x="1128" y="1420" font-size="12" letter-spacing="3" text-anchor="end">A CATALOGUE OF QUIET FORMS</text>
+    <text x="72" y="1420" font-size="11" letter-spacing="2" opacity=".5">1200 × 1500 / RISOGRAPH</text>
+  </g>
+
+  <rect width="1200" height="1500" filter="url(#grain)" opacity=".13" style="mix-blend-mode:multiply"/>
+</svg>

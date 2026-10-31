@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1500" width="1200" height="1500">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0.2" y2="1">
+      <stop offset="0" stop-color="#101a3c"/>
+      <stop offset=".38" stop-color="#3a3d74"/>
+      <stop offset=".62" stop-color="#b05f66"/>
+      <stop offset=".78" stop-color="#ff9a6a"/>
+      <stop offset=".9" stop-color="#f8c98d"/>
+      <stop offset="1" stop-color="#4b2630"/>
+    </linearGradient>
+    <radialGradient id="sun" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#fff5d6"/>
+      <stop offset=".55" stop-color="#ffd9a0" stop-opacity=".9"/>
+      <stop offset="1" stop-color="#ffae6e" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="land" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#20131c"/>
+      <stop offset="1" stop-color="#080607"/>
+    </linearGradient>
+    <filter id="blur" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="48"/>
+    </filter>
+    <filter id="blurSmall" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="8"/>
+    </filter>
+    <filter id="grain">
+      <feTurbulence type="fractalNoise" baseFrequency=".8" numOctaves="3" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="1500" fill="url(#sky)"/>
+  <circle cx="600" cy="860" r="330" fill="url(#sun)" filter="url(#blur)"/>
+  <circle cx="600" cy="860" r="112" fill="#fff0cd" filter="url(#blurSmall)" opacity=".95"/>
+
+  <g opacity=".55" fill="none" stroke="#ffe0b4" stroke-width=".8">
+    <path d="M0 760 H1200"/>
+    <path d="M0 800 H1200" stroke-dasharray="1 9"/>
+    <path d="M0 900 H1200" opacity=".4"/>
+  </g>
+
+  <path d="M0 1030 C 180 990 300 1010 430 1050 C 560 1090 690 1020 830 1035 C 990 1050 1090 1100 1200 1080 L1200 1500 L0 1500 Z" fill="url(#land)"/>
+  <path d="M0 1130 C 220 1090 360 1160 560 1150 C 780 1140 980 1180 1200 1150 L1200 1500 L0 1500 Z" fill="#050405"/>
+
+  <g stroke="#1a0e0c" stroke-width="2" opacity=".8">
+    <path d="M540 860 H660"/>
+  </g>
+
+  <g font-family="'JetBrains Mono', Consolas, monospace" fill="#ffe8ce" opacity=".85">
+    <text x="72" y="92" font-size="16" letter-spacing="4">BLUE HOUR / 蓝调时刻</text>
+    <text x="72" y="120" font-size="12" letter-spacing="2" opacity=".6">FILM &amp; SOUND — 2025</text>
+    <text x="1128" y="1420" font-size="12" letter-spacing="3" text-anchor="end">18:42 / THE LAST LIGHT</text>
+  </g>
+
+  <text x="600" y="1380" text-anchor="middle" font-family="Georgia, serif" font-style="italic" font-size="130" fill="#ffdcb0" opacity=".4">blue hour</text>
+
+  <rect width="1200" height="1500" filter="url(#grain)" opacity=".2" style="mix-blend-mode:overlay"/>
+</svg>

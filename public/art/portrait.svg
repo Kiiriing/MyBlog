@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1500" width="1200" height="1500">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.7" y2="1">
+      <stop offset="0" stop-color="#15120f"/>
+      <stop offset=".55" stop-color="#0b0a09"/>
+      <stop offset="1" stop-color="#050505"/>
+    </linearGradient>
+    <linearGradient id="skin" x1="0.1" y1="0.1" x2="0.9" y2="0.9">
+      <stop offset="0" stop-color="#fff2da"/>
+      <stop offset=".28" stop-color="#f6cb9f"/>
+      <stop offset=".56" stop-color="#d98b62"/>
+      <stop offset=".78" stop-color="#8b4c38"/>
+      <stop offset="1" stop-color="#2f1c18"/>
+    </linearGradient>
+    <radialGradient id="halo" cx="50%" cy="45%" r="55%">
+      <stop offset="0" stop-color="#ff6b34" stop-opacity=".32"/>
+      <stop offset=".65" stop-color="#7a3dff" stop-opacity=".12"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="blur" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="55"/>
+    </filter>
+    <filter id="grain">
+      <feTurbulence type="fractalNoise" baseFrequency=".82" numOctaves="3" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+    </filter>
+    <clipPath id="crop">
+      <rect width="1200" height="1500"/>
+    </clipPath>
+  </defs>
+
+  <rect width="1200" height="1500" fill="url(#bg)"/>
+  <circle cx="600" cy="560" r="540" fill="url(#halo)" filter="url(#blur)"/>
+
+  <g clip-path="url(#crop)">
+    <path d="M600 210 C 742 210 816 328 816 486 C 816 596 772 680 700 736 L 700 830 C 914 880 1030 1000 1050 1500 L 150 1500 C 170 1000 286 880 500 830 L 500 736 C 428 680 384 596 384 486 C 384 328 458 210 600 210 Z" fill="url(#skin)"/>
+    <path d="M600 210 C 742 210 816 328 816 486 C 816 596 772 680 700 736 L 700 830 C 914 880 1030 1000 1050 1500 L 760 1500 C 720 1080 680 940 600 900 C 520 940 480 1080 440 1500 L 150 1500 C 170 1000 286 880 500 830 L 500 736 C 428 680 384 596 384 486 C 384 328 458 210 600 210 Z" fill="#0a0908" opacity=".18"/>
+    <path d="M384 486 C 440 520 540 548 600 548 C 660 548 760 520 816 486 C 816 596 772 680 700 736 L 500 736 C 428 680 384 596 384 486 Z" fill="#2a1611" opacity=".42"/>
+    <path d="M500 830 C 560 862 640 862 700 830" fill="none" stroke="#f0b98a" stroke-width="1.2" opacity=".35"/>
+    <ellipse cx="470" cy="510" rx="34" ry="14" fill="#2a1712" opacity=".7"/>
+    <ellipse cx="730" cy="510" rx="34" ry="14" fill="#2a1712" opacity=".7"/>
+    <path d="M600 520 L 586 632 L 614 632" fill="none" stroke="#6d3a2a" stroke-width="1.4" opacity=".5"/>
+    <path d="M548 704 C 580 722 620 722 652 704" fill="none" stroke="#6d3a2a" stroke-width="2" opacity=".5"/>
+  </g>
+
+  <g fill="none" stroke="#ffe7c8" opacity=".24">
+    <ellipse cx="600" cy="590" rx="360" ry="450" stroke-width=".8"/>
+    <ellipse cx="600" cy="590" rx="430" ry="540" stroke-width=".6" stroke-dasharray="2 14"/>
+  </g>
+
+  <g font-family="'JetBrains Mono', Consolas, monospace" fill="#f4e9da" opacity=".72">
+    <text x="72" y="92" font-size="16" letter-spacing="4">PORTRAIT / 陆屿</text>
+    <text x="72" y="120" font-size="12" letter-spacing="2" opacity=".55">HANGZHOU — AUTUMN 2026</text>
+    <text x="1128" y="1420" font-size="12" letter-spacing="3" text-anchor="end">SELF PORTRAIT, WITH HEAT</text>
+  </g>
+
+  <rect width="1200" height="1500" filter="url(#grain)" opacity=".18" style="mix-blend-mode:overlay"/>
+</svg>

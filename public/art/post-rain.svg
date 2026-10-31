@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1500" width="1200" height="1500">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0" stop-color="#0a1414"/>
+      <stop offset=".45" stop-color="#14302f"/>
+      <stop offset=".75" stop-color="#0d1c1d"/>
+      <stop offset="1" stop-color="#050a0a"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#e8ffe9" stop-opacity=".85"/>
+      <stop offset=".6" stop-color="#89c9b8" stop-opacity=".28"/>
+      <stop offset="1" stop-color="#89c9b8" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="blur" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="26"/>
+    </filter>
+    <filter id="blurBig" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="80"/>
+    </filter>
+    <filter id="grain">
+      <feTurbulence type="fractalNoise" baseFrequency=".75" numOctaves="3" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="1500" fill="url(#bg)"/>
+  <circle cx="760" cy="390" r="280" fill="url(#glow)" filter="url(#blurBig)"/>
+  <circle cx="760" cy="390" r="86" fill="#dff3dd" opacity=".55" filter="url(#blur)"/>
+  <circle cx="760" cy="390" r="72" fill="#eaf7e2" opacity=".8"/>
+
+  <g stroke="#c8e9df" opacity=".22">
+    <path d="M260 260 L180 760 M360 120 L280 680 M480 200 L400 760 M580 80 L500 620 M680 180 L620 640 M900 240 L820 780 M1000 100 L920 660 M1100 300 L1020 820" stroke-width="1"/>
+  </g>
+  <g stroke="#e9fff4" opacity=".36" filter="url(#blur)">
+    <path d="M330 300 L300 520 M520 240 L480 480 M860 320 L820 560 M1030 200 L990 440" stroke-width="2"/>
+  </g>
+
+  <path d="M0 1200 C 240 1150 360 1220 600 1190 C 840 1160 1000 1210 1200 1170 L1200 1500 L0 1500 Z" fill="#04100f" opacity=".9"/>
+  <g fill="none" stroke="#7fb3a6" opacity=".2">
+    <path d="M0 1260 C 260 1210 420 1280 660 1240 C 900 1200 1040 1260 1200 1230" stroke-width=".8"/>
+    <path d="M0 1310 C 260 1270 420 1330 660 1290 C 900 1250 1040 1310 1200 1280" stroke-width=".8"/>
+  </g>
+
+  <g font-family="'JetBrains Mono', Consolas, monospace" fill="#e2f2e9" opacity=".76">
+    <text x="72" y="92" font-size="15" letter-spacing="4">HANGZHOU RAIN / 杭州的雨</text>
+    <text x="1128" y="1420" font-size="11" letter-spacing="3" text-anchor="end">FIELD NOTE 04 — APRIL 2026</text>
+  </g>
+
+  <text x="600" y="1120" text-anchor="middle" font-family="Georgia, serif" font-style="italic" font-size="128" fill="#ebf7ec" opacity=".65">humidity</text>
+
+  <rect width="1200" height="1500" filter="url(#grain)" opacity=".2" style="mix-blend-mode:overlay"/>
+</svg>
