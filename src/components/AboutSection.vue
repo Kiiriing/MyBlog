@@ -123,7 +123,7 @@ onBeforeUnmount(() => {
             <div class="about__tilt">
               <ArtworkFrame
                 src="/art/portrait.svg"
-                alt="陆屿的抽象自画像，焦糖色的人像轮廓与橘色光晕"
+                alt="我的抽象自画像，焦糖色的人像轮廓与橘色光晕"
                 ratio="4 / 5"
                 :parallax="5"
               >
@@ -134,7 +134,7 @@ onBeforeUnmount(() => {
             <button
               class="about__badge"
               type="button"
-              aria-label="联系陆屿"
+              aria-label="联系我"
               data-cursor="Hello"
               @click="scrollToSection('contact')"
             >

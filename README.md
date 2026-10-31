@@ -1,6 +1,6 @@
 # LU YU — Full-stack Web Developer
 
-陆屿的个人博客 / 作品集。静态前端，Vue 3 单页应用，强调滚动叙事、视差与细节交互；内容定位为全栈网页开发者，展示从界面、动效到 API 与数据库的完整项目。
+陆屿 — 个人博客 / 作品集。静态前端，Vue 3 单页应用，强调滚动叙事、视差与细节交互；内容定位为全栈网页开发者，展示从界面、动效到 API 与数据库的完整项目。
 
 ## 技术栈
 
@@ -93,17 +93,17 @@ public/art/     本地 SVG 视觉素材
 
 ## 更新日志
 
+### 2026-10-31 — 站点名与个人称谓分离
+
+- `陆屿` 统一作为站点 / 品牌名使用（页头、页面标题、页脚、预加载、路由转场等保持不变）。
+- 涉及个人姓名的文案改为第一人称「我」：自画像 alt 文案、联系按钮 `aria-label`、自述落款、手记署名（Words / Images）、项目团队信息（`src/components/AboutSection.vue`、`src/components/ManifestoSection.vue`、`public/art/portrait.svg`、`src/views/PostView.vue`、`src/data/works.js`）。
+- README 简介改为「陆屿 — 个人博客 / 作品集」。
+
 ### 2026-10-31 — 提交信息规范
 
 - 约定提交信息格式 `<type>(<scope>): <描述>`，使用 `feat` / `fix` / `style` / `refactor` / `perf` / `docs` / `chore` 前缀（`.trae/rules/project_rules.md`）。
 
-### 2026-10-31 — 修复首屏文字裁切，地点改为 Beijing
 
-- 修复预加载页 `LU YU` 大字顶部被遮罩裁切的问题：`.preloader__mask` 增加 `padding-top` 并用等量负 `margin-top` 抵消，保持原有排版与错位不变（`src/components/Preloader.vue`）。
-- 修复横向裁切：遮罩左右增加 `padding` 并配合等量负 `margin`，斜体字母右侧外扩（`U` 的右笔画）不再被切掉，排版占位不变（`src/components/Preloader.vue`）。
-- 站点所在地由 Hangzhou 改为 Beijing，坐标同步为 `39.9042° N / 116.4074° E`（`src/data/site.js` 及各页面文案、`public/art/portrait.svg`）。
-- 保留作品与文章内容中的杭州元素（虚构客户 `Hangzhou Bay Observatory`、文章《Hangzhou Rain / 杭州的雨》）。
-- 新增 `.trae/rules/project_rules.md`：每次改动需更新本更新日志并提交 git。
 
 ### 2026-10-31 — v1.0 首个正式版本
 

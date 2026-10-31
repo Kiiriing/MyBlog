@@ -98,7 +98,7 @@ onBeforeUnmount(() => {
               On systems, speed<br />
               and the space between.
             </p>
-            <span class="manifesto__aside-cn">陆屿 / 2026</span>
+            <span class="manifesto__aside-cn">我 / 2026</span>
           </div>
         </aside>
 

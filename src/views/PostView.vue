@@ -118,8 +118,8 @@ onBeforeUnmount(() => {
           </ul>
           <div class="post-aside__rule"></div>
           <div class="post-aside__meta mono">
-            <span>Words — LU YU</span>
-            <span>Images — LU YU</span>
+            <span>Words — 我</span>
+            <span>Images — 我</span>
             <span>Beijing, CN</span>
           </div>
         </div>

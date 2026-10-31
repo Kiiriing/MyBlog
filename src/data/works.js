@@ -24,7 +24,7 @@ export const works = [
       { label: '年份', value: '2025' },
       { label: '客户', value: 'Solstice Studio' },
       { label: '角色', value: 'Full-stack, WebGL, Payments' },
-      { label: '团队', value: 'LU YU, M. Chen' }
+      { label: '团队', value: '我, M. Chen' }
     ],
     notes: [
       {
@@ -88,7 +88,7 @@ export const works = [
       { label: '年份', value: '2024' },
       { label: '客户', value: 'Hangzhou Bay Observatory' },
       { label: '角色', value: 'Front-end, Data Viz, Streaming' },
-      { label: '团队', value: 'LU YU, Z. Wang' }
+      { label: '团队', value: '我, Z. Wang' }
     ],
     notes: [
       {
@@ -212,7 +212,7 @@ export const works = [
       { label: '年份', value: '2023' },
       { label: '客户', value: 'Riso Press' },
       { label: '角色', value: 'Full-stack, Search, CMS' },
-      { label: '团队', value: 'LU YU, A. Fischer' }
+      { label: '团队', value: '我, A. Fischer' }
     ],
     notes: [
       {
@@ -276,7 +276,7 @@ export const works = [
       { label: '年份', value: '2025' },
       { label: '客户', value: 'Blue Hour Cinema' },
       { label: '角色', value: 'Full-stack, Product, Payments' },
-      { label: '团队', value: 'LU YU, S. Lin' }
+      { label: '团队', value: '我, S. Lin' }
     ],
     notes: [
       {
