@@ -1,0 +1,69 @@
+.scroll-rail {
+  position: fixed;
+  top: 50%;
+  right: clamp(16px, 2.4vw, 36px);
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  color: #fff;
+  mix-blend-mode: difference;
+  transform: translateY(-50%);
+  pointer-events: none;
+  transition:
+    opacity 0.5s ease,
+    transform 0.65s var(--ease-out);
+}
+
+.scroll-rail.is-at-end {
+  opacity: 0;
+  transform: translateY(-50%) translateX(16px);
+}
+
+.scroll-rail__count {
+  display: flex;
+  gap: 5px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+}
+
+.scroll-rail__slash {
+  opacity: 0.4;
+}
+
+.scroll-rail__track {
+  position: relative;
+  width: 1px;
+  height: clamp(70px, 10vh, 110px);
+  background: rgba(255, 255, 255, 0.22);
+  overflow: hidden;
+}
+
+.scroll-rail__fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: currentColor;
+  transform-origin: top center;
+  will-change: transform;
+}
+
+.scroll-rail__label {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  writing-mode: vertical-rl;
+  opacity: 0.55;
+}
+
+@media (max-width: 900px) {
+  .scroll-rail {
+    display: none;
+  }
+}

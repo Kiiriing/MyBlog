@@ -1,0 +1,70 @@
+.circle-button-wrap {
+  display: inline-block;
+  will-change: transform;
+}
+
+.circle-button {
+  position: relative;
+  display: grid;
+  width: var(--size);
+  height: var(--size);
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  color: var(--fg);
+  transition:
+    color 0.45s var(--ease-out),
+    border-color 0.45s var(--ease-out);
+}
+
+.circle-button::before {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--fg);
+  content: '';
+  transform: scale(0);
+  transform-origin: center;
+  transition: transform 0.55s var(--ease-out);
+}
+
+.circle-button:hover {
+  border-color: var(--fg);
+  color: var(--bg);
+}
+
+.circle-button:hover::before {
+  transform: scale(1);
+}
+
+.circle-button__arrow {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  transform: rotate(var(--rotation, 0deg));
+  transition: transform 0.5s var(--ease-out);
+}
+
+.circle-button__arrow svg {
+  width: 23px;
+  height: 23px;
+}
+
+.circle-button:hover .circle-button__arrow {
+  transform: rotate(var(--rotation, 0deg)) translateX(3px);
+}
+
+.circle-button--dark {
+  border-color: var(--line);
+}
+
+.circle-button__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}

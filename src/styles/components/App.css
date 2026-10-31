@@ -1,0 +1,51 @@
+.app {
+  position: relative;
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+.site-main {
+  position: relative;
+}
+
+.top-shade {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 790;
+  height: calc(var(--nav-h) + 18px);
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--bg-deep) 94%, transparent) 0%,
+    color-mix(in srgb, var(--bg-deep) 74%, transparent) 58%,
+    transparent 100%
+  );
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.45s ease;
+}
+
+.top-shade.is-on {
+  opacity: 1;
+}
+
+.skip-link {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 1200;
+  padding: 10px 16px;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  transform: translateY(-160%);
+  transition: transform 0.35s var(--ease-out);
+}
+
+.skip-link:focus-visible {
+  outline-offset: 2px;
+  transform: translateY(0);
+}
