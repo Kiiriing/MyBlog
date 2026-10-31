@@ -90,7 +90,6 @@ function createScrollMotion() {
 
   scrollTween
     .to('.hero__lead', { yPercent: -5, ease: 'none' }, 0)
-    .to('.hero__panel', { yPercent: -9, ease: 'none' }, 0)
 
   gsap.to('.hero__bottom', {
     yPercent: -14,
@@ -184,8 +183,6 @@ onBeforeUnmount(() => {
           </p>
         </div>
       </div>
-
-      <aside class="hero__panel hero-fade" aria-hidden="true"></aside>
     </div>
 
     <div class="hero__bottom shell">
@@ -319,7 +316,7 @@ onBeforeUnmount(() => {
 .hero__body {
   display: grid;
   flex: 1;
-  grid-template-columns: minmax(0, 1.18fr) minmax(330px, 0.72fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: clamp(30px, 4.5vw, 80px);
   align-items: center;
   padding-block: clamp(16px, 2.6vh, 34px);
@@ -424,34 +421,6 @@ onBeforeUnmount(() => {
   transform: translateY(24px);
 }
 
-/* Hero panel frame -------------------------------------------------------- */
-
-.hero__panel {
-  position: relative;
-  justify-self: end;
-  width: 100%;
-  max-width: 560px;
-  height: clamp(330px, 46vh, 460px);
-  max-height: 100%;
-  border: 1px solid rgba(242, 237, 228, 0.14);
-  overflow: hidden;
-  background:
-    radial-gradient(ellipse 100% 76% at 66% 30%, rgba(255, 90, 47, 0.1), transparent 72%),
-    linear-gradient(180deg, #0a0a0c 0%, #060607 100%);
-}
-
-.hero__panel::after {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    160deg,
-    rgba(242, 237, 228, 0.05) 0%,
-    transparent 38%,
-    rgba(122, 103, 255, 0.06) 100%
-  );
-  content: '';
-  pointer-events: none;
-}
 /* Bottom bar ------------------------------------------------------------- */
 
 .hero__bottom {
@@ -614,10 +583,6 @@ onBeforeUnmount(() => {
     gap: 10px;
   }
 
-  .hero__panel {
-    height: 300px;
-  }
-
   .scroll-badge {
     width: 88px;
     height: 88px;
@@ -629,10 +594,6 @@ onBeforeUnmount(() => {
     grid-template-columns: minmax(0, 1fr);
     align-items: start;
     gap: clamp(26px, 4vh, 44px);
-  }
-
-  .hero__panel {
-    display: none;
   }
 
   .hero__lead {
@@ -712,10 +673,6 @@ onBeforeUnmount(() => {
 
   .hero__body {
     padding-block: 10px 12px;
-  }
-
-  .hero__panel {
-    height: 270px;
   }
 }
 
