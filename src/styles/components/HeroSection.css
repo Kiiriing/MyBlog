@@ -135,6 +135,13 @@
   font-size: inherit;
 }
 
+/* TextType 默认 inline-block，且空文本时没有行盒：首屏需要块级 + 固定行高，
+   打字过程中标题高度不变，下方副标题不会跳动 */
+.hero__line-inner.text-type {
+  display: block;
+  min-height: 0.78em;
+}
+
 .hero__line--two {
   --line-size: clamp(2.6rem, min(7.6vw, 11.2vh), 8.6rem);
   padding-left: clamp(20px, 7.4vw, 150px);

@@ -7,6 +7,7 @@
 - **React 19** + **TypeScript**，路由使用 **react-router-dom 7**
 - **Vite 8**（`@vitejs/plugin-react`）
 - **GSAP 3.15**（ScrollTrigger / SplitText / quickTo / ticker）
+- **TextType**（React Bits 打字机文字，`src/components/TextType.tsx`）：首屏标题按字符逐字出现，光标跟随文字并持续闪烁
 - **ogl 1.0**：承载 React Bits `DitherVeil` 抖动之幕（WebGL2）
 - **Tailwind CSS v4**（`@tailwindcss/vite`）与 **shadcn**（`components.json`），仅用于接入 registry 组件；项目自有 CSS 不分层，优先级更高
 - **Lenis** 平滑滚动，与 GSAP ticker 同步
@@ -102,6 +103,14 @@ public/art/     本地视觉素材（SVG / PNG）
 ```
 
 ## 更新日志
+
+### 2026-10-31 — 首屏标题接入 React Bits TextType 打字机动效
+
+- 新增 `src/components/TextType.tsx`：按 reactbits.dev/text-animations/text-type 的实现 1:1 移植（`NEIGHBORS` 错字映射、`fade / blur / rise` 三种逐字效果、`backspace / select` 删除模式、光标 `character / bar / block / underscore` 四种形态、光标滑动与闪烁、`Intl.Segmenter` 字素切分、`prefers-reduced-motion` 直接显示全文）。相比原实现仅新增 `start` 开关（等待预加载结束再开始打字）与 TypeScript 类型。
+- 新增 `src/styles/components/TextType.css`：与组件一一对应的原样式。
+- `src/components/HeroSection.tsx`：首屏两行标题改为 TextType —— 第一行 `Welcome` 先打（无光标），第二行 `Personal Blog` 延迟 420ms 后打并保留闪烁光标；移除原先标题的 SplitText 逐字上浮动画，其余 kicker / 副文案 / 底部栏入场节奏不变。
+- `src/styles/components/HeroSection.css`：为 `.hero__line-inner.text-type` 补 `display: block` 与 `min-height: 0.78em`，空文本时行高不塌陷，打字过程中下方副标题不会跳动。
+- 验证：headless Chrome 在 1440×900 与 390×844 采样打字全过程，两行遮罩高度稳定（1440 为 124/97px，390 为 52/38px），副标题 `top` 不变，光标始终在第二行遮罩内（`bottom 480 < 498`）；`npm run build` 通过。
 
 ### 2026-10-31 — 全站文字裁切排查：首屏标题、作品卡片、路由转场、About 说明与矮屏菜单
 

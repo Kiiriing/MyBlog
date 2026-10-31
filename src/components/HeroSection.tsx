@@ -1,8 +1,9 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
-import { gsap, SplitText } from '../lib/gsap'
+import { gsap } from '../lib/gsap'
 import { prefersReducedMotion, scrollToSection } from '../composables/useSmoothScroll'
 import { useUi } from '../store/ui'
 import { site } from '../data/site'
+import TextType from './TextType'
 import '../styles/components/HeroSection.css'
 
 /* WebGL 抖动之幕按需加载：首屏不进入主包，所有断点都渲染（窄屏改为下方居中展示） */
@@ -15,7 +16,6 @@ export default function HeroSection() {
 
   const [ready, setReady] = useState(false)
 
-  const splits = useRef<any[]>([])
   const timeline = useRef<gsap.core.Timeline | null>(null)
   const hasPlayed = useRef(false)
 
@@ -26,22 +26,6 @@ export default function HeroSection() {
     if (!el) return
 
     const q = gsap.utils.selector(el) as (selector: string) => HTMLElement[]
-
-    if (!prefersReducedMotion()) {
-      const lines = title.current?.querySelectorAll('.hero__line-inner')
-      if (lines?.length) {
-        splits.current = Array.from(lines).map(
-          (line) =>
-            new SplitText(line, {
-              type: 'chars',
-              charsClass: 'hero-char'
-            })
-        )
-        gsap.set(q('.hero__title'), { opacity: 0 })
-        const chars = splits.current.flatMap((split) => split.chars)
-        gsap.set(chars, { yPercent: 125, opacity: 0, rotate: 5 })
-      }
-    }
 
     let scrollTween: gsap.core.Timeline | null = null
     let bottomTween: gsap.core.Tween | null = null
@@ -76,8 +60,6 @@ export default function HeroSection() {
       scrollTween?.kill()
       bottomTween?.scrollTrigger?.kill()
       bottomTween?.kill()
-      splits.current.forEach((split) => split.revert())
-      splits.current = []
     }
   }, [])
 
@@ -99,25 +81,12 @@ export default function HeroSection() {
       return
     }
 
-    const chars = splits.current.flatMap((split) => split.chars)
-
     gsap.set(q('.hero__title'), { opacity: 1 })
     gsap.set(q('.hero-fade'), { opacity: 0, y: 24 })
 
     const tl = gsap.timeline({ delay: 0.08 })
     timeline.current = tl
-    tl.to(chars, {
-      yPercent: 0,
-      opacity: 1,
-      rotate: 0,
-      duration: 1.35,
-      ease: 'expo.out',
-      stagger: {
-        each: 0.028,
-        from: 'start'
-      }
-    })
-    tl.to(q('.hero__kicker'), { opacity: 1, y: 0, duration: 0.9, ease: 'power3.out' }, '-=1')
+    tl.to(q('.hero__kicker'), { opacity: 1, y: 0, duration: 0.9, ease: 'power3.out' })
     tl.to(
       q('.hero-fade'),
       {
@@ -162,10 +131,24 @@ export default function HeroSection() {
 
           <h1 ref={title} className="hero__title">
             <span className="hero__line">
-              <span className="hero__line-inner hero__line-inner--one">Welcome</span>
+              <TextType
+                as="span"
+                className="hero__line-inner hero__line-inner--one"
+                text="Welcome"
+                start={ready}
+                loop={false}
+                showCursor={false}
+              />
             </span>
             <span className="hero__line hero__line--two">
-              <span className="hero__line-inner hero__line-inner--two">Personal Blog</span>
+              <TextType
+                as="span"
+                className="hero__line-inner hero__line-inner--two"
+                text="Personal Blog"
+                start={ready}
+                loop={false}
+                initialDelay={420}
+              />
             </span>
           </h1>
 
