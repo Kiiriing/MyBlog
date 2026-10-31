@@ -1,77 +1,59 @@
-/* 技术栈的单一数据源：关于页的 LogoLoop 长条从这里取，
-   覆盖能力矩阵、实践经历与本站的技术选型，新增一项只需在这里追加。 */
+/* 技术栈的单一数据源：关于页 LogoLoop 从这里取图标。
+   icon 指向 public/art/logo 下的素材；新增一项只需把图标放进该目录，再在这里追加一行。
+   排序按「语言 → 前端框架 → 运行时 → 数据库 → 构建与工具 → 部署与系统 → 编辑器」的栈层次。 */
+
+export type TechGroup =
+  | '语言'
+  | '前端框架'
+  | '运行时'
+  | '数据库'
+  | '构建与工具'
+  | '部署与系统'
+  | '编辑器'
 
 export type TechItem = {
   name: string
-  group: 'Backend' | 'Frontend' | 'Interaction' | 'Cross-platform' | 'Infra' | 'Data' | 'AI'
+  icon: string
+  group: TechGroup
 }
 
 export const techStack: TechItem[] = [
-  { name: 'NestJS 11', group: 'Backend' },
-  { name: 'TypeScript', group: 'Backend' },
-  { name: 'Express', group: 'Backend' },
-  { name: 'Node.js', group: 'Backend' },
-  { name: 'Prisma 7', group: 'Backend' },
-  { name: 'PostgreSQL 14', group: 'Backend' },
-  { name: 'MySQL 8', group: 'Backend' },
-  { name: 'Redis', group: 'Backend' },
-  { name: 'Flask', group: 'Backend' },
-  { name: 'Python', group: 'Backend' },
-  { name: 'JWT / Passport', group: 'Backend' },
-  { name: 'RBAC', group: 'Backend' },
-  { name: 'Swagger', group: 'Backend' },
-  { name: 'Werkzeug', group: 'Backend' },
+  /* 语言 ---------------------------------------------------------------- */
+  { name: 'HTML5', icon: '/art/logo/html5.png', group: '语言' },
+  { name: 'CSS3', icon: '/art/logo/css3.png', group: '语言' },
+  { name: 'JavaScript', icon: '/art/logo/javascript.png', group: '语言' },
+  { name: 'TypeScript', icon: '/art/logo/typescript.png', group: '语言' },
+  { name: 'Java', icon: '/art/logo/java.png', group: '语言' },
+  { name: 'Python', icon: '/art/logo/python.png', group: '语言' },
+  { name: 'Markdown', icon: '/art/logo/markdown.png', group: '语言' },
 
-  { name: 'React 19', group: 'Frontend' },
-  { name: 'Vue 3', group: 'Frontend' },
-  { name: 'Vite 8', group: 'Frontend' },
-  { name: 'React Router 7', group: 'Frontend' },
-  { name: 'Pinia', group: 'Frontend' },
-  { name: 'Tailwind CSS 4', group: 'Frontend' },
-  { name: 'Sass', group: 'Frontend' },
-  { name: 'ECharts', group: 'Frontend' },
-  { name: 'Axios', group: 'Frontend' },
-  { name: 'vue-i18n', group: 'Frontend' },
+  /* 前端框架 -------------------------------------------------------------- */
+  { name: 'Vue.js', icon: '/art/logo/vue.png', group: '前端框架' },
+  { name: 'Next.js', icon: '/art/logo/nextjs.png', group: '前端框架' },
+  { name: 'Bootstrap', icon: '/art/logo/bootstrap.png', group: '前端框架' },
+  { name: 'Sass', icon: '/art/logo/sass.png', group: '前端框架' },
 
-  { name: 'GSAP 3', group: 'Interaction' },
-  { name: 'ScrollTrigger', group: 'Interaction' },
-  { name: 'Lenis', group: 'Interaction' },
-  { name: 'WebGL 2', group: 'Interaction' },
-  { name: 'ogl', group: 'Interaction' },
-  { name: 'React Bits', group: 'Interaction' },
+  /* 运行时 ---------------------------------------------------------------- */
+  { name: 'Node.js', icon: '/art/logo/nodejs.png', group: '运行时' },
 
-  { name: 'uni-app', group: 'Cross-platform' },
-  { name: 'uni-ui', group: 'Cross-platform' },
-  { name: 'WeChat Mini Program', group: 'Cross-platform' },
-  { name: 'Alipay Mini Program', group: 'Cross-platform' },
-  { name: 'Douyin Mini Program', group: 'Cross-platform' },
+  /* 数据库 ---------------------------------------------------------------- */
+  { name: 'PostgreSQL', icon: '/art/logo/postgresql.png', group: '数据库' },
+  { name: 'MySQL', icon: '/art/logo/mysql.png', group: '数据库' },
 
-  { name: 'Docker', group: 'Infra' },
-  { name: 'docker-compose', group: 'Infra' },
-  { name: 'Nginx', group: 'Infra' },
-  { name: 'Linux', group: 'Infra' },
-  { name: 'SSH', group: 'Infra' },
-  { name: 'Git', group: 'Infra' },
-  { name: 'Jest', group: 'Infra' },
-  { name: 'Artillery', group: 'Infra' },
+  /* 构建与工具 ------------------------------------------------------------ */
+  { name: 'Vite', icon: '/art/logo/vite.png', group: '构建与工具' },
+  { name: 'Git', icon: '/art/logo/git.png', group: '构建与工具' },
+  { name: 'GitHub', icon: '/art/logo/github.png', group: '构建与工具' },
+  { name: 'Apache Maven', icon: '/art/logo/maven.png', group: '构建与工具' },
+  { name: 'Anaconda', icon: '/art/logo/anaconda.png', group: '构建与工具' },
+  { name: 'Postman', icon: '/art/logo/postman.png', group: '构建与工具' },
 
-  { name: 'Hadoop', group: 'Data' },
-  { name: 'Hive', group: 'Data' },
-  { name: 'Kafka', group: 'Data' },
-  { name: 'Spark', group: 'Data' },
-  { name: 'Flume', group: 'Data' },
-  { name: 'Zookeeper', group: 'Data' },
+  /* 部署与系统 ------------------------------------------------------------ */
+  { name: 'Docker', icon: '/art/logo/docker.png', group: '部署与系统' },
+  { name: 'Ubuntu', icon: '/art/logo/ubuntu.png', group: '部署与系统' },
 
-  { name: 'Agent 开发', group: 'AI' },
-  { name: '大模型接入', group: 'AI' }
+  /* 编辑器 ---------------------------------------------------------------- */
+  { name: 'Visual Studio', icon: '/art/logo/visual-studio.png', group: '编辑器' },
+  { name: 'IntelliJ IDEA', icon: '/art/logo/intellij-idea.png', group: '编辑器' },
+  { name: 'PyCharm', icon: '/art/logo/pycharm.png', group: '编辑器' }
 ]
-
-export const techGroups: Record<TechItem['group'], string> = {
-  Backend: '服务端',
-  Frontend: '前端',
-  Interaction: '交互动效',
-  'Cross-platform': '跨端',
-  Infra: '工程化',
-  Data: '大数据',
-  AI: 'AI'
-}

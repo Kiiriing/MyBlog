@@ -10,7 +10,7 @@
 - **StrokeText**（React Bits 描边绘制文字，`src/components/StrokeText.tsx`）：首屏两行标题先描边勾出轮廓，再由左向右擦除出实心字形
 - **TextType**（React Bits 打字机文字，`src/components/TextType.tsx`）：首屏自述段落按字符逐字打出，光标跟随文字并持续闪烁
 - **GlowCursor**（React Bits 流体光迹，`src/components/GlowCursor.tsx`）：纯 WebGL2 的鼠标拖尾（半浮点帧缓冲 + MacCormack 平流 + 20 步压力迭代 + 5 级 bloom），深色页以 `screen` 加光、奶油色页换成组件的 light 主题落墨
-- **LogoLoop**（React Bits 技术栈长条，`src/components/LogoLoop.jsx` + 类型声明 `.d.ts`）：关于页底部的 51 项技术栈 wordmark，连续滚动、可拖拽甩动、悬停停下并点亮为强调色，`prefers-reduced-motion` 下保持静止排列
+- **LogoLoop**（React Bits 技术栈长条，`src/components/LogoLoop.jsx` + 类型声明 `.d.ts`）：关于页底部的 25 个技术栈品牌图标（`public/art/logo`），按语言 → 前端框架 → 运行时 → 数据库 → 构建与工具 → 部署与系统 → 编辑器分层排列，连续滚动、可拖拽甩动、悬停停下并恢复品牌色，`prefers-reduced-motion` 下保持静止排列
 - **ogl 1.0**：承载 React Bits `DitherVeil` 抖动之幕（WebGL2）
 - **Tailwind CSS v4**（`@tailwindcss/vite`）与 **shadcn**（`components.json`），仅用于接入 registry 组件；项目自有 CSS 不分层，优先级更高
 - **Lenis** 平滑滚动，与 GSAP ticker 同步
@@ -60,7 +60,7 @@ Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 - `src/data/profile.ts`：简历内容的单一数据源——能力矩阵、数字概览、三段实践经历、8 项荣誉、4 张证书与志愿服务。
 - `src/data/works.ts`：四个已交付项目（QianVerse / Attendance / Data Walls / Campus Lab）。每个项目包含 `stack`、`status`、`links`（GitHub / 邮件预约）与工程向的 `intro`、`notes`、`gallery`。
 - `src/data/posts.ts`：四篇真实项目手记与分类。
-- `src/data/stack.ts`：关于页 LogoLoop 的技术栈清单（`techStack` 51 项 + 分组中文名 `techGroups`），新增技术只改这一处。
+- `src/data/stack.ts`：关于页 LogoLoop 的技术栈图标清单（`techStack` 25 项，每项含 `name` / `icon` / `group`），按栈层次分组排列；新增技术只需把图标放进 `public/art/logo`（文件名小写、去空格），再在这里追加一行。
 
 > 站内 GitHub 与邮箱均为真实地址；分类筛选由 `works.ts` 的 `filters` 与 `WorkIndexView.tsx` 的 `filters` 共同决定，新增项目时两处需要同步。
 
@@ -74,7 +74,7 @@ Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 - 滚动后顶部渐隐遮罩，保证固定导航与大标题重叠时的可读性
 - 首页横向作品画廊：GSAP scrub 驱动，支持鼠标拖拽映射纵向滚动；桌面与移动端均提供 All projects 入口
 - 首页 Marquee：GSAP ticker 驱动，滚动越快横向速度与 `skewX` 倾斜越大，指针悬停减速；关键词与真实技术栈一致
-- 关于区底部 LogoLoop：技术栈 wordmark 连续滚动，可拖拽甩动，悬停停下并显示中文分组、点亮强调色，离屏自动停帧
+- 关于区底部 LogoLoop：技术栈品牌图标连续滚动，可拖拽甩动，悬停停下、恢复原色并显示「名称 · 分层」提示，离屏自动停帧
 - Experience 章节：粘性大号索引与竖向进度线（scrub），ScrollTrigger 在视口中段点亮当前经历
 - Credentials 章节：8 项荣誉行 + 4 张证书卡 + 20 小时志愿记录，指针光晕（quickTo）、逐条揭示与 `Magnetic` 磁性 CTA
 - 手记悬浮预览（仅精确指针设备）、作品卡 3D tilt、页脚光晕
@@ -104,10 +104,18 @@ src/
   store/        UI 状态（菜单 / 启动 / 触屏）
   styles/       主题变量、全局排版；components/ 下为各组件样式
   views/        首页、手记、文章、作品、404
-public/art/     本地视觉素材（SVG / PNG）
+public/art/     本地视觉素材（SVG / PNG；art/logo 为技术栈品牌图标）
 ```
 
 ## 更新日志
+
+### 2026-11-01 — 技术栈长条改用品牌图标并按栈层次排序
+
+- 新增 `public/art/logo/`：25 个技术栈品牌图标（素材来自 `art\logo`，统一为 512×512 PNG）。文件名规范化——小写、去空格与后缀差异（`Anaconda.png → anaconda.png`、`Apache Maven.png → maven.png`、`Next.js.png → nextjs.png`、`PostgresSQL.png → postgresql.png`、`Vite.js.png → vite.png`、`Vue.js.png → vue.png` 等），重复的 `JavaScript (1).png` 未收录。
+- `src/data/stack.ts` 重写为图标数据源：`techStack` 25 项各含 `name` / `icon` / `group`，按「语言（HTML5、CSS3、JavaScript、TypeScript、Java、Python、Markdown）→ 前端框架（Vue、Next.js、Bootstrap、Sass）→ 运行时（Node.js）→ 数据库（PostgreSQL、MySQL）→ 构建与工具（Vite、Git、GitHub、Maven、Anaconda、Postman）→ 部署与系统（Docker、Ubuntu）→ 编辑器（Visual Studio、IntelliJ IDEA、PyCharm）」排列；新增 `TechGroup` / `TechItem` 类型，移除旧的文字 wordmark 清单与 `techGroups`。
+- `src/components/AboutSection.tsx`：长条条目从「编号 + wordmark」改为 `<img>` 图标（带 `alt`、512×512 宽高比、`title` 为「名称 · 分层」），参数调整为 `speed 64`、`logoHeight 42`、`gap 54`、`muted 0.5`、`labels="hover"`（悬停停下、恢复品牌色并显示提示）；栏目标签显示 `25 icons · 拖动可回看`。
+- `src/styles/components/AboutSection.css`：删除旧的 wordmark 条目样式，新增图标长条样式；`github / markdown / nextjs` 的原图是深色实心 + 透明镂空，在近黑底上几乎不可见，用 `filter: invert(1)` 反相成浅色标记，其余图标保持品牌色；≤760px 以 `--logoloop-logoHeight: 34px !important` 收到 34px（组件把高度写成行内变量）并收窄条目间距。
+- 验证：`npm run build` 通过；`npm run preview` + headless Chrome 1440×900 实测 `itemsPerList 25`、`lists 4`、图标 42×42、轨道 400ms 内持续位移、悬停 `Java` 出现「Java · 语言」且恢复彩色、长条宽 1440 且无横向溢出；390×844 下图标 34×34、长条宽 390、悬停 `Markdown`；`prefers-reduced-motion` 下轨道静止。
 
 ### 2026-11-01 — 关于区收紧内边距并接入 React Bits LogoLoop 技术栈长条
 
