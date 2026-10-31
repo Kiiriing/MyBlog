@@ -272,8 +272,8 @@ export default function AboutSection() {
           logos={stackLogos}
           speed={64}
           direction="left"
-          logoHeight={42}
-          gap={54}
+          logoHeight={71}
+          gap={92}
           fadeOut
           fadeOutWidth={0.09}
           scaleOnHover

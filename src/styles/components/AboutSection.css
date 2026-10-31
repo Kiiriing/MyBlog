@@ -406,11 +406,11 @@
 
   /* 图标高度由组件写成行内变量，这里用 !important 在窄屏收一档 */
   .about__stack-loop {
-    --logoloop-logoHeight: 34px !important;
+    --logoloop-logoHeight: 58px !important;
   }
 
   .about__stack-loop .logoloop__item {
-    margin-right: 30px;
+    margin-right: 51px;
   }
 
   /* 窄屏上说明留给标题，拖拽提示没有意义 */

@@ -110,6 +110,12 @@ public/art/     本地视觉素材（SVG / PNG；art/logo 为技术栈品牌图�
 
 ## 更新日志
 
+### 2026-11-01 — 技术栈图标放大到 1.7 倍
+
+- `src/components/AboutSection.tsx`：LogoLoop 的图标尺寸 `logoHeight 42 → 71`、间距 `gap 54 → 92`，按 1.7 倍同步放大，图标与留白保持原比例。
+- `src/styles/components/AboutSection.css`：≤760px 的 `--logoloop-logoHeight` 由 34px 提到 58px、条目间距 30px → 51px，窄屏同样是 1.7 倍。
+- 验证：`npm run build` 通过；`npm run preview` + headless Chrome 1440×900 实测图标 71×71、条目间距 92px、长条高 252px、长条宽 1440 且无横向溢出；390×844 下图标 58×58、间距 51px、长条高 195px、宽 390 且无横向溢出；滚动、悬停提示与拖拽逻辑不受影响。
+
 ### 2026-11-01 — 首页背景改为 React Bits LetterGlitch 字符故障场
 
 - 新增 `src/components/LetterGlitch.tsx`：按 reactbits.dev/backgrounds/letter-glitch 的实现 1:1 移植为 TSX。着色器（字形图集 + 状态贴图、流动噪声、边缘 / 中心渐隐）、默认字符集与等宽字体、`fontSize 14` / `spacing 0.6` / `density 0.9` / `baseOpacity 0.16` / `glitchAmount 0.5` / `speed 1` / `flow 0.5` / `cursorRadius 140` / `clickEffect 'tear'` 等默认值与官方一致；intro 逐格显影、环境重绘与故障速率、最多 48 条游走撕裂（含分叉）、指针点亮与点击喷发、画布 DPR ≤ 2、IntersectionObserver 离屏停帧、`visibilitychange`、字体加载完成后重建图集、`prefers-reduced-motion` 下静止、卸载时回收 WebGL 上下文，全部保留。相比原实现仅补 TypeScript 类型。
