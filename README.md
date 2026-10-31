@@ -93,10 +93,9 @@ public/art/     本地 SVG 视觉素材
 
 ## 更新日志
 
-### 2026-10-31 — 修复首屏文字裁切、地点改为 Beijing
+### 2026-10-31 — 修复首屏文字裁切
 
 - 修复预加载页 `LU YU` 大字顶部被遮罩裁切的问题：`.preloader__mask` 增加 `padding-top` 并用等量负 `margin-top` 抵消，保持原有排版与错位不变（`src/components/Preloader.vue`）。
-- 站点所在地由 Hangzhou 改为 Beijing，坐标同步为 `39.9042° N / 116.4074° E`（`src/data/site.js`、`Preloader.vue`、`HeroSection.vue`、`AboutSection.vue`、`MenuOverlay.vue`、`ManifestoSection.vue`、`JournalView.vue`、`PostView.vue`、`NotFoundView.vue`、`WorkIndexView.vue`、`public/art/portrait.svg`）。
 - 保留作品与文章内容中的杭州元素（虚构客户 `Hangzhou Bay Observatory`、文章《Hangzhou Rain / 杭州的雨》）。
 - 新增 `.trae/rules/project_rules.md`：每次改动需更新本更新日志并提交 git。
 
