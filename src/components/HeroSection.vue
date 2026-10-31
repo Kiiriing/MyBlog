@@ -1,29 +1,40 @@
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { RouterLink } from 'vue-router'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { gsap, SplitText } from '../lib/gsap'
 import { prefersReducedMotion, scrollToSection } from '../composables/useSmoothScroll'
 import { ui } from '../stores/ui'
 import { site } from '../data/site'
-import { works } from '../data/works'
 
 const title = ref(null)
 const hero = ref(null)
 const ready = ref(false)
-const activeIndex = ref(0)
 
-const activeWork = computed(() => works[activeIndex.value] || works[0])
-const totalCount = computed(() => String(works.length).padStart(2, '0'))
-const panelStyle = computed(() => ({ '--work-accent': activeWork.value.accent }))
+const fieldEl = ref(null)
+const canvasEl = ref(null)
+
+const hud = reactive({ x: '0.500', y: '0.500', energy: '0.00', ripples: '00' })
+const touched = ref(false)
+const fieldZoom = ref('1.00')
+const stereo = ref(false)
+
+let stereoTimer = null
+
+const fieldStatus = computed(() => {
+  const energy = Number(hud.energy)
+  if (energy > 0.55) return 'Field saturated'
+  if (energy > 0.18) return 'Disturbance detected'
+  return 'Nothing here is static'
+})
 
 let splits = []
 let readyTimeline
 let scrollTween
 let hasPlayed = false
+let fieldState = null
+let fieldTicker = null
+let fieldObserver = null
 
-function setActive(index) {
-  activeIndex.value = index
-}
+/* Intro ------------------------------------------------------------------ */
 
 function splitTitle() {
   const lines = title.value?.querySelectorAll('.hero__line-inner')
@@ -83,6 +94,8 @@ function playIntro() {
   )
 }
 
+/* Scroll ----------------------------------------------------------------- */
+
 function createScrollMotion() {
   if (prefersReducedMotion()) return
 
@@ -112,6 +125,290 @@ function createScrollMotion() {
   })
 }
 
+/* Interactive field ------------------------------------------------------ */
+
+const ACCENT = '255, 90, 47'
+
+function resizeField() {
+  const s = fieldState
+  const canvas = canvasEl.value
+  const wrap = fieldEl.value
+  if (!s || !canvas || !wrap) return
+
+  const rect = wrap.getBoundingClientRect()
+  s.w = Math.max(1, rect.width)
+  s.h = Math.max(1, rect.height)
+  s.dpr = Math.min(2, window.devicePixelRatio || 1)
+
+  canvas.width = Math.round(s.w * s.dpr)
+  canvas.height = Math.round(s.h * s.dpr)
+  s.ctx.setTransform(s.dpr, 0, 0, s.dpr, 0, 0)
+
+  s.gap = Math.max(15, Math.min(30, s.w / 26))
+  s.cols = Math.ceil(s.w / s.gap) + 1
+  s.rows = Math.ceil(s.h / s.gap) + 1
+
+  drawField(s, 0)
+}
+
+function drawField(s, energy) {
+  const { ctx, w, h, gap } = s
+  if (!w || !h) return
+
+  ctx.clearRect(0, 0, w, h)
+
+  const px = s.smooth.x * w
+  const py = s.smooth.y * h
+  const radius = Math.min(w, h) * 0.55
+  const glow = ctx.createRadialGradient(px, py, 0, px, py, radius)
+  glow.addColorStop(0, `rgba(${ACCENT}, ${0.12 + energy * 0.12})`)
+  glow.addColorStop(0.55, `rgba(${ACCENT}, 0.035)`)
+  glow.addColorStop(1, `rgba(${ACCENT}, 0)`)
+  ctx.fillStyle = glow
+  ctx.fillRect(0, 0, w, h)
+
+  // Build the displaced lattice once, then reuse it for the mesh and dots.
+  const pts = []
+  for (let row = 0; row < s.rows; row++) {
+    for (let col = 0; col < s.cols; col++) {
+      const x = col * gap
+      const y = row * gap
+
+      const dx = x - px
+      const dy = y - py
+      const dist = Math.hypot(dx, dy) || 1
+      const influence = Math.max(0, 1 - dist / radius)
+      const push = influence * influence * (14 + energy * 52)
+
+      let ox = (dx / dist) * push
+      let oy = (dy / dist) * push
+      let boost = influence * 0.9
+
+      for (const ripple of s.ripples) {
+        const rd = Math.hypot(x - ripple.x, y - ripple.y) || 1
+        const band = Math.exp(-((rd - ripple.age * 340) ** 2) / (2 * 46 * 46))
+        const decay = Math.max(0, 1 - ripple.age / 3.1)
+        const amp = band * decay * (32 * ripple.amp)
+        if (amp > 0.05) {
+          ox += ((x - ripple.x) / rd) * amp
+          oy += ((y - ripple.y) / rd) * amp
+          boost = Math.max(boost, band * decay * 1.7)
+        }
+      }
+
+      pts.push(x + ox, y + oy, boost)
+    }
+  }
+
+  // Warped mesh
+  ctx.strokeStyle = 'rgba(242, 237, 228, 0.055)'
+  ctx.lineWidth = 1
+  ctx.beginPath()
+  for (let row = 0; row < s.rows; row++) {
+    for (let col = 0; col < s.cols; col++) {
+      const i = (row * s.cols + col) * 3
+      if (col === 0) ctx.moveTo(pts[i], pts[i + 1])
+      else ctx.lineTo(pts[i], pts[i + 1])
+    }
+  }
+  for (let col = 0; col < s.cols; col++) {
+    for (let row = 0; row < s.rows; row++) {
+      const i = (row * s.cols + col) * 3
+      if (row === 0) ctx.moveTo(pts[i], pts[i + 1])
+      else ctx.lineTo(pts[i], pts[i + 1])
+    }
+  }
+  ctx.stroke()
+
+  // Resting nodes
+  ctx.fillStyle = 'rgba(242, 237, 228, 0.22)'
+  ctx.beginPath()
+  for (let i = 0; i < pts.length; i += 3) {
+    if (pts[i + 2] > 0.32) continue
+    ctx.moveTo(pts[i] + 1.15, pts[i + 1])
+    ctx.arc(pts[i], pts[i + 1], 1.15, 0, Math.PI * 2)
+  }
+  ctx.fill()
+
+  // Excited nodes
+  for (let i = 0; i < pts.length; i += 3) {
+    const boost = pts[i + 2]
+    if (boost <= 0.32) continue
+    const size = 1.2 + Math.min(1, boost) * 1.9
+    ctx.beginPath()
+    ctx.fillStyle = `rgba(${ACCENT}, ${0.34 + Math.min(0.6, boost * 0.5)})`
+    ctx.arc(pts[i], pts[i + 1], size, 0, Math.PI * 2)
+    ctx.fill()
+  }
+
+  // Signal trace along the pointer's vertical axis
+  const amp = 6 + energy * 16
+  ctx.strokeStyle = `rgba(${ACCENT}, ${0.26 + energy * 0.24})`
+  ctx.lineWidth = 1
+  for (let line = 0; line < 2; line++) {
+    ctx.beginPath()
+    for (let x = 0; x <= w; x += 4) {
+      const dist = Math.abs(x - px)
+      const envelope = Math.exp(-(dist * dist) / (2 * (w * 0.32) ** 2))
+      const y = py + Math.sin(x * 0.028 + s.clock * 2.2 + line * 1.6) * amp * envelope
+      if (x === 0) ctx.moveTo(x, y)
+      else ctx.lineTo(x, y)
+    }
+    ctx.stroke()
+  }
+
+  // Pointer reticle
+  const ring = 9 + energy * 14
+  ctx.strokeStyle = `rgba(${ACCENT}, ${0.42 + energy * 0.36})`
+  ctx.lineWidth = 1
+  ctx.beginPath()
+  ctx.arc(px, py, ring, 0, Math.PI * 2)
+  ctx.stroke()
+  ctx.beginPath()
+  ctx.moveTo(px - ring - 6, py)
+  ctx.lineTo(px - ring - 14, py)
+  ctx.moveTo(px + ring + 6, py)
+  ctx.lineTo(px + ring + 14, py)
+  ctx.moveTo(px, py - ring - 6)
+  ctx.lineTo(px, py - ring - 14)
+  ctx.moveTo(px, py + ring + 6)
+  ctx.lineTo(px, py + ring + 14)
+  ctx.stroke()
+}
+
+function syncHud(s, energy) {
+  hud.x = s.smooth.x.toFixed(3)
+  hud.y = s.smooth.y.toFixed(3)
+  hud.energy = energy.toFixed(2)
+  hud.ripples = String(s.ripples.length).padStart(2, '0')
+  fieldZoom.value = `${(1 + energy * 0.06).toFixed(2)}x`
+}
+
+function tickField(time) {
+  const s = fieldState
+  if (!s) return
+
+  const dt = s.last ? Math.min(0.066, time - s.last) : 0.016
+  s.last = time
+  s.clock += dt
+
+  if (!s.active) {
+    // Idle: a slow ghost pointer keeps the field breathing on its own.
+    s.idle += dt
+    const t = s.clock * 0.42
+    s.target.x = 0.5 + Math.cos(t) * 0.33
+    s.target.y = 0.5 + Math.sin(t * 1.55) * 0.27
+    if (s.idle > 3 && s.ripples.length === 0 && Math.random() < 0.004) {
+      s.ripples.push({ x: s.w * (0.3 + Math.random() * 0.4), y: s.h * (0.3 + Math.random() * 0.4), age: 0, amp: 0.7 })
+    }
+  }
+
+  const ease = Math.min(1, dt * 8)
+  s.smooth.x += (s.target.x - s.smooth.x) * ease
+  s.smooth.y += (s.target.y - s.smooth.y) * ease
+
+  for (const ripple of s.ripples) ripple.age += dt
+  s.ripples = s.ripples.filter((ripple) => ripple.age < 3.1)
+
+  s.energy *= Math.pow(0.82, dt * 3.4)
+  if (s.ripples.length && s.energy < 0.12) s.energy = 0.12
+
+  drawField(s, s.energy)
+  if (time - s.hudAt > 0.1) {
+    s.hudAt = time
+    syncHud(s, s.energy)
+  }
+}
+
+function initField() {
+  const canvas = canvasEl.value
+  if (!canvas) return
+
+  const s = {
+    ctx: canvas.getContext('2d'),
+    w: 0,
+    h: 0,
+    dpr: 1,
+    gap: 22,
+    cols: 1,
+    rows: 1,
+    target: { x: 0.5, y: 0.5 },
+    smooth: { x: 0.5, y: 0.5 },
+    active: false,
+    idle: 0,
+    energy: 0.1,
+    ripples: [],
+    clock: 0,
+    last: 0,
+    hudAt: 0
+  }
+
+  fieldState = s
+  syncHud(s, s.energy)
+  resizeField()
+
+  if (prefersReducedMotion()) {
+    s.energy = 0.06
+    drawField(s, s.energy)
+  } else {
+    fieldTicker = (time) => tickField(time)
+    gsap.ticker.add(fieldTicker)
+  }
+
+  fieldObserver = new ResizeObserver(() => resizeField())
+  fieldObserver.observe(fieldEl.value)
+}
+
+function onFieldMove(event) {
+  const s = fieldState
+  if (!s || !fieldEl.value) return
+
+  const rect = fieldEl.value.getBoundingClientRect()
+  s.target.x = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width))
+  s.target.y = Math.min(1, Math.max(0, (event.clientY - rect.top) / rect.height))
+  s.active = true
+  s.idle = 0
+  if (!touched.value) touched.value = true
+}
+
+function onFieldLeave() {
+  const s = fieldState
+  if (!s) return
+  s.active = false
+  s.idle = 0
+}
+
+function addRipple(x, y, amp = 1) {
+  const s = fieldState
+  if (!s) return
+  s.ripples.push({ x: x * s.w, y: y * s.h, age: 0, amp })
+  s.ripples = s.ripples.slice(-5)
+  s.energy = Math.min(1.1, s.energy + 0.5)
+  if (!touched.value) touched.value = true
+}
+
+function onFieldDown(event) {
+  const s = fieldState
+  if (!s || !fieldEl.value) return
+  const rect = fieldEl.value.getBoundingClientRect()
+  const nx = (event.clientX - rect.left) / rect.width
+  const ny = (event.clientY - rect.top) / rect.height
+  addRipple(Math.min(1, Math.max(0, nx)), Math.min(1, Math.max(0, ny)), 1.15)
+
+  // Brief chromatic split on impact, then settle back.
+  stereo.value = true
+  if (stereoTimer) window.clearTimeout(stereoTimer)
+  stereoTimer = window.setTimeout(() => {
+    stereo.value = false
+  }, 700)
+}
+
+function sendPulse() {
+  addRipple(0.5, 0.5, 1.3)
+}
+
+/* Lifecycle -------------------------------------------------------------- */
+
 onMounted(async () => {
   if (!prefersReducedMotion()) {
     splitTitle()
@@ -122,12 +419,7 @@ onMounted(async () => {
   await nextTick()
   if (ui.introDone) playIntro()
   createScrollMotion()
-
-  // Warm the other project visuals so the first hover switch is instant.
-  works.slice(1).forEach((work) => {
-    const image = new Image()
-    image.src = work.art
-  })
+  initField()
 })
 
 watch(
@@ -142,6 +434,13 @@ onBeforeUnmount(() => {
   scrollTween?.scrollTrigger?.kill()
   scrollTween?.kill()
   splits.forEach((split) => split.revert())
+
+  if (fieldTicker) gsap.ticker.remove(fieldTicker)
+  if (stereoTimer) window.clearTimeout(stereoTimer)
+  fieldObserver?.disconnect()
+  fieldTicker = null
+  fieldObserver = null
+  fieldState = null
 })
 </script>
 
@@ -198,55 +497,53 @@ onBeforeUnmount(() => {
 
       <aside
         class="hero__panel hero-fade"
-        :style="panelStyle"
-        aria-labelledby="hero-work-label"
+        data-cursor="Disturb"
+        aria-labelledby="hero-field-label"
+        @pointermove="onFieldMove"
+        @pointerleave="onFieldLeave"
+        @pointerdown="onFieldDown"
       >
-        <div class="hero__panel-bg" aria-hidden="true">
-          <Transition name="hero-art">
-            <img
-              :key="activeWork.slug"
-              :src="activeWork.art"
-              alt=""
-              draggable="false"
-              decoding="async"
-            />
-          </Transition>
+        <div ref="fieldEl" class="hero__field">
+          <canvas ref="canvasEl" class="hero__field-canvas" aria-hidden="true"></canvas>
+          <div class="hero__field-scan" aria-hidden="true"></div>
         </div>
 
         <div class="hero__panel-head mono">
-          <span id="hero-work-label">Selected work</span>
-          <span>{{ totalCount }} projects — 2023/2026</span>
+          <span id="hero-field-label">Interactive field · 交互场</span>
+          <span>Live / cursor driven</span>
         </div>
 
-        <nav class="hero__index" aria-label="精选项目索引">
-          <RouterLink
-            v-for="(work, index) in works"
-            :key="work.slug"
-            :to="`/work/${work.slug}`"
-            class="hero__row"
-            :class="{ 'is-active': index === activeIndex }"
-            :style="{ '--row-accent': work.accent }"
-            data-cursor="Open"
-            @mouseenter="setActive(index)"
-            @focus="setActive(index)"
-          >
-            <span class="hero__row-no mono">#{{ work.index }}</span>
-            <span class="hero__row-title">{{ work.title }}</span>
-            <span class="hero__row-cat mono">{{ work.category.split(' / ')[0] }}</span>
-            <span class="hero__row-year mono">{{ work.year }}</span>
-            <span class="hero__row-arrow" aria-hidden="true">↗</span>
-          </RouterLink>
-        </nav>
+        <div class="hero__hud mono" aria-hidden="true">
+          <span>X {{ hud.x }}</span>
+          <span>Y {{ hud.y }}</span>
+          <span>E {{ hud.energy }}</span>
+          <span>R {{ hud.ripples }}</span>
+          <span class="hero__hud-stereo" :class="{ 'is-on': stereo }">
+            STEREO {{ stereo ? 'ON' : '—' }}
+          </span>
+          <span>ZOOM {{ fieldZoom }}</span>
+        </div>
+
+        <div class="hero__field-hint" :class="{ 'is-hidden': touched }">
+          <p class="hero__field-hint-cn">触碰这个场 —— 每一次移动、拖拽、点击，都会留下波纹。</p>
+          <p class="hero__field-hint-en mono">Move · drag · click · disturb</p>
+        </div>
 
         <div class="hero__panel-foot">
           <span class="mono hero__panel-status">
             <span class="dot"></span>
-            <span class="hero__panel-status-text">{{ activeWork.status }}</span>
+            <span class="hero__panel-status-text">{{ fieldStatus }}</span>
           </span>
-          <RouterLink to="/work" class="mono hero__panel-all" data-cursor="Index">
-            <span>All projects</span>
+          <button
+            class="mono hero__panel-action"
+            type="button"
+            data-cursor="Pulse"
+            @pointerdown.stop
+            @click="sendPulse"
+          >
+            <span>Send a pulse</span>
             <span aria-hidden="true">↗</span>
-          </RouterLink>
+          </button>
         </div>
       </aside>
     </div>
@@ -487,7 +784,7 @@ onBeforeUnmount(() => {
   transform: translateY(24px);
 }
 
-/* Work index panel ------------------------------------------------------- */
+/* Interactive field ------------------------------------------------------- */
 
 .hero__panel {
   position: relative;
@@ -502,26 +799,10 @@ onBeforeUnmount(() => {
   padding: clamp(16px, 1.8vw, 26px);
   border: 1px solid rgba(242, 237, 228, 0.16);
   overflow: hidden;
-  background: #0a0a0c;
-}
-
-.hero__panel-bg {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  background: #0c0b0d;
-}
-
-.hero__panel-bg img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: 50% 42%;
-  opacity: 0.82;
-  transform: scale(1.02);
-  will-change: opacity, transform;
+  background: #08080a;
+  cursor: crosshair;
+  touch-action: pan-y;
+  user-select: none;
 }
 
 .hero__panel::after {
@@ -529,19 +810,55 @@ onBeforeUnmount(() => {
   inset: 0;
   z-index: 1;
   background:
-    linear-gradient(90deg, rgba(6, 6, 8, 0.58), transparent 62%),
-    linear-gradient(
-      180deg,
-      rgba(6, 6, 8, 0.34) 0%,
-      rgba(6, 6, 8, 0.52) 42%,
-      rgba(6, 6, 8, 0.9) 100%
-    );
+    linear-gradient(180deg, rgba(6, 6, 8, 0.72) 0%, transparent 32%),
+    linear-gradient(0deg, rgba(6, 6, 8, 0.8) 0%, transparent 34%);
   content: '';
   pointer-events: none;
 }
 
+.hero__field {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.hero__field-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.hero__field-scan {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 34%;
+  background: linear-gradient(90deg, transparent, rgba(255, 90, 47, 0.08), transparent);
+  animation: field-scan 9s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  pointer-events: none;
+}
+
+@keyframes field-scan {
+  0% {
+    transform: translateX(-60%);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.8;
+  }
+  70% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateX(320%);
+    opacity: 0;
+  }
+}
+
 .hero__panel-head,
-.hero__index,
+.hero__hud,
+.hero__field-hint,
 .hero__panel-foot {
   position: relative;
   z-index: 2;
@@ -551,107 +868,69 @@ onBeforeUnmount(() => {
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  color: rgba(242, 237, 228, 0.7);
+  color: rgba(242, 237, 228, 0.66);
   font-size: 7.5px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
+  pointer-events: none;
 }
 
-.hero__index {
+.hero__hud {
+  position: absolute;
+  top: calc(clamp(16px, 1.8vw, 26px) + 20px);
+  right: clamp(16px, 1.8vw, 26px);
   display: flex;
   flex-direction: column;
-}
-
-.hero__row {
-  position: relative;
-  display: grid;
-  grid-template-columns: 30px minmax(0, 1fr) auto 32px 14px;
-  gap: 10px;
-  align-items: center;
-  padding: clamp(6px, 0.9vh, 10px) 2px;
-  border-top: 1px solid rgba(242, 237, 228, 0.13);
-  color: rgba(242, 237, 228, 0.68);
-  transition:
-    color 0.3s ease,
-    background-color 0.35s ease;
-}
-
-.hero__row:last-child {
-  border-bottom: 1px solid rgba(242, 237, 228, 0.13);
-}
-
-.hero__row::before {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: 2px;
-  background: var(--row-accent);
-  content: '';
-  transform: scaleY(0);
-  transform-origin: top center;
-  transition: transform 0.4s var(--ease-out);
-}
-
-.hero__row.is-active,
-.hero__row:hover {
-  color: var(--paper);
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.06), transparent 74%);
-}
-
-.hero__row.is-active::before,
-.hero__row:hover::before {
-  transform: scaleY(1);
-}
-
-.hero__row-no {
-  color: var(--fg-faint);
-  font-size: 7.5px;
-  letter-spacing: 0.06em;
-  transition: color 0.3s ease;
-}
-
-.hero__row.is-active .hero__row-no {
-  color: var(--row-accent);
-}
-
-.hero__row-title {
-  overflow: hidden;
-  font-family: var(--font-serif);
-  font-size: clamp(1.05rem, 1.5vw, 1.45rem);
-  line-height: 1.1;
-  letter-spacing: -0.01em;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.hero__row-cat {
-  color: var(--fg-faint);
+  gap: 3px;
+  color: rgba(242, 237, 228, 0.42);
   font-size: 7px;
-  letter-spacing: 0.08em;
-  white-space: nowrap;
-}
-
-.hero__row-year {
-  color: var(--fg-faint);
-  font-size: 7.5px;
+  letter-spacing: 0.1em;
   text-align: right;
+  pointer-events: none;
+  font-variant-numeric: tabular-nums;
 }
 
-.hero__row-arrow {
-  color: var(--paper);
-  font-size: 12px;
-  opacity: 0;
-  transform: translate(-2px, 2px);
+.hero__hud-stereo {
+  color: rgba(242, 237, 228, 0.24);
+  transition: color 0.25s ease;
+}
+
+.hero__hud-stereo.is-on {
+  color: var(--acid);
+}
+
+.hero__field-hint {
+  position: absolute;
+  right: clamp(16px, 1.8vw, 26px);
+  bottom: 62px;
+  left: clamp(16px, 1.8vw, 26px);
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  pointer-events: none;
   transition:
-    opacity 0.3s ease,
-    transform 0.4s var(--ease-out);
+    opacity 0.8s ease,
+    transform 0.8s var(--ease-out);
 }
 
-.hero__row.is-active .hero__row-arrow,
-.hero__row:hover .hero__row-arrow {
-  opacity: 1;
-  transform: none;
+.hero__field-hint.is-hidden {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.hero__field-hint-cn {
+  max-width: 34ch;
+  color: rgba(242, 237, 228, 0.82);
+  font-size: 11.5px;
+  line-height: 1.7;
+  letter-spacing: 0.04em;
+}
+
+.hero__field-hint-en {
+  color: rgba(255, 154, 106, 0.72);
+  font-size: 7px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
 }
 
 .hero__panel-foot {
@@ -677,6 +956,17 @@ onBeforeUnmount(() => {
   flex-shrink: 0;
   background: var(--acid);
   box-shadow: 0 0 8px rgba(216, 255, 67, 0.7);
+  animation: status-pulse 2.6s ease-in-out infinite;
+}
+
+@keyframes status-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 .hero__panel-status-text {
@@ -685,33 +975,24 @@ onBeforeUnmount(() => {
   white-space: nowrap;
 }
 
-.hero__panel-all {
+.hero__panel-action {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  padding: 5px 10px;
+  border: 1px solid rgba(242, 237, 228, 0.24);
   color: var(--paper);
   white-space: nowrap;
-  transition: color 0.35s ease;
-}
-
-.hero__panel-all:hover {
-  color: var(--acid);
-}
-
-.hero-art-enter-active,
-.hero-art-leave-active {
   transition:
-    opacity 0.65s ease,
-    transform 1.4s var(--ease-out);
+    color 0.35s ease,
+    border-color 0.35s ease,
+    background-color 0.35s ease;
 }
 
-.hero-art-enter-from {
-  opacity: 0;
-  transform: scale(1.07);
-}
-
-.hero-art-leave-to {
-  opacity: 0;
+.hero__panel-action:hover {
+  border-color: var(--accent);
+  background: rgba(255, 90, 47, 0.12);
+  color: var(--paper);
 }
 
 /* Bottom bar ------------------------------------------------------------- */
@@ -958,22 +1239,22 @@ onBeforeUnmount(() => {
     font-size: 7px;
   }
 
-  .hero__row {
-    grid-template-columns: 26px minmax(0, 1fr) auto 12px;
-    gap: 8px;
-    padding-block: 8px;
+  .hero__hud {
+    position: absolute;
+    top: 44px;
+    right: 16px;
   }
 
-  .hero__row-cat {
-    display: none;
+  .hero__field-hint {
+    bottom: 58px;
   }
 
-  .hero__row-title {
-    font-size: 1.08rem;
+  .hero__field-hint-cn {
+    font-size: 10.5px;
   }
 
   .hero__panel-status {
-    max-width: 66%;
+    max-width: 56%;
   }
 
   .hero__bottom {

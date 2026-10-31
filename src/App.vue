@@ -44,6 +44,15 @@ function onIntro() {
 function onPreloaderDone() {
   finishBoot()
   showPreloader.value = false
+
+  // Always open on the hero. Browsers otherwise restore the previous scroll
+  // position on reload, which looked like the site "jumping" to About.
+  if (!route.hash) {
+    const lenis = getLenis()
+    if (lenis) lenis.scrollTo(0, { immediate: true, force: true })
+    else window.scrollTo(0, 0)
+  }
+
   scheduleRefresh(240)
 }
 
@@ -97,6 +106,9 @@ watch(
 )
 
 onMounted(() => {
+  // Take over scroll restoration so a reload always starts at the top.
+  if ('scrollRestoration' in window.history) window.history.scrollRestoration = 'manual'
+
   initSmoothScroll()
   lockScroll()
   onScroll()

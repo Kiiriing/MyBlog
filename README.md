@@ -8,7 +8,7 @@
 - **Vite 8**
 - **GSAP 3.15**（ScrollTrigger / SplitText / quickTo）
 - **Lenis** 平滑滚动，与 GSAP ticker 同步
-- **项目驱动 Hero**：精选项目索引 + 悬停切换的项目视觉，纯 DOM / CSS / GSAP，不再加载 WebGL 场景
+- **交互场 Hero**：Canvas 2D 位移点阵 + 指针引力井 + 波纹 + 信号曲线 + HUD 读数，纯 DOM / Canvas / GSAP，不加载 WebGL 场景
 - 原生 SVG 程序化视觉素材（`public/art`），无外部图片依赖
 
 运行时要求 **Node.js ≥ 22.12**（当前已验证 Node 26 / npm 11）。
@@ -45,7 +45,7 @@ Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 | `/journal/:slug` | 文章详情（阅读进度、正文排版、上一篇 / 下一篇） |
 | `/:pathMatch(.*)*` | 404 |
 
-站内锚点：`/#manifesto`、`/#work`、`/#journal`、`/#contact`。直接访问时会等待预加载与滚动解锁后再定位。
+站内锚点：`/#manifesto`、`/#work`、`/#journal`、`/#contact`。直接访问时会等待预加载与滚动解锁后再定位。不带 hash 进入首页（含刷新）始终从顶部开始，不会恢复上一次的滚动位置。
 
 ## 内容与替换
 
@@ -58,7 +58,8 @@ Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 ## 交互与可访问性
 
 - 自定义光标（仅在光标实际可见时隐藏系统光标，离开窗口 / 失焦自动恢复）、预加载揭幕、全屏菜单、颗粒质感、页面过渡
-- 首页 Hero：精选项目索引，悬停 / 键盘聚焦切换项目视觉与状态，点击进入案例；桌面与移动端都不依赖固定视口高度
+- 首页 Hero：右侧「交互场」实时响应指针移动 / 拖拽 / 点击，产生引力井形变、波纹与信号曲线，并回显 X / Y / 能量 / 波纹数 / STEREO / ZOOM 读数；空闲时由幽灵指针自行巡游，另有 `Send a pulse` 按钮；桌面与移动端都不依赖固定视口高度
+- 进入首页（无 hash）时始终落在顶部：接管 `history.scrollRestoration` 并在预加载结束后回滚到 0，修复刷新后「自动跳到关于我」的问题
 - 路由切换时以橙色幕布进行擦除式转场（含目标页面标签与路径）
 - 项目索引：分类筛选、计数过渡、整行 paper 色块从中心揭幕、项目数字变实色、光标跟随案例预览卡，键盘 focus 同样触发揭幕
 - 滚动后顶部渐隐遮罩，保证固定导航与大标题重叠时的可读性
@@ -92,6 +93,14 @@ public/art/     本地 SVG 视觉素材
 ```
 
 ## 更新日志
+
+### 2026-10-31 — Hero 换成可交互的「场」，并修复刷新自动跳转
+
+- 首屏右侧原「Selected work」项目索引面板替换为 Canvas 交互场：位移点阵 + 网格 mesh + 指针引力井、点击 / 拖拽留下的波纹、橙色信号曲线、准星与扫描光；`Send a pulse` 按钮主动激发波纹（`src/components/HeroSection.vue`）。
+- 新增实时 HUD 读数（X / Y / 能量 / 波纹数 / STEREO / ZOOM）、随能量变化的状态文案（`Nothing here is static` → `Disturbance detected` → `Field saturated`），以及空闲时自动巡游的幽灵指针。
+- 交互提示文案在首次触碰后淡出；面板整体保持 `touch-action: pan-y`，移动端不阻塞纵向滚动。
+- 修复进入网页自动跳到「关于我」：接管 `history.scrollRestoration = 'manual'`，并在预加载结束后对无 hash 的首屏强制回到顶部（`src/App.vue`）。
+- README 技术栈与交互说明同步更新。
 
 ### 2026-10-31 — 仓库忽略编辑器本地历史
 
