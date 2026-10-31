@@ -405,3 +405,59 @@
     width: 100%;
   }
 }
+
+/* 桌面矮屏（1440×900 / 1366×768 / 1024×768 等）：7 个菜单项加页脚要在同一屏，
+   按视口高度收紧行距与字号，否则 Contact 与页脚会被下缘截断 */
+@media (min-width: 761px) and (max-height: 1100px) {
+  .menu__body {
+    padding-top: calc(var(--nav-h) + 12px);
+    padding-bottom: 18px;
+  }
+
+  .menu__eyebrow {
+    margin-bottom: 14px;
+  }
+
+  .menu__item {
+    padding: clamp(8px, 1.4vh, 16px) 0;
+  }
+
+  /* 9vw 保留平板单列的字号，6.6vh 保证矮屏一屏放下，取较小值再封顶 */
+  .menu__en {
+    font-size: clamp(2.2rem, min(9vw, 6.6vh), 5rem);
+  }
+
+  .menu__footer {
+    padding-top: 16px;
+  }
+
+  .menu__email {
+    font-size: clamp(1.2rem, 1.7vw, 1.6rem);
+  }
+}
+
+/* 极矮小屏（320×568 一类）：再收一档行距，让 7 项与页脚尽量落在一屏 */
+@media (max-width: 760px) and (max-height: 640px) {
+  .menu__body {
+    padding-top: calc(var(--nav-h) + 6px);
+    padding-bottom: 10px;
+  }
+
+  .menu__eyebrow {
+    margin-bottom: 10px;
+  }
+
+  .menu__item {
+    padding: 5px 0;
+  }
+
+  .menu__en {
+    font-size: clamp(1.8rem, 9vw, 2.6rem);
+  }
+
+  .menu__footer {
+    margin-top: 12px;
+    padding-top: 10px;
+    gap: 10px;
+  }
+}

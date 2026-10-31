@@ -329,9 +329,11 @@ export default function WorksSection() {
                       <span className="work-card__cn">{work.cn}</span>
                     </div>
                     <div className="work-card__tags">
-                      <span className="work-card__category mono">{work.category}</span>
+                      <span className="work-card__category mono">
+                        {work.category.split(' / ')[0]}
+                      </span>
                       <span className="work-card__stack mono">
-                        {work.stack?.slice(0, 3).join(' · ')}
+                        {work.stack?.slice(0, 2).join(' · ')}
                       </span>
                     </div>
                   </div>

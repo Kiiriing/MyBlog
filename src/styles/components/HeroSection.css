@@ -119,27 +119,28 @@
   opacity: 0;
 }
 
+/* 遮罩按行尺寸计算底部留白：line-height 比字形盒更紧，
+   "in production." 的 p 下伸部分需要额外空间，否则会被裁掉 */
 .hero__line {
+  --line-size: clamp(3.4rem, min(9.6vw, 14.4vh), 11.5rem);
   display: block;
   overflow: hidden;
-  padding-bottom: 0.06em;
+  padding-bottom: 0.18em;
+  font-size: var(--line-size);
 }
 
 .hero__line-inner {
   display: block;
   transform-origin: left bottom;
-}
-
-.hero__line-inner--one {
-  font-size: clamp(3.4rem, min(9.6vw, 14.4vh), 11.5rem);
+  font-size: inherit;
 }
 
 .hero__line--two {
+  --line-size: clamp(2.6rem, min(7.6vw, 11.2vh), 8.6rem);
   padding-left: clamp(20px, 7.4vw, 150px);
 }
 
 .hero__line-inner--two {
-  font-size: clamp(2.6rem, min(7.6vw, 11.2vh), 8.6rem);
   font-style: italic;
 }
 
@@ -416,16 +417,13 @@
     gap: 14px;
   }
 
-  .hero__line-inner--one {
-    font-size: clamp(2.9rem, 14vw, 5.2rem);
+  .hero__line {
+    --line-size: clamp(2.9rem, 14vw, 5.2rem);
   }
 
   .hero__line--two {
+    --line-size: clamp(2.1rem, 10.2vw, 4rem);
     padding-left: clamp(8px, 7vw, 40px);
-  }
-
-  .hero__line-inner--two {
-    font-size: clamp(2.1rem, 10.2vw, 4rem);
   }
 
   .hero__cn {

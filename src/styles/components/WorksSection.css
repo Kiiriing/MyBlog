@@ -179,12 +179,19 @@
 
 .work-card__visual {
   position: relative;
+  flex: 0 1 auto;
+  min-height: 0;
+  aspect-ratio: 4 / 5;
   transform-style: preserve-3d;
   will-change: transform;
 }
 
+/* 画框绝对定位填满可视区：纵向空间不够时按 4/5 优先、超出部分等比裁切，
+   避免标题与元信息被 viewport 裁掉 */
 .work-card__visual .artwork {
-  aspect-ratio: 4 / 5;
+  position: absolute;
+  inset: 0;
+  aspect-ratio: auto !important;
 }
 
 .work-card__top {
@@ -241,9 +248,10 @@
 
 .work-card__meta {
   display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 12px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 7px;
+  max-width: 100%;
   padding-top: 2px;
 }
 
@@ -251,6 +259,7 @@
   display: flex;
   align-items: baseline;
   gap: 9px;
+  max-width: 100%;
 }
 
 .work-card__title {
@@ -259,6 +268,7 @@
   font-weight: 400;
   line-height: 1;
   letter-spacing: -0.02em;
+  white-space: nowrap;
   transition: color 0.35s ease;
 }
 
@@ -267,30 +277,41 @@
 }
 
 .work-card__cn {
+  flex-shrink: 0;
   font-family: var(--font-sans);
   font-size: 10px;
   color: var(--fg-dim);
   letter-spacing: 0.12em;
+  white-space: nowrap;
 }
 
 .work-card__category {
+  min-width: 0;
+  overflow: hidden;
   color: var(--fg-faint);
   font-size: 7px;
-  text-align: right;
+  text-align: left;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .work-card__tags {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 3px;
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
 }
 
 .work-card__stack {
+  min-width: 0;
+  overflow: hidden;
   color: var(--fg-faint);
   font-size: 6.5px;
   letter-spacing: 0.06em;
+  text-align: right;
+  text-overflow: ellipsis;
   white-space: nowrap;
   opacity: 0.72;
 }
@@ -412,6 +433,16 @@
   }
 }
 
+@media (max-width: 900px) {
+  .work-card__category {
+    display: none;
+  }
+
+  .work-card__stack {
+    text-align: left;
+  }
+}
+
 @media (max-width: 760px) {
   .works__sticky {
     min-height: 600px;
@@ -420,8 +451,22 @@
   }
 
   .works__head {
+    flex-wrap: wrap;
     align-items: flex-end;
-    gap: 16px;
+    gap: 10px 16px;
+  }
+
+  /* 小屏上页眉宽度被右侧控件挤压：收紧标签的字距与短横线，
+     并禁止 "04 / Selected Work"、"All projects" 折行 */
+  .works__head-left .eyebrow {
+    gap: 8px;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+  }
+
+  .works__head-left .eyebrow::before {
+    width: 14px;
   }
 
   .works__title {
@@ -451,10 +496,12 @@
     display: none;
   }
 
-  .works__all {
+  /* .mono 的字号会覆盖单类规则，这里用复合选择器收紧标签尺寸 */
+  .works__all.mono {
     gap: 4px;
-    font-size: 7px;
-    letter-spacing: 0.08em;
+    font-size: 8px;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
   }
 
   .works__all-arrow {

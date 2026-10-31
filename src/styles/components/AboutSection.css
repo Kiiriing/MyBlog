@@ -76,12 +76,18 @@
   box-shadow: 0 44px 110px rgba(0, 0, 0, 0.42);
 }
 
+/* 右下角被圆形徽章覆盖，说明文字改为左下角，避免被不透明徽章遮挡 */
 .about__caption {
   position: absolute;
-  right: 16px;
+  left: 16px;
   bottom: 15px;
   z-index: 3;
   color: rgba(242, 237, 228, 0.7);
+}
+
+/* main.css 的 .mono 与单类选择器优先级相同且加载更晚，
+   说明文字的字号与字距必须用复合选择器才不会被 11px 覆盖 */
+.about__caption.mono {
   font-size: 8px;
   letter-spacing: 0.12em;
   text-transform: none;
@@ -390,6 +396,12 @@
 
   .about__title {
     font-size: clamp(2.8rem, 12vw, 4.6rem);
+  }
+
+  /* 320 一类窄屏里徽章会压到左下角的说明文字，收紧字号与字距让它停在徽章左侧 */
+  .about__caption.mono {
+    font-size: 7px;
+    letter-spacing: 0.06em;
   }
 
   .about__copy {

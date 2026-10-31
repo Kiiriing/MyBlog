@@ -162,10 +162,10 @@ export default function HeroSection() {
 
           <h1 ref={title} className="hero__title">
             <span className="hero__line">
-              <span className="hero__line-inner hero__line-inner--one">Full-stack</span>
+              <span className="hero__line-inner hero__line-inner--one">Welcome</span>
             </span>
             <span className="hero__line hero__line--two">
-              <span className="hero__line-inner hero__line-inner--two">in production.</span>
+              <span className="hero__line-inner hero__line-inner--two">Personal Blog</span>
             </span>
           </h1>
 

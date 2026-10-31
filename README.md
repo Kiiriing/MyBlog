@@ -103,6 +103,17 @@ public/art/     本地视觉素材（SVG / PNG）
 
 ## 更新日志
 
+### 2026-10-31 — 全站文字裁切排查：首屏标题、作品卡片、路由转场、About 说明与矮屏菜单
+
+- 排查方式：headless Chrome 在 320 / 390 / 768 / 1024 / 1280 / 1366 / 1440 / 1920 下逐页测量文字墨迹边界与最近的裁切祖先（`overflow: hidden` 的可见区按含 padding 的 padding box 计算），并先强制 `.reveal` 可见再测，排除入场位移造成的误判。
+- `src/styles/components/HeroSection.css`：`line-height: 0.78` 比字形盒更紧，首屏第二行标题的下伸字母（`in production.` 的 `p`）被 `.hero__line` 的 `overflow: hidden` 裁掉；把字号移到遮罩行自身，再用按行字号计算的 `padding-bottom: 0.18em` 留白（1440 下 23.3px、390 下 9.8px）。复核当前标题 `Welcome / Personal Blog` 的墨迹宽度：1440 距遮罩右缘 137px、1280 距 91px，任何宽度都不再横向溢出。
+- `src/components/HeroSection.tsx`：首屏标题第一行拼写由 `Welcom` 补全为 `Welcome`（如想保留原样可直接回退该行）。
+- `src/styles/components/WorksSection.css` 与 `src/components/WorksSection.tsx`：04 Selected Work 卡片元信息改为两行（标题 + 中文名 / 分类 + 技术栈），中文名 `flex-shrink: 0` + `nowrap`，`QianVerse 千域` 不再伸进第二张卡，`校企实验室` 不再被挤成逐字竖排；分类只取英文段、技术栈取前 2 项并带省略号；画框改为可纵向压缩（`flex: 0 1 auto` + 绝对定位填充），1366×768 / 1024×768 短屏下卡片标题与元信息不会被视口裁掉。≤760px 收紧页眉字距，`04 / Selected Work` 与 `All projects` 不再折行（用 `.works__all.mono` 复合选择器压过 `main.css` 中 `.mono` 的 11px）。
+- `src/styles/components/RouteWipe.css` 与 `src/components/RouteWipe.tsx`：路由转场斜体标签的 `J` 下伸被裁约 4px；字号移到遮罩行，`margin: 0 -0.12em -0.2em` 与 `padding: 0 0.12em 0.2em` 抵消布局位移，6 个标签的墨迹测量下边界全部为负值（不裁切）。
+- `src/styles/components/AboutSection.css`：`Fig. 01 — At the desk, 2026` 原先被右下角不透明圆形徽章盖住，说明文字改到左下角；`main.css` 的 `.mono` 与单类选择器优先级相同且加载更晚，字号改用 `.about__caption.mono` 才生效（8px，≤760px 7px），320 下距徽章仍有 35px 间隙。
+- `src/styles/components/MenuOverlay.css`：桌面矮屏（1440×900 / 1366×768 / 1280×800 / 1024×768）下菜单内容高 1111px，Contact 与页脚落在视口外；新增 `(min-width: 761px) and (max-height: 1100px)` 收紧内边距与 `.menu__en` 字号（`min(9vw, 6.6vh)`），各尺寸 `scrollHeight` 均等于视口高；`(max-width: 760px) and (max-height: 640px)` 再收一档，360×640 一屏放下，320×568 仍保留滚动。
+- 验证：上述尺寸复核 `scrollWidth === clientWidth`，无横向溢出；截图确认首屏 `p` / `g` 下伸、四张作品卡元信息、About 说明与菜单七项完整可见；`npm run build` 通过。
+
 ### 2026-10-31 — 修复窄屏响应式：作品筛选、移动端菜单与文章标题裁切
 
 - 排查结论：媒体查询在 320 / 390 / 768 / 1024 / 1280 / 1366 以及实时拖动窗口时都正常；「不支持响应式」来自新增内容撑破容器——作品索引筛选标签变长后只能横向滚动，7 项菜单在手机上把底部信息挤出视口，文章标题的 `white-space: nowrap` 让长中文标题超出屏宽。

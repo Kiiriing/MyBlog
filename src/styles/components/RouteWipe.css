@@ -73,10 +73,18 @@
   padding-bottom: 0.04em;
 }
 
+/* line-height 比字形盒更紧，斜体字母 J 的下伸与左侧外扩需要留白，
+   em 基准必须是行自身字号，所以字号放在遮罩行上；负 margin 抵消布局位移 */
+.route-wipe__line--label {
+  margin: 0 -0.12em -0.2em;
+  padding: 0 0.12em 0.2em;
+  font-size: clamp(3.6rem, 11vw, 11rem);
+}
+
 .route-wipe__label {
   display: block;
   font-family: var(--font-serif);
-  font-size: clamp(3.6rem, 11vw, 11rem);
+  font-size: inherit;
   font-style: italic;
   font-weight: 400;
   line-height: 0.82;
@@ -101,7 +109,7 @@
     display: none;
   }
 
-  .route-wipe__label {
+  .route-wipe__line--label {
     font-size: clamp(3.4rem, 17vw, 5.6rem);
   }
 }

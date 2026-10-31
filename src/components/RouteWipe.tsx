@@ -86,7 +86,7 @@ const RouteWipe = forwardRef<RouteWipeHandle>(function RouteWipe(_, ref) {
 
         <div className="route-wipe__center">
           <span className="route-wipe__eyebrow mono">Now entering</span>
-          <span className="route-wipe__line">
+          <span className="route-wipe__line route-wipe__line--label">
             <span ref={labelEl} className="route-wipe__label">
               {label}
             </span>
