@@ -10,12 +10,13 @@
 - **StrokeText**（React Bits 描边绘制文字，`src/components/StrokeText.tsx`）：首屏两行标题先描边勾出轮廓，再由左向右擦除出实心字形
 - **TextType**（React Bits 打字机文字，`src/components/TextType.tsx`）：首屏自述段落按字符逐字打出，光标跟随文字并持续闪烁
 - **GlowCursor**（React Bits 流体光迹，`src/components/GlowCursor.tsx`）：纯 WebGL2 的鼠标拖尾（半浮点帧缓冲 + MacCormack 平流 + 20 步压力迭代 + 5 级 bloom），深色页以 `screen` 加光、奶油色页换成组件的 light 主题落墨
+- **LetterGlitch**（React Bits 字符故障背景，`src/components/LetterGlitch.tsx`）：首屏整屏铺满的 WebGL2 字符场（字形图集 + 状态贴图、流动噪声、游走撕裂与指针火花），默认参数与官方一致，`prefers-reduced-motion` 下退化为静止字符
 - **LogoLoop**（React Bits 技术栈长条，`src/components/LogoLoop.jsx` + 类型声明 `.d.ts`）：关于页底部的 25 个技术栈品牌图标（`public/art/logo`），按语言 → 前端框架 → 运行时 → 数据库 → 构建与工具 → 部署与系统 → 编辑器分层排列，连续滚动、可拖拽甩动、悬停停下并恢复品牌色，`prefers-reduced-motion` 下保持静止排列
 - **ogl 1.0**：承载 React Bits `DitherVeil` 抖动之幕（WebGL2）
 - **Tailwind CSS v4**（`@tailwindcss/vite`）与 **shadcn**（`components.json`），仅用于接入 registry 组件；项目自有 CSS 不分层，优先级更高
 - **Lenis** 平滑滚动，与 GSAP ticker 同步
 - 组件样式集中在 `src/styles/components/*.css`，由入口按需引入
-- 首屏为「左侧排版 + 右侧 DitherVeil 抖动之幕」双列布局（≤900px 面板下移居中），动效集中在标题描边 + 自述打字、滚动视差与底部提示
+- 首屏为「左侧排版 + 右侧 DitherVeil 抖动之幕」双列布局（≤900px 面板下移居中），背景由 LetterGlitch 字符故障场铺满整屏，动效集中在标题描边 + 自述打字、滚动视差与底部提示
 - 原生 SVG 程序化视觉素材（`public/art`），无外部图片依赖
 
 运行时要求 **Node.js ≥ 22.12**（当前已验证 Node 26 / npm 11）。
@@ -67,7 +68,7 @@ Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 ## 交互与可访问性
 
 - 自定义光标（仅在光标实际可见时隐藏系统光标，离开窗口 / 失焦自动恢复）、预加载揭幕、全屏菜单、颗粒质感、页面过渡
-- 首页 Hero：左侧标题逐字入场、`hero__lead` 与底部提示随滚动产生视差；右侧 DitherVeil 用 `floyd` 抖动把镀铬头像压成 1-bit 点阵，透明底会被 alpha 裁掉，点阵直接浮在页面网格上；鼠标划过的拖尾会烧穿成全彩、松开后逐格编织回点阵，点击产生冲击波
+- 首页 Hero：背景由 LetterGlitch 铺满整屏（字符在流动噪声里缓亮、随机成片故障，指针经过处点亮火花、点击沿行撕裂），并在文字一侧压一层暗场保证小字号可读；左侧标题逐字入场、`hero__lead` 与底部提示随滚动产生视差；右侧 DitherVeil 用 `floyd` 抖动把镀铬头像压成 1-bit 点阵，透明底会被 alpha 裁掉，点阵直接浮在页面网格上；鼠标划过的拖尾会烧穿成全彩、松开后逐格编织回点阵，点击产生冲击波
 - 进入首页（无 hash）时始终落在顶部：接管 `history.scrollRestoration` 并在预加载结束后回滚到 0，修复刷新后「自动跳到关于我」的问题
 - 路由切换时以橙色幕布进行擦除式转场（含目标页面标签与路径）
 - 项目索引：分类筛选、计数过渡、整行 paper 色块从中心揭幕、项目数字变实色、光标跟随案例预览卡，键盘 focus 同样触发揭幕
@@ -108,6 +109,14 @@ public/art/     本地视觉素材（SVG / PNG；art/logo 为技术栈品牌图�
 ```
 
 ## 更新日志
+
+### 2026-11-01 — 首页背景改为 React Bits LetterGlitch 字符故障场
+
+- 新增 `src/components/LetterGlitch.tsx`：按 reactbits.dev/backgrounds/letter-glitch 的实现 1:1 移植为 TSX。着色器（字形图集 + 状态贴图、流动噪声、边缘 / 中心渐隐）、默认字符集与等宽字体、`fontSize 14` / `spacing 0.6` / `density 0.9` / `baseOpacity 0.16` / `glitchAmount 0.5` / `speed 1` / `flow 0.5` / `cursorRadius 140` / `clickEffect 'tear'` 等默认值与官方一致；intro 逐格显影、环境重绘与故障速率、最多 48 条游走撕裂（含分叉）、指针点亮与点击喷发、画布 DPR ≤ 2、IntersectionObserver 离屏停帧、`visibilitychange`、字体加载完成后重建图集、`prefers-reduced-motion` 下静止、卸载时回收 WebGL 上下文，全部保留。相比原实现仅补 TypeScript 类型。
+- 新增 `src/styles/components/LetterGlitch.css`：与组件一一对应的原样式。
+- `src/components/HeroSection.tsx`：在 `.hero__ambient` 之上新增 `.hero__glitch` 背景层并挂载 `LetterGlitch`（不传任何 props，保持默认参数）；原有右侧 DitherVeil 抖动之幕、标题描边与自述打字保持不变。
+- `src/styles/components/HeroSection.css`：新增 `.hero__glitch`（`position: absolute; inset: 0; z-index: 0; pointer-events: none`，组件在 `window` 上监听指针，因此不拦截鼠标交互）；并用 `::after` 压一层暗场——左侧 0.78 → 0 的横向渐变收敛小字号段落的背景噪声，上下各 0.55 / 0.6 的纵向渐变压住四角标注，右侧展示图区域保持原亮度。
+- 验证：`npm run build` 通过；`npm run preview` + headless Chrome 1440×900 实测背景容器 1440×900、画布 2880×1800（DPR 2）、页面无横向溢出，LetterGlitch / DitherVeil / GlowCursor 三个 WebGL2 上下文同时可用，headless 未节流下 rAF 采样 258fps，滚动到 2400px 后 hero 离屏、回滚后恢复，控制台无异常；390×844 下画布 780×1688、无横向溢出；`prefers-reduced-motion: reduce` 下字符场静止且标题、自述、展示图均正常。
 
 ### 2026-11-01 — 技术栈长条改用品牌图标并按栈层次排序
 

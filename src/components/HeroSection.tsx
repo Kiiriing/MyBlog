@@ -5,6 +5,7 @@ import { useUi } from '../store/ui'
 import { site } from '../data/site'
 import StrokeText from './StrokeText'
 import TextType from './TextType'
+import LetterGlitch from './LetterGlitch'
 import '../styles/components/HeroSection.css'
 
 /* 自述段落：改用打字机逐字出现，文案由站点主人自述 */
@@ -113,6 +114,10 @@ export default function HeroSection() {
       data-label="Index"
     >
       <div className="hero__ambient" aria-hidden="true" />
+      {/* 首屏背景：React Bits LetterGlitch，整屏铺满的字符故障场 */}
+      <div className="hero__glitch" aria-hidden="true">
+        <LetterGlitch />
+      </div>
       <div className="hero__grid" aria-hidden="true" />
       <div className="hero__lines" aria-hidden="true">
         <span />

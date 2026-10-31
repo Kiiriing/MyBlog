@@ -21,6 +21,37 @@
   pointer-events: none;
 }
 
+/* 字母故障背景：整屏铺满；组件在 window 上监听指针，容器本身不拦截交互 */
+.hero__glitch {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* 字符场默认铺满整屏，小字号段落会与背景字形互相争抢：
+   在文字一侧与上下两端压一层暗场，右侧展示图区域保持原亮度 */
+.hero__glitch::after {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(6, 6, 8, 0.78) 0%,
+      rgba(6, 6, 8, 0.56) 32%,
+      rgba(6, 6, 8, 0.2) 56%,
+      rgba(6, 6, 8, 0) 76%
+    ),
+    linear-gradient(
+      to bottom,
+      rgba(6, 6, 8, 0.55) 0%,
+      rgba(6, 6, 8, 0) 16%,
+      rgba(6, 6, 8, 0) 76%,
+      rgba(6, 6, 8, 0.6) 100%
+    );
+  content: '';
+}
+
 .hero__grid {
   position: absolute;
   inset: 0;
