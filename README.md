@@ -8,7 +8,7 @@
 - **Vite 8**
 - **GSAP 3.15**（ScrollTrigger / SplitText / quickTo）
 - **Lenis** 平滑滚动，与 GSAP ticker 同步
-- **交互场 Hero**：WebGL（`ogl`）实现的 `<DitherVeil />` 抖动之幕——把自画像抖动成 ink / paper 双色点阵，指针周围开出全彩揭示窗口并留下渐隐轨迹，点击产生彩色冲击波；`Veil / Index` 双模式保留精选项目索引
+- 首屏右侧留白面板（空画框），动效集中在标题拆字、滚动视差与底部提示
 - 原生 SVG 程序化视觉素材（`public/art`），无外部图片依赖
 
 运行时要求 **Node.js ≥ 22.12**（当前已验证 Node 26 / npm 11）。
@@ -58,7 +58,7 @@ Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 ## 交互与可访问性
 
 - 自定义光标（仅在光标实际可见时隐藏系统光标，离开窗口 / 失焦自动恢复）、预加载揭幕、全屏菜单、颗粒质感、页面过渡
-- 首页 Hero：右侧面板是 `<DitherVeil />`（`src/components/DitherVeil.vue`）——把 `public/art/hero-veil.svg` 抖动成 ink / paper 双色点阵；指针移动开出软边全彩圆窗并留下渐隐轨迹，点击产生彩色冲击波环，空闲时由 `wander` 自动巡游。面板顶部 `Veil / Index` 切换：Veil 为抖动之幕，Index 恢复原来的 5 行精选项目索引（背景点阵压暗），底部 Pattern 按钮可切换 `bayer / noise / floyd / lines` 抖动图案，HUD 回显 CELL / LEVELS / INK
+- 首页 Hero：右侧面板已清空，只保留一个带细边框、轻微环境光的空画框（随滚动做视差），不再承载抖动、索引或其他交互内容
 - 进入首页（无 hash）时始终落在顶部：接管 `history.scrollRestoration` 并在预加载结束后回滚到 0，修复刷新后「自动跳到关于我」的问题
 - 路由切换时以橙色幕布进行擦除式转场（含目标页面标签与路径）
 - 项目索引：分类筛选、计数过渡、整行 paper 色块从中心揭幕、项目数字变实色、光标跟随案例预览卡，键盘 focus 同样触发揭幕
@@ -93,6 +93,13 @@ public/art/     本地 SVG 视觉素材
 ```
 
 ## 更新日志
+
+### 2026-10-31 — 清空首屏右侧面板
+
+- `src/components/HeroSection.vue`：删除面板内的 DitherVeil、Veil / Index 切换、项目索引、HUD 与 Pattern 按钮，只保留一个空画框；顶部标识由 `Selected work` 改为 `Full-stack`。
+- 移除 `src/components/DitherVeil.vue`、`public/art/hero-veil.svg`，并卸载运行时依赖 `ogl`（`package.json` / `package-lock.json`）。
+- 清理面板相关的脚本状态与样式（`hero__veil` / `hero__hud` / `hero__patterns` / `hero__index` / `hero__row` / `hero__panel-foot` 等），移动端不再有面板小字与按钮。
+- README 技术栈与交互说明同步更新。
 
 ### 2026-10-31 — 首屏右侧面板改为 DitherVeil 抖动之幕
 

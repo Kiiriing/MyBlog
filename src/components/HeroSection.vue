@@ -1,29 +1,13 @@
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { RouterLink } from 'vue-router'
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { gsap, SplitText } from '../lib/gsap'
 import { prefersReducedMotion, scrollToSection } from '../composables/useSmoothScroll'
 import { ui } from '../stores/ui'
 import { site } from '../data/site'
-import { works } from '../data/works'
-import DitherVeil from './DitherVeil.vue'
 
 const title = ref(null)
 const hero = ref(null)
 const ready = ref(false)
-
-const mode = ref('veil')
-const activeIndex = ref(0)
-const revealed = ref(false)
-const pattern = ref('floyd')
-
-const patterns = ['bayer', 'noise', 'floyd', 'lines']
-const veilSrc = '/art/hero-veil.svg'
-
-const footStatus = computed(() => {
-  if (mode.value === 'index') return works[activeIndex.value]?.status || 'Live in production'
-  return revealed.value ? 'Signal revealed' : 'Veil intact'
-})
 
 let splits = []
 let readyTimeline
@@ -121,26 +105,6 @@ function createScrollMotion() {
   })
 }
 
-/* Veil panel -------------------------------------------------------------- */
-
-function setMode(next) {
-  if (next === 'index') activeIndex.value = 0
-  mode.value = next
-}
-
-function setPattern(next) {
-  pattern.value = next
-  revealed.value = true
-}
-
-function onReveal() {
-  if (!revealed.value) revealed.value = true
-}
-
-function setActive(index) {
-  activeIndex.value = index
-}
-
 /* Lifecycle -------------------------------------------------------------- */
 
 onMounted(async () => {
@@ -190,7 +154,7 @@ onBeforeUnmount(() => {
         <span class="mono">Portfolio / Vol. 06</span>
         <span class="mono">2020 — 2026</span>
       </div>
-      <span class="hero__top-note mono">Index / 01 — Selected work</span>
+      <span class="hero__top-note mono">Index / 01 — Full-stack</span>
     </div>
 
     <div class="hero__body shell">
@@ -221,133 +185,7 @@ onBeforeUnmount(() => {
         </div>
       </div>
 
-      <aside
-        class="hero__panel hero-fade"
-        :class="{ 'is-index': mode === 'index' }"
-        data-cursor="Reveal"
-        aria-labelledby="hero-panel-label"
-      >
-        <div class="hero__veil">
-          <DitherVeil
-            :src="veilSrc"
-            fit="cover"
-            :pattern="pattern"
-            :pixel-size="2.2"
-            :levels="2"
-            palette="duotone"
-            ink-color="#08080a"
-            paper-color="#f2ede4"
-            :contrast="1.16"
-            :brightness="-0.02"
-            :reveal-radius="168"
-            :softness="0.55"
-            :linger="1.1"
-            rim-color="#ff5a2f"
-            :rim="0.12"
-            :wander="mode === 'veil'"
-            :click-burst="mode === 'veil'"
-            @reveal="onReveal"
-          />
-        </div>
-
-        <div class="hero__panel-ui">
-          <div class="hero__panel-top">
-            <div class="hero__panel-head mono">
-              <span id="hero-panel-label">
-                {{ mode === 'veil' ? 'Dithered veil · 抖动之幕' : 'Selected work · 精选项目' }}
-              </span>
-              <div class="hero__panel-tabs">
-                <button
-                  class="hero__panel-tab"
-                  type="button"
-                  :class="{ 'is-on': mode === 'veil' }"
-                  :aria-pressed="mode === 'veil'"
-                  @click="setMode('veil')"
-                >
-                  Veil
-                </button>
-                <button
-                  class="hero__panel-tab"
-                  type="button"
-                  :class="{ 'is-on': mode === 'index' }"
-                  :aria-pressed="mode === 'index'"
-                  @click="setMode('index')"
-                >
-                  Index
-                </button>
-              </div>
-            </div>
-
-            <p
-              v-show="mode === 'veil'"
-              class="hero__veil-hint mono"
-              :class="{ 'is-hidden': revealed }"
-            >
-              Move to reveal · click to burst
-            </p>
-          </div>
-
-          <nav v-show="mode === 'index'" class="hero__index" aria-label="精选项目索引">
-            <RouterLink
-              v-for="(work, index) in works"
-              :key="work.slug"
-              :to="`/work/${work.slug}`"
-              class="hero__row"
-              :class="{ 'is-active': index === activeIndex }"
-              :style="{ '--row-accent': work.accent }"
-              data-cursor="Open"
-              @pointerenter="setActive(index)"
-              @focus="setActive(index)"
-            >
-              <span class="hero__row-no mono">#{{ work.index }}</span>
-              <span class="hero__row-title">{{ work.title }}</span>
-              <span class="hero__row-cat mono">{{ work.category.split(' / ')[0] }}</span>
-              <span class="hero__row-year mono">{{ work.year }}</span>
-              <span class="hero__row-arrow" aria-hidden="true">↗</span>
-            </RouterLink>
-          </nav>
-
-          <div class="hero__panel-bottom">
-            <div v-show="mode === 'veil'" class="hero__hud mono" aria-hidden="true">
-              <span>PATTERN {{ pattern.toUpperCase() }}</span>
-              <span>CELL 2.2</span>
-              <span>LEVELS 02</span>
-              <span class="hero__hud-ink">INK 08080A</span>
-            </div>
-
-            <div
-              v-show="mode === 'veil'"
-              class="hero__patterns mono"
-              role="group"
-              aria-label="抖动图案"
-            >
-              <span class="hero__patterns-label">Pattern</span>
-              <button
-                v-for="item in patterns"
-                :key="item"
-                class="hero__pattern"
-                type="button"
-                :class="{ 'is-on': pattern === item }"
-                :aria-pressed="pattern === item"
-                @click="setPattern(item)"
-              >
-                {{ item }}
-              </button>
-            </div>
-
-            <div class="hero__panel-foot">
-              <span class="mono hero__panel-status">
-                <span class="dot"></span>
-                <span class="hero__panel-status-text">{{ footStatus }}</span>
-              </span>
-              <RouterLink to="/work" class="mono hero__panel-all" data-cursor="Index">
-                <span>All projects</span>
-                <span aria-hidden="true">↗</span>
-              </RouterLink>
-            </div>
-          </div>
-        </div>
-      </aside>
+      <aside class="hero__panel hero-fade" aria-hidden="true"></aside>
     </div>
 
     <div class="hero__bottom shell">
@@ -586,385 +424,34 @@ onBeforeUnmount(() => {
   transform: translateY(24px);
 }
 
-/* Dithered veil ----------------------------------------------------------- */
+/* Hero panel frame -------------------------------------------------------- */
 
 .hero__panel {
-  --panel-pad: clamp(16px, 1.8vw, 26px);
   position: relative;
   justify-self: end;
-  display: flex;
-  flex-direction: column;
   width: 100%;
   max-width: 560px;
   height: clamp(330px, 46vh, 460px);
   max-height: 100%;
-  padding: 0 var(--panel-pad);
-  border: 1px solid rgba(242, 237, 228, 0.16);
+  border: 1px solid rgba(242, 237, 228, 0.14);
   overflow: hidden;
-  background: #08080a;
-  cursor: crosshair;
-  touch-action: pan-y;
-  user-select: none;
+  background:
+    radial-gradient(ellipse 100% 76% at 66% 30%, rgba(255, 90, 47, 0.1), transparent 72%),
+    linear-gradient(180deg, #0a0a0c 0%, #060607 100%);
 }
 
 .hero__panel::after {
   position: absolute;
   inset: 0;
-  z-index: 1;
-  background:
-    radial-gradient(ellipse 118% 84% at 50% 42%, transparent 38%, rgba(4, 4, 6, 0.5) 100%),
-    linear-gradient(180deg, rgba(6, 6, 8, 0.24) 0%, transparent 18%),
-    linear-gradient(0deg, rgba(6, 6, 8, 0.34) 0%, transparent 20%);
-  content: '';
-  pointer-events: none;
-}
-
-.hero__veil {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  transition:
-    opacity 0.7s ease,
-    filter 0.7s ease;
-}
-
-.hero__panel.is-index .hero__veil {
-  opacity: 0.18;
-  filter: saturate(0.35) brightness(0.8);
-}
-
-.hero__panel-ui {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  min-height: 0;
-}
-
-.hero__panel-top {
-  margin: 0 calc(var(--panel-pad) * -1);
-  padding: var(--panel-pad) var(--panel-pad) 20px;
   background: linear-gradient(
-    180deg,
-    rgba(4, 4, 6, 0.96) 0%,
-    rgba(4, 4, 6, 0.82) 58%,
-    rgba(4, 4, 6, 0) 100%
+    160deg,
+    rgba(242, 237, 228, 0.05) 0%,
+    transparent 38%,
+    rgba(122, 103, 255, 0.06) 100%
   );
-}
-
-.hero__panel-bottom {
-  margin: auto calc(var(--panel-pad) * -1) calc(var(--panel-pad) * -1);
-  padding: 26px var(--panel-pad) var(--panel-pad);
-  background: linear-gradient(
-    0deg,
-    rgba(4, 4, 6, 0.96) 0%,
-    rgba(4, 4, 6, 0.84) 62%,
-    rgba(4, 4, 6, 0) 100%
-  );
-}
-
-.hero__panel-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  color: rgba(242, 237, 228, 0.66);
-  font-size: 7.5px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
-.hero__panel-tabs {
-  display: flex;
-  flex-shrink: 0;
-  gap: 10px;
-}
-
-.hero__panel-tab {
-  color: rgba(242, 237, 228, 0.32);
-  font-family: var(--font-mono);
-  font-size: 7px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  transition: color 0.3s ease;
-}
-
-.hero__panel-tab::before {
-  display: inline-block;
-  width: 4px;
-  height: 4px;
-  margin-right: 5px;
-  border-radius: 50%;
-  background: currentColor;
   content: '';
-  opacity: 0.4;
-  transition:
-    opacity 0.3s ease,
-    box-shadow 0.3s ease;
-  vertical-align: 1px;
-}
-
-.hero__panel-tab:hover {
-  color: rgba(242, 237, 228, 0.78);
-}
-
-.hero__panel-tab.is-on {
-  color: var(--paper);
-}
-
-.hero__panel-tab.is-on::before {
-  background: var(--acid);
-  box-shadow: 0 0 6px rgba(216, 255, 67, 0.8);
-  opacity: 1;
-}
-
-.hero__hud {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 9px;
-  color: rgba(242, 237, 228, 0.5);
-  font-size: 6.8px;
-  letter-spacing: 0.1em;
   pointer-events: none;
-  font-variant-numeric: tabular-nums;
 }
-
-.hero__hud span + span::before {
-  margin-right: 6px;
-  color: rgba(242, 237, 228, 0.22);
-  content: '/';
-}
-
-.hero__hud-ink {
-  color: rgba(255, 154, 106, 0.8);
-}
-
-.hero__veil-hint {
-  margin-top: 7px;
-  color: rgba(255, 154, 106, 0.7);
-  font-size: 7px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  pointer-events: none;
-  transition:
-    opacity 0.7s ease,
-    transform 0.7s var(--ease-out);
-}
-
-.hero__veil-hint.is-hidden {
-  opacity: 0;
-  transform: translateY(-4px);
-}
-
-.hero__patterns {
-  display: flex;
-  align-items: center;
-  gap: 13px;
-  margin-top: 11px;
-  font-size: 7px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.hero__patterns-label {
-  color: rgba(242, 237, 228, 0.3);
-}
-
-.hero__pattern {
-  padding-bottom: 2px;
-  border-bottom: 1px solid transparent;
-  color: rgba(242, 237, 228, 0.44);
-  font-family: var(--font-mono);
-  font-size: 7px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  transition:
-    color 0.3s ease,
-    border-color 0.3s ease;
-}
-
-.hero__pattern:hover {
-  color: var(--paper);
-}
-
-.hero__pattern.is-on {
-  border-bottom-color: var(--acid);
-  color: var(--acid);
-}
-
-/* Selected work index (restored inside the panel) ------------------------- */
-
-.hero__index {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  min-height: 0;
-  margin-top: clamp(8px, 1.6vh, 18px);
-  overflow-y: auto;
-  scrollbar-width: none;
-  animation: index-in 0.5s var(--ease-out) both;
-}
-
-.hero__index::-webkit-scrollbar {
-  display: none;
-}
-
-@keyframes index-in {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-}
-
-.hero__row {
-  position: relative;
-  display: grid;
-  grid-template-columns: 30px minmax(0, 1fr) auto 32px 14px;
-  gap: 10px;
-  align-items: center;
-  padding: clamp(5px, 0.8vh, 9px) 2px;
-  border-top: 1px solid rgba(242, 237, 228, 0.13);
-  color: rgba(242, 237, 228, 0.68);
-  transition:
-    color 0.3s ease,
-    background-color 0.35s ease;
-}
-
-.hero__row:last-child {
-  border-bottom: 1px solid rgba(242, 237, 228, 0.13);
-}
-
-.hero__row::before {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: 2px;
-  background: var(--row-accent);
-  content: '';
-  transform: scaleY(0);
-  transform-origin: top center;
-  transition: transform 0.4s var(--ease-out);
-}
-
-.hero__row.is-active,
-.hero__row:hover {
-  color: var(--paper);
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.06), transparent 74%);
-}
-
-.hero__row.is-active::before,
-.hero__row:hover::before {
-  transform: scaleY(1);
-}
-
-.hero__row-no {
-  color: var(--fg-faint);
-  font-size: 7.5px;
-  letter-spacing: 0.06em;
-  transition: color 0.3s ease;
-}
-
-.hero__row.is-active .hero__row-no {
-  color: var(--row-accent);
-}
-
-.hero__row-title {
-  overflow: hidden;
-  font-family: var(--font-serif);
-  font-size: clamp(1rem, 1.35vw, 1.3rem);
-  line-height: 1.12;
-  letter-spacing: -0.01em;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.hero__row-cat {
-  color: var(--fg-faint);
-  font-size: 7px;
-  letter-spacing: 0.08em;
-  white-space: nowrap;
-}
-
-.hero__row-year {
-  color: var(--fg-faint);
-  font-size: 7.5px;
-  text-align: right;
-}
-
-.hero__row-arrow {
-  color: var(--paper);
-  font-size: 12px;
-  opacity: 0;
-  transform: translate(-2px, 2px);
-  transition:
-    opacity 0.3s ease,
-    transform 0.4s var(--ease-out);
-}
-
-.hero__row.is-active .hero__row-arrow,
-.hero__row:hover .hero__row-arrow {
-  opacity: 1;
-  transform: none;
-}
-
-.hero__panel-all {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--paper);
-  white-space: nowrap;
-  transition: color 0.35s ease;
-}
-
-.hero__panel-all:hover {
-  color: var(--acid);
-}
-
-.hero__panel-foot {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid rgba(242, 237, 228, 0.16);
-  color: rgba(242, 237, 228, 0.58);
-  font-size: 7.5px;
-  letter-spacing: 0.08em;
-}
-
-.hero__panel-status {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
-
-.hero__panel-status .dot {
-  flex-shrink: 0;
-  background: var(--acid);
-  box-shadow: 0 0 8px rgba(216, 255, 67, 0.7);
-  animation: status-pulse 2.6s ease-in-out infinite;
-}
-
-@keyframes status-pulse {
-  0%,
-  100% {
-    opacity: 0.55;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
-.hero__panel-status-text {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 /* Bottom bar ------------------------------------------------------------- */
 
 .hero__bottom {
@@ -1145,9 +632,7 @@ onBeforeUnmount(() => {
   }
 
   .hero__panel {
-    justify-self: stretch;
-    max-width: none;
-    height: clamp(320px, 42vh, 400px);
+    display: none;
   }
 
   .hero__lead {
@@ -1198,40 +683,6 @@ onBeforeUnmount(() => {
   .hero__desc {
     max-width: 36ch;
     font-size: 11.5px;
-  }
-
-  .hero__panel {
-    --panel-pad: 16px;
-    height: 300px;
-  }
-
-  .hero__panel-head {
-    font-size: 7px;
-  }
-
-  .hero__patterns {
-    gap: 9px;
-  }
-
-  .hero__index {
-    margin-top: 10px;
-  }
-
-  .hero__row {
-    grid-template-columns: 26px minmax(0, 1fr) auto 12px;
-    gap: 8px;
-  }
-
-  .hero__row-cat {
-    display: none;
-  }
-
-  .hero__row-title {
-    font-size: 1.02rem;
-  }
-
-  .hero__panel-status {
-    max-width: 56%;
   }
 
   .hero__bottom {
