@@ -96,26 +96,28 @@
   <path d="M926 448 C 960 430 1014 430 1058 456" fill="none" stroke="#1b0f0c" stroke-width="13" stroke-linecap="round" opacity=".8"/>
 
   <!-- 眼 -->
-  <path d="M712 512 C 742 486 798 486 826 514 C 796 536 742 536 712 512 Z" fill="#f2dcc4"/>
-  <path d="M934 514 C 962 486 1018 486 1048 512 C 1018 536 964 536 934 514 Z" fill="#f2dcc4"/>
-  <circle cx="770" cy="512" r="16" fill="#3a2418"/>
-  <circle cx="992" cy="512" r="16" fill="#3a2418"/>
-  <circle cx="770" cy="512" r="7" fill="#0d0806"/>
-  <circle cx="992" cy="512" r="7" fill="#0d0806"/>
-  <circle cx="776" cy="506" r="4" fill="#fff3dc" opacity=".85"/>
-  <circle cx="998" cy="506" r="4" fill="#fff3dc" opacity=".85"/>
-  <path d="M712 512 C 742 486 798 486 826 514" fill="none" stroke="#1b0f0c" stroke-width="5" opacity=".75"/>
-  <path d="M934 514 C 962 486 1018 486 1048 512" fill="none" stroke="#1b0f0c" stroke-width="5" opacity=".75"/>
-  <path d="M718 536 C 750 550 792 550 820 536" fill="none" stroke="#8b5236" stroke-width="2.5" opacity=".4"/>
-  <path d="M940 536 C 968 550 1010 550 1042 536" fill="none" stroke="#8b5236" stroke-width="2.5" opacity=".4"/>
+  <path d="M712 510 C 742 492 798 492 826 514 C 796 534 742 534 712 510 Z" fill="#ead0b4"/>
+  <path d="M934 514 C 962 492 1018 492 1048 510 C 1018 534 964 534 934 514 Z" fill="#ead0b4"/>
+  <circle cx="770" cy="512" r="14" fill="#3a2418"/>
+  <circle cx="992" cy="512" r="14" fill="#3a2418"/>
+  <circle cx="770" cy="512" r="6" fill="#0d0806"/>
+  <circle cx="992" cy="512" r="6" fill="#0d0806"/>
+  <circle cx="775" cy="507" r="3" fill="#fff3dc" opacity=".85"/>
+  <circle cx="997" cy="507" r="3" fill="#fff3dc" opacity=".85"/>
+  <path d="M712 510 C 742 488 798 488 826 514" fill="none" stroke="#1b0f0c" stroke-width="4.5" opacity=".7"/>
+  <path d="M934 514 C 962 488 1018 488 1048 510" fill="none" stroke="#1b0f0c" stroke-width="4.5" opacity=".7"/>
+  <path d="M720 528 C 752 542 792 542 818 528" fill="none" stroke="#8b5236" stroke-width="2" opacity=".35"/>
+  <path d="M942 528 C 968 542 1008 542 1040 528" fill="none" stroke="#8b5236" stroke-width="2" opacity=".35"/>
 
   <!-- 鼻 -->
-  <path d="M884 522 L 862 688 C 858 704 874 714 884 714 C 894 714 910 704 906 688 L 898 522 Z" fill="#8b5236" opacity=".55"/>
-  <path d="M848 704 C 864 714 884 714 898 708" fill="none" stroke="#3a1d16" stroke-width="4" opacity=".6"/>
+  <path d="M884 520 L 872 682 C 870 696 884 704 884 704 C 884 704 898 696 896 682 L 892 520 Z" fill="#a96a4a" opacity=".42"/>
+  <ellipse cx="870" cy="706" rx="9" ry="5" fill="#4a2418" opacity=".55"/>
+  <ellipse cx="898" cy="706" rx="9" ry="5" fill="#4a2418" opacity=".55"/>
+  <ellipse cx="884" cy="668" rx="10" ry="26" fill="#ffe9cc" opacity=".3"/>
 
   <!-- 嘴 -->
-  <path d="M796 774 C 836 796 924 796 964 772" fill="none" stroke="#2a1109" stroke-width="12" stroke-linecap="round" opacity=".78"/>
-  <path d="M808 758 C 840 770 920 770 952 758" fill="none" stroke="#ffe3c0" stroke-width="3" opacity=".32"/>
+  <path d="M812 776 C 848 792 918 791 952 772" fill="none" stroke="#2a1109" stroke-width="9" stroke-linecap="round" opacity=".68"/>
+  <path d="M822 762 C 850 772 914 772 942 760" fill="none" stroke="#ffe3c0" stroke-width="2.5" opacity=".28"/>
 
   <!-- 面颊 / 颧骨高光 -->
   <ellipse cx="724" cy="642" rx="70" ry="44" fill="#ffe9cc" opacity=".22"/>
