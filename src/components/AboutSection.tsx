@@ -1,9 +1,11 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { gsap, ScrollTrigger } from '../lib/gsap'
 import { prefersReducedMotion, scrollToSection } from '../composables/useSmoothScroll'
 import { site } from '../data/site'
 import { capabilities, stats } from '../data/profile'
+import { techGroups, techStack } from '../data/stack'
 import ArtworkFrame from './ArtworkFrame'
+import LogoLoop from './LogoLoop'
 import { useReveal } from '../hooks/useReveal'
 import '../styles/components/AboutSection.css'
 
@@ -27,6 +29,23 @@ export default function AboutSection() {
   const capRef = useReveal<HTMLDivElement>()
   const statsReveal = useReveal<HTMLDivElement>()
   const availability = useReveal<HTMLDivElement>()
+
+  /* 技术栈长条：每个条目渲染成 wordmark 文本，悬停时停下并点亮为强调色 */
+  const stackLogos = useMemo(
+    () =>
+      techStack.map((tech, index) => ({
+        node: (
+          <span className="about__stack-item">
+            <span className="about__stack-no">{String(index + 1).padStart(2, '0')}</span>
+            <span className="about__stack-name">{tech.name}</span>
+          </span>
+        ),
+        title: `${tech.name} · ${techGroups[tech.group]}`,
+        ariaLabel: `${tech.name} · ${techGroups[tech.group]}`,
+        hoverColor: 'var(--accent)'
+      })),
+    []
+  )
 
   /* Tilt ----------------------------------------------------------------- */
 
@@ -246,6 +265,27 @@ export default function AboutSection() {
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="about__stack">
+        <div className="about__stack-head mono">
+          <span>Stack / 技术栈</span>
+          <span>{techStack.length} tools · 拖动可回看</span>
+        </div>
+        <LogoLoop
+          logos={stackLogos}
+          speed={72}
+          direction="left"
+          logoHeight={26}
+          gap={44}
+          fadeOut
+          fadeOutWidth={0.09}
+          scaleOnHover
+          labels="hover"
+          muted={0.6}
+          ariaLabel="技术栈"
+          className="about__stack-loop"
+        />
       </div>
     </section>
   )

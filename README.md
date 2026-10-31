@@ -10,6 +10,7 @@
 - **StrokeText**（React Bits 描边绘制文字，`src/components/StrokeText.tsx`）：首屏两行标题先描边勾出轮廓，再由左向右擦除出实心字形
 - **TextType**（React Bits 打字机文字，`src/components/TextType.tsx`）：首屏自述段落按字符逐字打出，光标跟随文字并持续闪烁
 - **GlowCursor**（React Bits 流体光迹，`src/components/GlowCursor.tsx`）：纯 WebGL2 的鼠标拖尾（半浮点帧缓冲 + MacCormack 平流 + 20 步压力迭代 + 5 级 bloom），深色页以 `screen` 加光、奶油色页换成组件的 light 主题落墨
+- **LogoLoop**（React Bits 技术栈长条，`src/components/LogoLoop.jsx` + 类型声明 `.d.ts`）：关于页底部的 51 项技术栈 wordmark，连续滚动、可拖拽甩动、悬停停下并点亮为强调色，`prefers-reduced-motion` 下保持静止排列
 - **ogl 1.0**：承载 React Bits `DitherVeil` 抖动之幕（WebGL2）
 - **Tailwind CSS v4**（`@tailwindcss/vite`）与 **shadcn**（`components.json`），仅用于接入 registry 组件；项目自有 CSS 不分层，优先级更高
 - **Lenis** 平滑滚动，与 GSAP ticker 同步
@@ -59,6 +60,7 @@ Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 - `src/data/profile.ts`：简历内容的单一数据源——能力矩阵、数字概览、三段实践经历、8 项荣誉、4 张证书与志愿服务。
 - `src/data/works.ts`：四个已交付项目（QianVerse / Attendance / Data Walls / Campus Lab）。每个项目包含 `stack`、`status`、`links`（GitHub / 邮件预约）与工程向的 `intro`、`notes`、`gallery`。
 - `src/data/posts.ts`：四篇真实项目手记与分类。
+- `src/data/stack.ts`：关于页 LogoLoop 的技术栈清单（`techStack` 51 项 + 分组中文名 `techGroups`），新增技术只改这一处。
 
 > 站内 GitHub 与邮箱均为真实地址；分类筛选由 `works.ts` 的 `filters` 与 `WorkIndexView.tsx` 的 `filters` 共同决定，新增项目时两处需要同步。
 
@@ -72,6 +74,7 @@ Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 - 滚动后顶部渐隐遮罩，保证固定导航与大标题重叠时的可读性
 - 首页横向作品画廊：GSAP scrub 驱动，支持鼠标拖拽映射纵向滚动；桌面与移动端均提供 All projects 入口
 - 首页 Marquee：GSAP ticker 驱动，滚动越快横向速度与 `skewX` 倾斜越大，指针悬停减速；关键词与真实技术栈一致
+- 关于区底部 LogoLoop：技术栈 wordmark 连续滚动，可拖拽甩动，悬停停下并显示中文分组、点亮强调色，离屏自动停帧
 - Experience 章节：粘性大号索引与竖向进度线（scrub），ScrollTrigger 在视口中段点亮当前经历
 - Credentials 章节：8 项荣誉行 + 4 张证书卡 + 20 小时志愿记录，指针光晕（quickTo）、逐条揭示与 `Magnetic` 磁性 CTA
 - 手记悬浮预览（仅精确指针设备）、作品卡 3D tilt、页脚光晕
@@ -105,6 +108,17 @@ public/art/     本地视觉素材（SVG / PNG）
 ```
 
 ## 更新日志
+
+### 2026-11-01 — 关于区收紧内边距并接入 React Bits LogoLoop 技术栈长条
+
+- `src/styles/components/AboutSection.css`：`#about` 的 `padding-block` 由 `clamp(100px, 13vw, 190px)` 减半为 `clamp(50px, 6.5vw, 95px)`，`.about__head` 的 `padding-bottom` 由 `clamp(44px, 6vw, 84px)` 减半为 `clamp(22px, 3vw, 42px)`；1440px 下实测上下内边距 187.2px → 93.6px、眉标下间距 84px → 42px。
+- 新增 `src/components/LogoLoop.jsx`：原样（1:1）接入 reactbits.dev/animations/logo-loop 的实现——误差函数透镜、弧 / 波浪 / 轨道三种布局、无限循环 + 拖拽甩动（动量衰减与吸附）、intro 逐项渐入、`--logoloop-pad` 自适应留白、IntersectionObserver 离屏停帧；仅把样式改为从 `src/styles/components/LogoLoop.css` 引入。
+- 新增 `src/styles/components/LogoLoop.css`：与组件一一对应的原样式。
+- 新增 `src/components/LogoLoop.d.ts`：为这个 JSX 组件补上 `logos / speed / layout / labels / muted / ...` 的 props 类型，TS 侧可直接补全参数。
+- 新增 `src/data/stack.ts`：技术栈的单一数据源，51 项按 Backend / Frontend / Interaction / Cross-platform / Infra / Data / AI 分组，覆盖能力矩阵、三段经历与本站技术选型（NestJS 11、TypeScript、React 19、Vue 3、uni-app、Prisma 7、PostgreSQL 14、MySQL 8、Redis、Flask、Docker、Nginx、GSAP、Lenis、WebGL 2、Hadoop / Hive / Kafka / Spark 等）。
+- `src/components/AboutSection.tsx`：在关于区底部新增 `Stack / 技术栈` 长条，条目渲染为「编号 + wordmark」文本节点（不等宽编号 + 衬线斜体名称），`speed 72`、`gap 44`、`fadeOut 0.09`、`scaleOnHover`、`labels="hover"`（悬停时停下并显示「名称 · 中文分组」）、`muted 0.6`（默认压暗、悬停恢复并点亮 `--accent`）。
+- `src/styles/components/AboutSection.css`：新增 `.about__stack*` 样式——顶部细分隔线、与 `.shell` 对齐的栏目标签、条目字号 `clamp(17px, 1.7vw, 26px)` 随视口流体缩放，≤760px 收到 15px / 30px 间距。
+- 验证：`npm run build` 通过；`npm run preview` + headless Chrome 1440×900 实测 `#about` 内边距 93.6px、长条宽 1440、每份列表 51 项、轨道 400ms 内持续位移、悬停 `Express` 出现「Express · 服务端」提示并转为 `--accent`、拖拽进入 `data-dragging` 且可甩动、页面无横向溢出；390×844 下条目 15px、长条宽 390、无横向溢出；`prefers-reduced-motion: reduce` 下轨道静止且条目完整可见。
 
 ### 2026-11-01 — 全站接入 React Bits GlowCursor 鼠标光迹
 
