@@ -1,0 +1,25 @@
+/* 描边绘制文字组件（React Bits StrokeText）的样式，与组件一一对应 */
+.stroke-text {
+  display: block;
+  width: 100%;
+  line-height: 0;
+}
+
+.stroke-text--hover {
+  cursor: pointer;
+}
+
+/* --stroke-text-width 由组件按文字实际包围盒写入，未测量前用 600px 兜底 */
+.stroke-text__svg {
+  display: block;
+  width: 100%;
+  max-width: var(--stroke-text-width, 600px);
+  height: auto;
+  margin: 0 auto;
+  overflow: visible;
+}
+
+.stroke-text__stroke,
+.stroke-text__fill {
+  user-select: none;
+}

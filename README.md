@@ -7,12 +7,13 @@
 - **React 19** + **TypeScript**，路由使用 **react-router-dom 7**
 - **Vite 8**（`@vitejs/plugin-react`）
 - **GSAP 3.15**（ScrollTrigger / SplitText / quickTo / ticker）
-- **TextType**（React Bits 打字机文字，`src/components/TextType.tsx`）：首屏标题按字符逐字出现，光标跟随文字并持续闪烁
+- **StrokeText**（React Bits 描边绘制文字，`src/components/StrokeText.tsx`）：首屏两行标题先描边勾出轮廓，再由左向右擦除出实心字形
+- **TextType**（React Bits 打字机文字，`src/components/TextType.tsx`）：首屏自述段落按字符逐字打出，光标跟随文字并持续闪烁
 - **ogl 1.0**：承载 React Bits `DitherVeil` 抖动之幕（WebGL2）
 - **Tailwind CSS v4**（`@tailwindcss/vite`）与 **shadcn**（`components.json`），仅用于接入 registry 组件；项目自有 CSS 不分层，优先级更高
 - **Lenis** 平滑滚动，与 GSAP ticker 同步
 - 组件样式集中在 `src/styles/components/*.css`，由入口按需引入
-- 首屏为「左侧排版 + 右侧 DitherVeil 抖动之幕」双列布局（≤900px 面板下移居中），动效集中在标题拆字、滚动视差与底部提示
+- 首屏为「左侧排版 + 右侧 DitherVeil 抖动之幕」双列布局（≤900px 面板下移居中），动效集中在标题描边 + 自述打字、滚动视差与底部提示
 - 原生 SVG 程序化视觉素材（`public/art`），无外部图片依赖
 
 运行时要求 **Node.js ≥ 22.12**（当前已验证 Node 26 / npm 11）。
@@ -103,6 +104,14 @@ public/art/     本地视觉素材（SVG / PNG）
 ```
 
 ## 更新日志
+
+### 2026-11-01 — 首屏标题改用 React Bits StrokeText 描边动效，打字机移到自述
+
+- 新增 `src/components/StrokeText.tsx`：按 reactbits.dev/c/text-animations/stroke-text 的实现 1:1 移植为 TS（逐字 `strokeDasharray / strokeDashoffset` 描边、按字 `stagger`、`wipe / fade / none` 三种填充、四种擦除方向、`solid / dotted / dashed` 描边与 marching、`hover` 重绘、可选投影、`mount / scroll / hover / loop` 触发、`prefers-reduced-motion` 直接显示完成态）。相比原实现仅新增 `start` 开关（等预加载结束再绘制）与 `--stroke-text-em-width`（把包围盒宽度按 em 暴露给外层，样式即可做响应式缩放，无需重新测量或重播动画）。
+- 新增 `src/styles/components/StrokeText.css`：与组件一一对应的原样式。
+- `src/components/HeroSection.tsx`：首屏两行标题改为 StrokeText —— `Welcome` / `Personal Blog` 先由橙色描边勾出轮廓，再由左向右擦除出 `--paper` 实心字形；移除标题上的 TextType。自述段落改为 TextType 打印新文案（「我相信好的网页不是把所有东西都加上去……」），26ms/字、不循环、保留光标，并在下方用不可见 ghost 文本占位。
+- `src/styles/components/HeroSection.css`：描边 SVG 以 `--line-size` 为字号基准（`max-width: calc(var(--stroke-text-em-width, 4.7) * 1em)`）并左对齐，斜体顺 `font-style` 继承到 SVG 文本；SVG 包围盒按字体上下沿计算、比原先 `line-height: 0.78` 的行盒高，用 `-0.39em / -0.62em` 负外边距把两行墨迹拉回原来的紧行距。自述的 ghost 占位 + 绝对定位打字层保证逐字出现时段落高度不变。≤760px 自述改为满行宽 / 11px、展示图 `max-height` 收到 28svh，390×844 首屏重新一屏放下。
+- 验证：headless Chrome 采样 1440×900 / 1366×768 / 1024×768 / 390×844 / 320×568；描边后的擦除矩形宽度由 0 动画到整行（582 / 897 用户单位），首屏高度在 1440 / 1366 / 1024 / 390 下分别等于 900 / 768 / 768 / 844；自述 4 行，ghost 与打字层行数一致，`stackTop` 在打字前后不变；`npm run build` 通过，并在 `npm run preview` 下复测同一组尺寸。
 
 ### 2026-10-31 — 首屏标题接入 React Bits TextType 打字机动效
 

@@ -110,7 +110,6 @@
 .hero__title {
   position: relative;
   z-index: 2;
-  margin-left: -0.045em;
   color: var(--paper);
   font-family: var(--font-serif);
   font-weight: 400;
@@ -119,41 +118,41 @@
   opacity: 0;
 }
 
-/* 遮罩按行尺寸计算底部留白：line-height 比字形盒更紧，
-   "in production." 的 p 下伸部分需要额外空间，否则会被裁掉 */
+/* 遮罩按行尺寸计算：字号挂在行上，StrokeText 的 SVG 按 em 跟随这个字号缩放，
+   --line-size 既决定字形大小，也决定描边组件的外部尺寸 */
 .hero__line {
   --line-size: clamp(3.4rem, min(9.6vw, 14.4vh), 11.5rem);
   display: block;
-  overflow: hidden;
-  padding-bottom: 0.18em;
+  /* SVG 包围盒自带 0.1em 内边距（描边留白），负外边距把字形拉回原来的基线位置 */
+  margin-left: -0.1em;
   font-size: var(--line-size);
 }
 
-.hero__line-inner {
-  display: block;
-  transform-origin: left bottom;
-  font-size: inherit;
+/* SVG 的包围盒按字体上下沿（而非字墨）计算，比原先 line-height 0.78 的行盒高得多。
+   这里按字号的比例把两行分别上提：首行裁掉字体上方的留白，次行恢复原来的紧行距。 */
+.hero__line:first-child {
+  margin-top: -0.39em;
 }
 
-/* TextType 默认 inline-block，且空文本时没有行盒：首屏需要块级 + 固定行高，
-   打字过程中标题高度不变，下方副标题不会跳动 */
-.hero__line-inner.text-type {
-  display: block;
-  min-height: 0.78em;
+/* 描边组件默认按自身包围盒宽度定宽并居中；首屏需要左对齐，并交给行字号决定尺寸 */
+.hero__line .stroke-text {
+  width: 100%;
+}
+
+.hero__line .stroke-text__svg {
+  max-width: calc(var(--stroke-text-em-width, 4.7) * 1em);
+  margin-inline: 0;
 }
 
 .hero__line--two {
   --line-size: clamp(2.6rem, min(7.6vw, 11.2vh), 8.6rem);
+  margin-top: -0.62em;
   padding-left: clamp(20px, 7.4vw, 150px);
 }
 
-.hero__line-inner--two {
+/* 斜体沿 SVG 文本的 font-style 继承生效 */
+.hero__line--two .stroke-text {
   font-style: italic;
-}
-
-.hero__title .hero-char {
-  display: inline-block;
-  will-change: transform, opacity;
 }
 
 .hero__sub {
@@ -172,10 +171,23 @@
 }
 
 .hero__desc {
+  position: relative;
   max-width: 46ch;
   color: rgba(242, 237, 228, 0.78);
   font-size: 13px;
   line-height: 1.85;
+}
+
+/* 透明 ghost 占位：段落高度在打字前就确定，下方技术栈不会被逐字推走 */
+.hero__desc-ghost {
+  visibility: hidden;
+}
+
+.hero__desc .hero__desc-type {
+  position: absolute;
+  inset: 0;
+  display: block;
+  white-space: pre-wrap;
 }
 
 .hero__stack {
@@ -438,9 +450,16 @@
     letter-spacing: 0.18em;
   }
 
+  /* 自述比原来的两行文案长：窄屏用满行宽并缩小字号，避免把展示图与底部提示挤出首屏 */
   .hero__desc {
-    max-width: 36ch;
-    font-size: 11.5px;
+    max-width: none;
+    font-size: 11px;
+    line-height: 1.8;
+  }
+
+  /* 展示图同步收一档，给标题 + 自述留出首屏空间 */
+  .hero__veil {
+    max-height: clamp(150px, 28svh, 300px);
   }
 
   .hero__bottom {

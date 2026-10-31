@@ -3,8 +3,13 @@ import { gsap } from '../lib/gsap'
 import { prefersReducedMotion, scrollToSection } from '../composables/useSmoothScroll'
 import { useUi } from '../store/ui'
 import { site } from '../data/site'
+import StrokeText from './StrokeText'
 import TextType from './TextType'
 import '../styles/components/HeroSection.css'
+
+/* 自述段落：改用打字机逐字出现，文案由站点主人自述 */
+const HERO_INTRO =
+  '我相信好的网页不是把所有东西都加上去，而是在复杂度里找到最清晰的那条路径。我从前端、API 与数据库之间工作，关心一次加载、一个边界条件、和每一处不该让用户等待的地方。它们让复杂系统重新变得简单、可信。'
 
 /* WebGL 抖动之幕按需加载：首屏不进入主包，所有断点都渲染（窄屏改为下方居中展示） */
 const DitherVeil = lazy(() => import('./DitherVeil'))
@@ -12,7 +17,6 @@ const DitherVeil = lazy(() => import('./DitherVeil'))
 export default function HeroSection() {
   const ui = useUi()
   const hero = useRef<HTMLElement>(null)
-  const title = useRef<HTMLHeadingElement>(null)
 
   const [ready, setReady] = useState(false)
 
@@ -129,25 +133,34 @@ export default function HeroSection() {
         <div className="hero__lead">
           <p className="hero__kicker">Full-stack Web Developer</p>
 
-          <h1 ref={title} className="hero__title">
+          <h1 className="hero__title">
+            {/* 描边先被画笔勾出，再由左向右擦除出实心字形。
+                StrokeText 以 200px 为绘制基准，外部按 --line-size 等比缩放；
+                letter-spacing 为 -0.055em，颜色对应 --accent / --paper */}
             <span className="hero__line">
-              <TextType
-                as="span"
-                className="hero__line-inner hero__line-inner--one"
+              <StrokeText
                 text="Welcome"
+                fontFamily="var(--font-serif)"
+                fontSize={200}
+                fontWeight={400}
+                letterSpacing={-11}
+                strokeWidth={2}
+                strokeColor="#ff5a2f"
+                fillColor="#efe8db"
                 start={ready}
-                loop={false}
-                showCursor={false}
               />
             </span>
             <span className="hero__line hero__line--two">
-              <TextType
-                as="span"
-                className="hero__line-inner hero__line-inner--two"
+              <StrokeText
                 text="Personal Blog"
+                fontFamily="var(--font-serif)"
+                fontSize={200}
+                fontWeight={400}
+                letterSpacing={-11}
+                strokeWidth={2}
+                strokeColor="#ff5a2f"
+                fillColor="#efe8db"
                 start={ready}
-                loop={false}
-                initialDelay={420}
               />
             </span>
           </h1>
@@ -155,8 +168,18 @@ export default function HeroSection() {
           <div className="hero__sub">
             <p className="hero__cn hero-fade">{site.intro}</p>
             <p className="hero__desc hero-fade">
-              在读全栈开发者。2024 年起在校内工作室写接口，2025 年成为合作企业管理系统的技术负责人：
-              NestJS + PostgreSQL + Redis 的服务端，Vue / React 的界面，一个人把需求推到上线。
+              {/* ghost 预留整段文字的高度，打字过程中段落与下方技术栈不跳动 */}
+              <span className="hero__desc-ghost" aria-hidden="true">
+                {HERO_INTRO}
+              </span>
+              <TextType
+                as="span"
+                className="hero__desc-type"
+                text={HERO_INTRO}
+                start={ready}
+                loop={false}
+                typingSpeed={26}
+              />
             </p>
             <p className="hero__stack hero-fade mono">
               {site.stack.map((tech, index) => (
