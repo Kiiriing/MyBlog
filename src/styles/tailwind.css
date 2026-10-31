@@ -1,0 +1,3 @@
+/* Tailwind is used by shadcn / React Bits components. The project's own CSS is
+   unlayered, so it keeps precedence over Tailwind's layered theme and preflight. */
+@import 'tailwindcss';

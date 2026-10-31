@@ -12,6 +12,10 @@
     "moduleDetection": "force",
     "noEmit": true,
     "jsx": "react-jsx",
+    "allowJs": true,
+    "paths": {
+      "@/*": ["./src/*"]
+    },
     "strict": false,
     "noUnusedLocals": false,
     "noUnusedParameters": false,

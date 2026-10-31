@@ -7,6 +7,7 @@
 - **React 19** + **TypeScript**，路由使用 **react-router-dom 7**
 - **Vite 8**（`@vitejs/plugin-react`）
 - **GSAP 3.15**（ScrollTrigger / SplitText / quickTo）
+- **Tailwind CSS v4**（`@tailwindcss/vite`）与 **shadcn**（`components.json`），仅用于接入 registry 组件；项目自有 CSS 不分层，优先级更高
 - **Lenis** 平滑滚动，与 GSAP ticker 同步
 - 组件样式集中在 `src/styles/components/*.css`，由入口按需引入
 - 首屏为单列排版，标题区占满宽度，右侧不再有面板；动效集中在标题拆字、滚动视差与底部提示
@@ -84,7 +85,7 @@ src/
   App.tsx       应用外壳：预加载、菜单、页面过渡、滚动重置
   main.tsx      React 入口（createRoot + BrowserRouter）
   router.tsx    路由表与路由名映射
-  components/   页面区块与通用组件（.tsx）
+  components/   页面区块与通用组件（.tsx，另有 shadcn / React Bits 生成的 .jsx）
   composables/  平滑滚动（GSAP + Lenis）
   hooks/        时钟、进场 reveal
   data/         站点、作品、文章内容
@@ -96,6 +97,15 @@ public/art/     本地 SVG 视觉素材
 ```
 
 ## 更新日志
+
+### 2026-10-31 — 接入 Tailwind / shadcn，安装 React Bits SplitText 与 GSAP skills
+
+- 前置配置：安装 `tailwindcss` + `@tailwindcss/vite`（v4），新增 `src/styles/tailwind.css`（`@import 'tailwindcss';`）并在 `src/main.tsx` 里先于 `main.css` 引入；`vite.config.ts` 加入 `tailwindcss()` 插件与 `@` → `src` 别名；`tsconfig.json` 增加 `paths` 与 `allowJs`（TypeScript 7 已移除 `baseUrl`，因此只用相对 `paths`）。
+- 新增 `components.json`（new-york / neutral / CSS 变量），`tailwind.css` 指向 `src/styles/tailwind.css`，并用 `registries` 注册 React Bits registry。
+- 执行 `npx shadcn@latest add @react-bits/SplitText-JS-CSS`，生成 `src/components/SplitText.jsx`（拆字入场、`rise / fade / blur / flip / pop / skew / wave` 效果、`view / load / hover / click` 触发、`mask` 与 `loop`）；新增依赖 `@gsap/react ^2.1.2`，`gsap` 复用项目已有版本。组件目前未被页面引用。
+- 项目自有 CSS 保持不分层（unlayered），优先级高于 Tailwind 的 theme / preflight，已在 `src/styles/tailwind.css` 注释说明。
+- 执行 `npx skills add https://github.com/greensock/gsap-skills`，安装 GSAP 官方 8 个 skills（`gsap-core` / `gsap-timeline` / `gsap-scrolltrigger` / `gsap-plugins` / `gsap-react` / `gsap-frameworks` / `gsap-performance` / `gsap-utils`）到 `.agents/skills` 与 `.trae/skills`（用 `--copy` 避免 Windows 下符号链接失效），并生成 `skills-lock.json`。
+- 验证：`npm run build` 通过；`npm run preview` 下用 headless Chrome 截图复核首页与手记文章页，字体、标题间距与排版未受 Tailwind preflight 影响。
 
 ### 2026-10-31 — 从 Vue 3 迁移到 React 19 + Vite + TypeScript
 
