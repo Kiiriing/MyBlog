@@ -9,10 +9,10 @@ import '../styles/components/WorkIndexView.css'
 
 const filters = [
   { key: 'all', label: 'All', cn: '全部' },
-  { key: 'commerce', label: 'Commerce', cn: '电商' },
-  { key: 'data', label: 'Data', cn: '数据' },
-  { key: 'platform', label: 'Platform', cn: '平台' },
-  { key: 'experiment', label: 'Experiment', cn: '实验' }
+  { key: 'enterprise', label: 'Enterprise', cn: '企业系统' },
+  { key: 'fullstack', label: 'Full-stack', cn: '全栈产品' },
+  { key: 'data', label: 'Data', cn: '数据可视化' },
+  { key: 'collab', label: 'Collab', cn: '校企协作' }
 ]
 
 type Work = (typeof works)[number]
@@ -140,7 +140,7 @@ export default function WorkIndexView() {
         <div className="shell work-index__hero-inner">
           <div className="work-index__hero-top mono">
             <span>Work index / 项目索引</span>
-            <span>{total} projects — 2023 / 2026</span>
+            <span>{total} projects — 2024 / 2026</span>
           </div>
 
           <div className="work-index__hero-main">
@@ -149,13 +149,13 @@ export default function WorkIndexView() {
                 <span>All</span>
                 <em>projects.</em>
               </h1>
-              <p className="work-index__cn">从界面到数据库，五个真正上过线的产品。</p>
+              <p className="work-index__cn">从界面到数据库，四个真正交付过的项目。</p>
             </div>
 
             <aside className="work-index__aside">
               <p className="work-index__lede">
-                这里收录 2023 年以来的五个全栈项目：电商、实时数据、 出版平台与开源实验。每一个都从一行需求开始，
-                最后跑到真实用户的浏览器里。
+                这里收录 2024 年以来的四个项目：企业管理系统、签到考勤、数据可视化大屏
+                与校企协作。每一个都从一条需求开始，最后跑到真实用户手里。
               </p>
 
               <span className="work-index__stamp" aria-hidden="true">
@@ -168,7 +168,7 @@ export default function WorkIndexView() {
                   </defs>
                   <text>
                     <textPath href="#work-stamp-circle">
-                      FULL-STACK WORK · 2023—2026 · FIVE PROJECTS ·
+                      FULL-STACK WORK · 2024—2026 · FOUR PROJECTS ·
                     </textPath>
                   </text>
                   <text className="work-index__stamp-core" x="80" y="87" textAnchor="middle">
@@ -181,7 +181,7 @@ export default function WorkIndexView() {
 
           <div className="work-index__hero-meta mono">
             <span>Based in Beijing</span>
-            <span>Commerce / Data / Platform / Experiment</span>
+            <span>Enterprise / Full-stack / Data / Collaboration</span>
             <span>Scroll to browse ↓</span>
           </div>
         </div>

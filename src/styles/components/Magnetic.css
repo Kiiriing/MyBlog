@@ -1,0 +1,16 @@
+.magnetic {
+  display: inline-flex;
+  max-width: 100%;
+}
+
+.magnetic__inner {
+  display: inline-flex;
+  max-width: 100%;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .magnetic__inner {
+    transform: none !important;
+  }
+}

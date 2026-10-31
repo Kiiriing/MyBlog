@@ -242,7 +242,8 @@ export default function WorksSection() {
 
           <div className="works__head-right">
             <p className="works__intro">
-              从 3D 电商到实时数据平台，五个已经上线的全栈项目。 界面、接口、数据库与部署，都是同一条链路。
+              四个真正交付过的项目：企业管理系统、签到考勤、20 余张数据大屏与校企协作。
+              界面、接口、数据库与部署，都是同一条链路。
             </p>
 
             <div className="works__controls">
@@ -348,7 +349,8 @@ export default function WorksSection() {
                   <em>in mind?</em>
                 </h3>
                 <p className="work-end__copy">
-                  2026 年秋季还有一些档期。无论是从零开始的产品， 还是需要有人把前后端一起推进的项目，都可以聊聊。
+                  现在开放 2026 年的实习与全栈岗位机会。无论是从零开始的产品，
+                  还是需要有人把前后端一起推进的项目，都可以聊聊。
                 </p>
                 <button
                   className="work-end__cta"
@@ -373,7 +375,7 @@ export default function WorksSection() {
             <span ref={nowEl} className="mono works__now">
               Now viewing — {works[0].title}
             </span>
-            <span className="mono works__foot-year">© 2023—2026</span>
+            <span className="mono works__foot-year">© 2024—2026</span>
           </div>
         </footer>
       </div>

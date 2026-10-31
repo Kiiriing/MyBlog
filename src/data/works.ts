@@ -1,319 +1,259 @@
 export const works = [
   {
-    slug: 'melt',
+    slug: 'qianverse',
     index: '01',
-    title: 'Melt',
-    cn: '熔',
-    category: '3D Commerce / 电商',
-    filters: ['commerce'],
-    year: '2025',
-    client: 'Solstice Studio',
-    role: 'Full-stack · WebGL · Payments',
+    title: 'QianVerse',
+    cn: '千域',
+    category: 'Enterprise System / 企业系统',
+    filters: ['enterprise'],
+    year: '2025 — 2026',
+    client: '合作企业',
+    role: '技术负责人 (CTO) · 后端核心开发',
     art: '/art/work-melt.svg',
     accent: '#ff5a2f',
-    status: 'Live in production',
-    tagline: '把一件香氛，做成可以在浏览器里转动、试色、下单的东西。',
+    status: '已上线 · 持续迭代',
+    tagline: '把库存、订单、会员和报表，收进一套可以对外合作的管理系统。',
     summary:
-      '为独立香氛品牌 Solstice 从零搭建的 3D 电商站：商品模型实时渲染，内容在后台可视化编辑，结账、库存与订单全部打通。',
+      '企业级餐饮零售一体化管理系统：NestJS 11 + TypeScript + PostgreSQL 14 + Prisma 7 + Redis，覆盖认证、组织权限、商品库存、订单支付、营销会员、数据报表与 AI 助手十余个模块。',
     intro: [
-      'Solstice 原来的店铺建立在模板平台上，商品图、库存和订单分散在三个系统里。我们决定把它重做成一个以 3D 为中心的商店：用户第一次进入，就能直接转动瓶子，看清玻璃厚度和液体颜色。',
-      '前端是 Vue 3 + Three.js，模型经过 Draco 压缩后从 8.4 MB 降到 900 KB，并且只在用户第一次拖动时加载细节层。后端是 Node.js + PostgreSQL，商品、变体、库存和订单共用一套 schema；Stripe 负责支付、退款与对账。',
-      '上线后移动端首屏 LCP 从 4.6s 降到 1.8s，加入购物车率提升 34%，因「看不清实物」产生的客服咨询减少了近一半。'
+      'QianVerse 是合作企业的餐饮零售一体化管理系统：认证与用户、组织与权限、商品与库存、订单与支付、营销与会员、报表与 AI 助手，十余个业务模块跑在同一套 NestJS 服务里。',
+      '我负责技术选型与架构：NestJS 11 + TypeScript + PostgreSQL 14 + Prisma 7 + Redis，JWT + Passport 鉴权、RBAC 守卫、多组织数据隔离。订单链路用数据库幂等表配合事务内的库存「锁定 — 扣减 / 释放」，解决重复提交与超卖导致的库存不一致。',
+      '工程化上，Swagger 输出 OpenAPI，Docker + docker-compose 统一开发与部署，Artillery 压测脚本进入仓库；这套约定让后来的同学可以在一天内跑通本地环境。'
     ],
     details: [
-      { label: '年份', value: '2025' },
-      { label: '客户', value: 'Solstice Studio' },
-      { label: '角色', value: 'Full-stack, WebGL, Payments' },
-      { label: '团队', value: '我, M. Chen' }
+      { label: '时间', value: '2025.10 — 至今' },
+      { label: '身份', value: '技术负责人（CTO）' },
+      { label: '规模', value: '十余个业务模块 · 多组织' },
+      { label: '协作', value: '合作企业项目组' }
     ],
     notes: [
       {
-        label: '01 / 渲染',
-        value: '模型按部件拆分 LOD，首屏只加载 900KB 的压缩网格，高精度细节在交互后补载。'
+        label: '01 / 幂等',
+        value: '订单创建与支付回调共用一张幂等记录表，唯一键冲突时直接返回原订单，重放不会重复扣款。'
       },
       {
-        label: '02 / 数据',
-        value: '商品、SKU、库存与订单共用一套 PostgreSQL schema，库存扣减放在事务里，避免并发超卖。'
+        label: '02 / 权限',
+        value: 'RBAC 守卫按组织与角色求交集，接口级最小权限；组织之间的数据在 service 层强制带 tenant 条件。'
       },
       {
-        label: '03 / 支付',
-        value: 'Stripe Checkout + Webhook 幂等处理，回调重放不会重复创建订单或重复扣款。'
+        label: '03 / 性能',
+        value: '权限树与热点字典放 Redis（cache-manager），列表接口只取需要的字段，用复合索引覆盖高频查询。'
       }
     ],
     gallery: [
       {
         src: '/art/work-melt.svg',
-        caption: 'Product configurator — 模型、材质与实时价格同步',
+        caption: 'Order & payment — 幂等、库存锁定与支付回调',
         position: '50% 35%'
       },
       {
         src: '/art/work-melt.svg',
-        caption: 'Checkout flow — 库存校验、支付与订单确认',
+        caption: 'Organization & RBAC — 多组织、多身份与接口级权限',
         position: '60% 65%'
       }
     ],
-    stack: ['Vue 3', 'Three.js', 'Node.js', 'PostgreSQL', 'Stripe'],
+    stack: ['NestJS 11', 'TypeScript', 'PostgreSQL 14', 'Prisma 7', 'Redis', 'Docker'],
     links: [
-      { label: 'Live site', href: 'https://example.com/melt', hint: 'Demo placeholder' },
+      { label: 'More on GitHub', href: 'https://github.com/Kiiriing/', hint: '代码与其它项目' },
       {
-        label: 'Request a walkthrough',
-        href: 'mailto:hello@luyu.dev?subject=Melt%20walkthrough',
-        hint: 'Case study on request'
+        label: 'Ask for a walkthrough',
+        href: 'mailto:liukiiriing@gmail.com?subject=QianVerse%20walkthrough',
+        hint: '案例细节可邮件沟通'
       }
     ],
-    next: 'tidal-memory'
+    next: 'attendance'
   },
   {
-    slug: 'tidal-memory',
+    slug: 'attendance',
     index: '02',
-    title: 'Tidal Memory',
-    cn: '潮汐记忆',
-    category: 'Real-time Data / 实时',
-    filters: ['data'],
-    year: '2024',
-    client: 'Hangzhou Bay Observatory',
-    role: 'Front-end · Data Viz · Streaming',
+    title: 'Attendance',
+    cn: '签到考勤',
+    category: 'Full-stack / 全栈',
+    filters: ['fullstack'],
+    year: '2026',
+    client: '独立开发',
+    role: 'Full-stack · Flask · MySQL',
     art: '/art/work-tide.svg',
     accent: '#7a67ff',
-    status: 'Shipped — internal platform',
-    tagline: '把三十年的潮汐记录，变成一条不会停的实时曲线。',
+    status: '已交付 · 校内使用',
+    tagline: '把「老师点名」变成一条可追溯、可统计的签到链路。',
     summary:
-      '为杭州湾观测站搭建的实时数据平台：37 个浮标每 5 秒上报一次，前端以 60fps 绘制十万级数据点，并支持任意时间窗口回放。',
+      'Vue 3 + Flask 的前后端分离考勤系统：管理员 / 教师 / 学生三角色工作台，限时签到、名册核对与补录、ECharts 统计报表，以及三层反作弊。',
     intro: [
-      '观测站原本靠每天早上导出的 Excel 看数据，一次异常潮位往往要几个小时之后才会被发现。Tidal Memory 把这件事变成实时的：37 个浮标通过 MQTT 上报，5 秒内出现在值班大屏和手机上。',
-      '真正的难点在渲染。十年历史大约 1.1 亿条记录，直接画会让浏览器卡死。我们用 TimescaleDB 做连续聚合，按缩放级别返回不同精度的序列；前端用 React + D3 计算比例尺，Canvas 双缓冲绘制，把帧率稳定在 55–60fps。',
-      '现在值班人员可以在任意时间窗口回放一次风暴潮，也可以把某一段导出成 CSV 交给研究团队，而不必再写一次性的脚本。'
+      '签到系统从一句需求开始：老师发起签到，学生在限定时间内完成，迟到与旷课自动判定，期末能直接导出统计。前端 Vue 3 + TypeScript + Vite，后端 Flask + MySQL 8，三角色各有一套工作台。',
+      '后端用 Flask 蓝图按角色拆分接口，flask-jwt-extended 签发 7 天 JWT 并按角色校验；PyMySQL 自建连接池（空闲连接上限 10、物理连接上限 50、获取超时 10s），避免班级集中签到把数据库连接打满。',
+      '反作弊做了三层：设备维度唯一约束、浏览器指纹（webdriver、headless-gl、cdc-keys 等自动化特征），以及后端对 UA、请求头完整性与短时高频请求的检测；命中后写入 is_script 标记并在前端红色告警。'
     ],
     details: [
-      { label: '年份', value: '2024' },
-      { label: '客户', value: 'Hangzhou Bay Observatory' },
-      { label: '角色', value: 'Front-end, Data Viz, Streaming' },
-      { label: '团队', value: '我, Z. Wang' }
+      { label: '时间', value: '2026.09' },
+      { label: '类型', value: '全栈独立开发' },
+      { label: '规模', value: '三角色 · 8 张业务表' },
+      { label: '安全', value: 'JWT · scrypt · 参数化查询' }
     ],
     notes: [
       {
-        label: '01 / 聚合',
-        value: 'TimescaleDB 连续聚合按小时、天、月预计算，缩放时只请求当前精度所需的数据。'
+        label: '01 / 数据',
+        value: '统一 UUID 主键，task_id + student_id、task_id + device_id、class_id + course_date 三组复合索引覆盖高频查询。'
       },
       {
-        label: '02 / 流',
-        value: 'WebSocket 只推送变化点，历史区间走普通 HTTP 缓存，避免长连接里塞满大对象。'
+        label: '02 / 规则',
+        value: '迟到 10 分钟宽限与旷课自动判定写在服务层，时间一律以服务端为准，改系统时间绕不过去。'
       },
       {
-        label: '03 / 降级',
-        value: '页面不可见时暂停订阅；弱网下自动切到 30 秒轮询，并明确标注数据延迟。'
+        label: '03 / 可观测',
+        value: '全局日志中间件记录 IP、耗时、身份与请求体并自动脱敏密码字段，出问题能直接定位到某一次请求。'
       }
     ],
     gallery: [
       {
         src: '/art/work-tide.svg',
-        caption: 'Live dashboard — 37 个浮标的实时潮位与异常标记',
+        caption: 'Sign-in flow — 发起、限时签到与补录',
         position: '50% 45%'
       },
       {
         src: '/art/work-tide.svg',
-        caption: 'Timeline replay — 一次风暴潮的完整回放',
+        caption: 'Reports — ECharts 趋势与状态分布',
         position: '35% 70%'
       }
     ],
-    stack: ['React', 'TypeScript', 'D3.js', 'WebSocket', 'TimescaleDB'],
+    stack: ['Vue 3', 'TypeScript', 'Vite', 'Flask', 'MySQL 8', 'JWT'],
     links: [
+      { label: 'More on GitHub', href: 'https://github.com/Kiiriing/', hint: '代码与其它项目' },
       {
-        label: 'Request a demo',
-        href: 'mailto:hello@luyu.dev?subject=Tidal%20Memory%20demo',
-        hint: 'Internal product'
-      },
-      { label: 'Read the build notes', href: '/journal/on-gravity', hint: 'Journal' }
+        label: 'Ask about anti-cheat',
+        href: 'mailto:liukiiriing@gmail.com?subject=Attendance%20anti-cheat',
+        hint: '三层防护的实现细节'
+      }
     ],
-    next: 'signal-garden'
+    next: 'data-walls'
   },
   {
-    slug: 'signal-garden',
+    slug: 'data-walls',
     index: '03',
-    title: 'Signal Garden',
-    cn: '信号花园',
-    category: 'Creative Experiment / 实验',
-    filters: ['experiment'],
-    year: '2026',
-    client: 'Open source',
-    role: 'Full-stack · WebGL · Audio',
+    title: 'Data Walls',
+    cn: '数据大屏',
+    category: 'Data Visualization / 数据',
+    filters: ['data'],
+    year: '2024 — 2025',
+    client: '校内工作室 · 联想集团',
+    role: '后端 · 数据接口与清洗',
     art: '/art/work-garden.svg',
     accent: '#d8ff43',
-    status: 'Open source — maintained',
-    tagline: '一个由所有访客共同养大的开源花园。',
+    status: '20+ 张已交付',
+    tagline: '二十多块大屏，把教学、成果与校企合作的数据摆到墙上。',
     summary:
-      '开源的生成式网页实验：访客的停留、移动与点击被匿名聚合后写入 Redis，再由后台定时生长成一株新的植物，所有人都能看见它今天的样子。',
+      '在校内工作室承接各院系与联想集团的数据可视化需求，负责数据清洗、指标口径与后端接口，累计交付 20 余张数据大屏。',
     intro: [
-      'Signal Garden 最初只是一个周末的 WebGL 练习，后来长成了一个完整的开源项目：前端 Vue 3 + WebGL 负责生长与渲染，后端 NestJS 负责把匿名的交互信号变成养分。',
-      '每 15 分钟，一个 worker 会读取过去一段时间的聚合信号，用 L-system 推进一步生长，把新枝干写入 PostgreSQL。Redis 缓存当天的完整形态，页面打开时只拉取增量，所以它永远在变，又几乎不占带宽。',
-      '声音由 Web Audio 实时合成，不使用任何采样文件，整站压缩后不到 400KB。代码、生成规则和数据 schema 全部开源。'
+      '在学校的校内工作室，我承接各院系与联想集团的数据可视化需求：教学管理、学生成果、校企合作，一共交付了 20 余张大屏。',
+      '我的位置在后端：把散落在 Excel、教务系统和业务库里的数据清洗成统一指标，按大屏的刷新频率提供接口；前端同学只需要按约定字段接入，联调时间从几天缩短到半天。',
+      '大屏和普通网页不一样，它要在会议室里连续亮一整天。所以接口做了缓存与降级：低频指标走分钟级缓存，断网时保留最后一次快照，数字不会突然变空。'
     ],
     details: [
-      { label: '年份', value: '2026' },
-      { label: '类型', value: 'Self-initiated / Open source' },
-      { label: '角色', value: 'Design, Full-stack, Audio' },
-      { label: '许可证', value: 'MIT' }
+      { label: '时间', value: '2024.09 — 2025.06' },
+      { label: '身份', value: '工作室后端技术人员' },
+      { label: '交付', value: '20 余张数据大屏' },
+      { label: '协作', value: '院系 · 联想集团' }
     ],
     notes: [
       {
-        label: '01 / 生长',
-        value: 'L-system 的规则参数由聚合信号驱动，同一株植物不会在两次访问里完全重复。'
+        label: '01 / 口径',
+        value: '先统一指标口径再写 SQL，避免同一块屏上两个数字互相矛盾，也方便后续换口径时只改一处。'
       },
       {
-        label: '02 / 隐私',
-        value: '只保存按分钟聚合的计数与轨迹分桶，不写入 IP、UA 或任何可回溯到个人的标识。'
+        label: '02 / 缓存',
+        value: '刷新频率低的指标走 5–15 分钟缓存，实时指标单独接口，避免整页重算拖慢会议室里的机器。'
       },
       {
-        label: '03 / 成本',
-        value: '静态形态缓存在 Redis，生长任务跑在单台 1C1G 实例上，每月成本控制在几美元。'
+        label: '03 / 交付',
+        value: '每张屏都附字段说明和更新方式，交接给下一届同学也能自己维护，而不是只留下一个能跑的页面。'
       }
     ],
     gallery: [
       {
         src: '/art/work-garden.svg',
-        caption: 'Live garden — 访问第 1,284 天',
+        caption: 'Campus wall — 教学管理与学生成果',
         position: '50% 50%'
       },
       {
         src: '/art/work-garden.svg',
-        caption: 'Growth pipeline — 信号、聚合与枝干生成',
+        caption: 'Pipeline — 清洗、聚合与接口分发',
         position: '40% 40%'
       }
     ],
-    stack: ['Vue 3', 'WebGL', 'Web Audio API', 'NestJS', 'Redis', 'PostgreSQL'],
+    stack: ['Python', 'Flask', 'MySQL', 'Redis', 'ECharts'],
     links: [
-      { label: 'Live garden', href: 'https://example.com/signal-garden', hint: 'Demo placeholder' },
-      { label: 'Source on GitHub', href: 'https://github.com', hint: 'Open source' }
+      { label: 'More on GitHub', href: 'https://github.com/Kiiriing/', hint: '代码与其它项目' },
+      {
+        label: 'Request a walkthrough',
+        href: 'mailto:liukiiriing@gmail.com?subject=Data%20walls',
+        hint: '大屏与接口设计'
+      }
     ],
-    next: 'monochrome-index'
+    next: 'campus-lab'
   },
   {
-    slug: 'monochrome-index',
+    slug: 'campus-lab',
     index: '04',
-    title: 'Monochrome Index',
-    cn: '单体索引',
-    category: 'Publishing Platform / 出版',
-    filters: ['platform'],
-    year: '2023',
-    client: 'Riso Press',
-    role: 'Full-stack · Search · CMS',
-    art: '/art/work-index.svg',
-    accent: '#e0431d',
-    status: 'Shipped — running since 2023',
-    tagline: '一个没有图片的出版平台，只靠网格和文字工作。',
-    summary:
-      '为独立出版社 Riso Press 重做的内容平台：编辑在后台用结构化字段写作，前台自动生成跨设备的书目、作者页与全文搜索，构建时间从 14 分钟降到 40 秒。',
-    intro: [
-      'Riso Press 每年出版 12 本小书，原来的网站是手工维护的静态页面，改一次目录要半小时。我们把内容拆成结构化字段：书目、作者、篇章、引文，编辑只需要填表，不再碰 HTML。',
-      '前台用 Vue 3 + Vite 构建，搜索交给 Meilisearch，支持按作者、年份和正文片段检索。所有页面在发布时预渲染，首屏不依赖 JS 也能读完一整页书目。',
-      '数据库使用 PostgreSQL，全文检索字段与展示字段分离，编辑可以随时修订，而已经发布的书目版本仍可追溯。'
-    ],
-    details: [
-      { label: '年份', value: '2023' },
-      { label: '客户', value: 'Riso Press' },
-      { label: '角色', value: 'Full-stack, Search, CMS' },
-      { label: '团队', value: '我, A. Fischer' }
-    ],
-    notes: [
-      {
-        label: '01 / 结构',
-        value: '内容按「书目—篇章—引文」三层建模，编辑端的表单由同一份 schema 生成。'
-      },
-      {
-        label: '02 / 搜索',
-        value: 'Meilisearch 索引正文与作者，支持中文分词和错字容错，结果高亮在前端完成。'
-      },
-      {
-        label: '03 / 构建',
-        value: '增量构建只重新渲染受影响的页面，把一次完整发布从 14 分钟压缩到 40 秒。'
-      }
-    ],
-    gallery: [
-      {
-        src: '/art/work-index.svg',
-        caption: 'Catalogue view — 由结构化字段生成的年度书目',
-        position: '50% 40%'
-      },
-      {
-        src: '/art/work-index.svg',
-        caption: 'Search — 按作者、年份与正文片段检索',
-        position: '65% 70%'
-      }
-    ],
-    stack: ['Vue 3', 'Node.js', 'PostgreSQL', 'Meilisearch', 'Vite'],
-    links: [
-      { label: 'Live site', href: 'https://example.com/monochrome-index', hint: 'Demo placeholder' },
-      {
-        label: 'Read the build notes',
-        href: '/journal/after-the-scroll',
-        hint: 'Journal'
-      }
-    ],
-    next: 'blue-hour'
-  },
-  {
-    slug: 'blue-hour',
-    index: '05',
-    title: 'Blue Hour',
-    cn: '蓝调时刻',
-    category: 'Booking Product / 预约',
-    filters: ['platform'],
-    year: '2025',
-    client: 'Blue Hour Cinema',
-    role: 'Full-stack · Product · Payments',
+    title: 'Campus Lab',
+    cn: '校企实验室',
+    category: 'Collaboration / 协作',
+    filters: ['collab'],
+    year: '2024 — 2025',
+    client: '校企合作项目',
+    role: '接口设计 · 前后端联调',
     art: '/art/work-bluehour.svg',
     accent: '#ff9a6a',
-    status: 'Live in production',
-    tagline: '一家独立影院，把排片、选座和退款放在同一个页面里。',
+    status: '多个项目已交付',
+    tagline: '响应式官网、AI 互动教学平台、SMT 生产应用——小组作战的三次练习。',
     summary:
-      '为杭州一家独立影院做的预约系统：排片、选座、票种、会员价与退款全部在一个流程内完成，前台 Next.js，后台 Prisma + PostgreSQL，支付走 Stripe。',
+      '参与多个校企合作项目：响应式学校官网、昌平区 AI 互动教学平台、SMT 生产应用系统，负责需求拆解、任务分工、接口设计与前后端联调。',
     intro: [
-      '独立影院的排片经常临时调整，原来的售票系统要打电话才能改。Blue Hour 把排片、座位和票价做成可视化编辑，影院经理在手机上就能完成，改完立刻同步到前台。',
-      '选座页用 SVG 渲染整个影厅，座位状态通过 SSE 推送。两个人同时点同一个座位时只有一个能成功，并发控制写在 PostgreSQL 的行锁里，而不是靠前端禁用来假装安全。',
-      '上线后的第一个月，线上购票占比从 18% 提升到 64%，退款处理时间从两天缩短到十分钟，影院也不再需要为每场活动单独做一张报名表。'
+      '校企合作的几个项目都是小组作战：响应式学校官网、昌平区 AI 互动教学平台、SMT 生产应用系统。我负责需求拆解、接口设计与前后端联调。',
+      '我习惯先把字段和状态图定清楚再写代码：谁能改、什么状态可以流转、失败回滚到哪里。这样前端同学不用猜，联调阶段也更容易判断问题归属。',
+      '这些项目让我第一次体会到「交付」的重量：接口文档、数据库设计说明、演示环境，一个都不能少。'
     ],
     details: [
-      { label: '年份', value: '2025' },
-      { label: '客户', value: 'Blue Hour Cinema' },
-      { label: '角色', value: 'Full-stack, Product, Payments' },
-      { label: '团队', value: '我, S. Lin' }
+      { label: '时间', value: '2024.05 — 2025.06' },
+      { label: '类型', value: '校企合作 · 小组项目' },
+      { label: '项目', value: '官网 / AI 教学平台 / SMT' },
+      { label: '角色', value: '接口设计与联调' }
     ],
     notes: [
       {
-        label: '01 / 并发',
-        value: '选座写入使用 PostgreSQL 行锁与唯一约束，重复请求返回同一订单而不是新建订单。'
+        label: '01 / 拆解',
+        value: '需求先拆成可交付的小块，每块都带验收标准，避免项目尾声才发现方向偏了。'
       },
       {
-        label: '02 / 实时',
-        value: 'SSE 只推座位状态变化，断线自动重连，并以最近一次快照恢复现场。'
+        label: '02 / 对齐',
+        value: '字段定义、状态图与错误码写在同一份文档里，前端不用猜后端返回什么，联调时也能快速定位问题归属。'
       },
       {
-        label: '03 / 退款',
-        value: '退款规则写成可配置策略，Stripe 退款与站内订单状态在同一事务边界内对账。'
+        label: '03 / 交付',
+        value: '每个项目都补齐接口文档、数据库设计说明与演示环境，让下一届同学可以直接接手。'
       }
     ],
     gallery: [
       {
         src: '/art/work-bluehour.svg',
-        caption: 'Seat map — SVG 影厅与实时座位状态',
+        caption: 'Responsive site — 响应式学校官网',
         position: '50% 50%'
       },
       {
         src: '/art/work-bluehour.svg',
-        caption: 'Scheduling — 经理端的排片与票价编辑',
+        caption: 'AI classroom — 昌平区 AI 互动教学平台',
         position: '50% 75%'
       }
     ],
-    stack: ['Next.js', 'TypeScript', 'Prisma', 'PostgreSQL', 'Stripe', 'SSE'],
+    stack: ['Vue 3', 'uni-app', 'Flask', 'MySQL', 'Axios'],
     links: [
-      { label: 'Live site', href: 'https://example.com/blue-hour', hint: 'Demo placeholder' },
+      { label: 'More on GitHub', href: 'https://github.com/Kiiriing/', hint: '代码与其它项目' },
       {
-        label: 'Request a walkthrough',
-        href: 'mailto:hello@luyu.dev?subject=Blue%20Hour%20walkthrough',
-        hint: 'Case study on request'
+        label: 'Say hello',
+        href: 'mailto:liukiiriing@gmail.com?subject=Hello%20from%20the%20blog',
+        hint: '聊聊项目与协作'
       }
     ],
-    next: 'melt'
+    next: 'qianverse'
   }
 ]
 

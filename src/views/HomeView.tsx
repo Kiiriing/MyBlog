@@ -8,6 +8,8 @@ import MarqueeBand from '../components/MarqueeBand'
 import ManifestoSection from '../components/ManifestoSection'
 import AboutSection from '../components/AboutSection'
 import WorksSection from '../components/WorksSection'
+import ExperienceSection from '../components/ExperienceSection'
+import CredentialsSection from '../components/CredentialsSection'
 import JournalSection from '../components/JournalSection'
 import SiteFooter from '../components/SiteFooter'
 import '../styles/components/HomeView.css'
@@ -40,6 +42,8 @@ export default function HomeView() {
       <ManifestoSection />
       <AboutSection />
       <WorksSection />
+      <ExperienceSection />
+      <CredentialsSection />
       <JournalSection />
       <SiteFooter />
     </div>

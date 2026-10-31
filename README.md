@@ -1,17 +1,17 @@
 # LU YU — Full-stack Web Developer
 
-陆屿 — 个人博客 / 作品集。静态前端，React 19 单页应用，强调滚动叙事、视差与细节交互；内容定位为全栈网页开发者，展示从界面、动效到 API 与数据库的完整项目。
+陆屿 — 个人博客 / 作品集。静态前端，React 19 单页应用，强调滚动叙事、视差与细节交互；内容按真实简历组织：企业管理系统、签到考勤、数据大屏、竞赛荣誉与项目手记。
 
 ## 技术栈
 
 - **React 19** + **TypeScript**，路由使用 **react-router-dom 7**
 - **Vite 8**（`@vitejs/plugin-react`）
-- **GSAP 3.15**（ScrollTrigger / SplitText / quickTo）
+- **GSAP 3.15**（ScrollTrigger / SplitText / quickTo / ticker）
 - **ogl 1.0**：承载 React Bits `DitherVeil` 抖动之幕（WebGL2）
 - **Tailwind CSS v4**（`@tailwindcss/vite`）与 **shadcn**（`components.json`），仅用于接入 registry 组件；项目自有 CSS 不分层，优先级更高
 - **Lenis** 平滑滚动，与 GSAP ticker 同步
 - 组件样式集中在 `src/styles/components/*.css`，由入口按需引入
-- 首屏为「左侧排版 + 右侧 DitherVeil 抖动之幕」双列布局（≤900px 隐藏面板），动效集中在标题拆字、滚动视差与底部提示
+- 首屏为「左侧排版 + 右侧 DitherVeil 抖动之幕」双列布局（≤900px 面板下移居中），动效集中在标题拆字、滚动视差与底部提示
 - 原生 SVG 程序化视觉素材（`public/art`），无外部图片依赖
 
 运行时要求 **Node.js ≥ 22.12**（当前已验证 Node 26 / npm 11）。
@@ -41,22 +41,23 @@ Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 
 | 路径 | 页面 |
 | --- | --- |
-| `/` | 首页：Hero → Marquee → Manifesto → About → Work → Journal → Contact |
+| `/` | 首页：Hero → Marquee → Manifesto → About → Work → Experience → Credentials → Journal → Contact |
 | `/work` | 项目索引（分类筛选 + 光标跟随预览 + 整行色彩揭幕） |
 | `/work/:slug` | 作品详情（项目信息、笔记、画廊、下一项目） |
 | `/journal` | 手记索引（分类筛选 + 悬浮预览） |
 | `/journal/:slug` | 文章详情（阅读进度、正文排版、上一篇 / 下一篇） |
 | `*` | 404 |
 
-站内锚点：`/#manifesto`、`/#work`、`/#journal`、`/#contact`。直接访问时会等待预加载与滚动解锁后再定位。不带 hash 进入首页（含刷新）始终从顶部开始，不会恢复上一次的滚动位置。
+站内锚点：`/#about`、`/#manifesto`、`/#work`、`/#experience`、`/#credentials`、`/#journal`、`/#contact`。直接访问时会等待预加载与滚动解锁后再定位。不带 hash 进入首页（含刷新）始终从顶部开始，不会恢复上一次的滚动位置。
 
 ## 内容与替换
 
-- `src/data/site.ts`：姓名、职位、邮箱、社交链接、技术栈与菜单文案。
-- `src/data/works.ts`：五个全栈项目。每个项目包含 `stack`（技术栈）、`status`（上线状态）、`links`（Live / 源码 / 预约演示）与工程向的 `intro`、`notes`、`gallery`。
-- `src/data/posts.ts`：手记文章与分类。
+- `src/data/site.ts`：姓名、职位、真实邮箱（`liukiiriing@gmail.com`）、GitHub（`@Kiiriing`）、技术栈与菜单文案。
+- `src/data/profile.ts`：简历内容的单一数据源——能力矩阵、数字概览、三段实践经历、8 项荣誉、4 张证书与志愿服务。
+- `src/data/works.ts`：四个已交付项目（QianVerse / Attendance / Data Walls / Campus Lab）。每个项目包含 `stack`、`status`、`links`（GitHub / 邮件预约）与工程向的 `intro`、`notes`、`gallery`。
+- `src/data/posts.ts`：四篇真实项目手记与分类。
 
-> 项目里的 `https://example.com/...` 与 `https://github.com` 是演示占位地址，上线前请替换为真实站点或仓库；`mailto:hello@luyu.dev` 也需要改成你的实际邮箱（同时修改 `site.ts`）。
+> 站内 GitHub 与邮箱均为真实地址；分类筛选由 `works.ts` 的 `filters` 与 `WorkIndexView.tsx` 的 `filters` 共同决定，新增项目时两处需要同步。
 
 ## 交互与可访问性
 
@@ -67,6 +68,9 @@ Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 - 项目索引：分类筛选、计数过渡、整行 paper 色块从中心揭幕、项目数字变实色、光标跟随案例预览卡，键盘 focus 同样触发揭幕
 - 滚动后顶部渐隐遮罩，保证固定导航与大标题重叠时的可读性
 - 首页横向作品画廊：GSAP scrub 驱动，支持鼠标拖拽映射纵向滚动；桌面与移动端均提供 All projects 入口
+- 首页 Marquee：GSAP ticker 驱动，滚动越快横向速度与 `skewX` 倾斜越大，指针悬停减速；关键词与真实技术栈一致
+- Experience 章节：粘性大号索引与竖向进度线（scrub），ScrollTrigger 在视口中段点亮当前经历
+- Credentials 章节：8 项荣誉行 + 4 张证书卡 + 20 小时志愿记录，指针光晕（quickTo）、逐条揭示与 `Magnetic` 磁性 CTA
 - 手记悬浮预览（仅精确指针设备）、作品卡 3D tilt、页脚光晕
 - 尊重 `prefers-reduced-motion`：关闭连续动画，保留最终画面与横向滚动的静态 scrub
 - 菜单打开时 `#main` 设为 `inert` 并锁定滚动；提供跳过导航链接与 `focus-visible` 样式
@@ -98,6 +102,17 @@ public/art/     本地视觉素材（SVG / PNG）
 ```
 
 ## 更新日志
+
+### 2026-10-31 — 按真实简历重写内容，新增经历与荣誉章节
+
+- 内容数据：重写 `src/data/site.ts`（真实邮箱 / GitHub / 技术栈 / 菜单）、`src/data/works.ts`（QianVerse、签到考勤、数据大屏、校企协作四个项目）、`src/data/posts.ts`（四篇真实项目手记）；新增 `src/data/profile.ts`（能力、数字、经历、荣誉、证书与志愿）。
+- 首页新增 `ExperienceSection`（05）与 `CredentialsSection`（06）：经历用粘性索引、ScrollTrigger 点亮与竖向进度线；荣誉用 8 项获奖行 + 4 张证书卡 + 20h 志愿区块，配指针光晕与逐条揭示。
+- 新组件 `Magnetic` + `Magnetic.css`：外层保留命中区，内层用 `gsap.quickTo` 跟随指针，用于两处 CTA。
+- `AboutSection` 换成真实经历、4 列数字与可展开的能力项。
+- 章节编号统一为 Hero 01 / Manifesto 02 / About 03 / Work 04 / Experience 05 / Credentials 06 / Journal 07 / Contact 08；菜单新增 Experience、Credentials，`ScrollProgress` 自动显示 8 章。
+- `MarqueeBand` 改为 GSAP ticker 驱动：滚动越快越倾斜，悬停减速；关键词替换为真实技术栈。
+- 作品索引分类改为 Enterprise / Full-stack / Data / Collab；作品年份、手记总数与 `PostView` 的 `/ 05` 改为按数据计算。
+- 验证：`npm run build` 通过；preview 1440×900 与 390×844 截图确认首屏、Experience、Credentials 排版与条目点亮正常，页面无横向溢出。
 
 ### 2026-10-31 — 修复窄屏 / 手机端抖动面板消失
 

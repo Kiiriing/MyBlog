@@ -10,12 +10,12 @@ export default function JournalSection() {
   const total = String(posts.length).padStart(2, '0')
 
   return (
-    <section id="journal" className="journal-section theme-paper" data-section="05" data-label="Journal">
+    <section id="journal" className="journal-section theme-paper" data-section="07" data-label="Journal">
       <div className="journal-section__grid" aria-hidden="true" />
 
       <div className="shell journal-section__inner">
         <header className="journal-section__head">
-          <span className="eyebrow">05 / Journal · 手记</span>
+          <span className="eyebrow">07 / Journal · 手记</span>
           <Link to="/journal" className="journal-section__all mono" data-cursor="Read">
             <span>All entries / {total}</span>
             <span className="journal-section__all-icon" aria-hidden="true">
@@ -32,7 +32,8 @@ export default function JournalSection() {
 
           <div className="journal-section__lede">
             <p>
-              关于工程、产品与设计的零散记录。它们不是结论， 更像是一些被留下来的决策过程——写给同样在意细节的人。
+              从幂等订单、签到反作弊，到大屏指标口径与一次前端迁移——都是真实项目里留下来的判断。
+              写给同样在意细节的人。
             </p>
             <div className="journal-section__meta mono">
               <span>Essays &amp; build notes</span>

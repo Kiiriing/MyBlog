@@ -11,12 +11,8 @@
 .marquee__track {
   display: flex;
   width: max-content;
-  animation: marquee 34s linear infinite;
+  transform-origin: center;
   will-change: transform;
-}
-
-.marquee:hover .marquee__track {
-  animation-play-state: paused;
 }
 
 .marquee__item {
@@ -59,12 +55,6 @@
   letter-spacing: 0.2em;
   transform: translateY(-50%);
   mix-blend-mode: normal;
-}
-
-@keyframes marquee {
-  to {
-    transform: translate3d(-50%, 0, 0);
-  }
 }
 
 @media (max-width: 760px) {

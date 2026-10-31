@@ -81,7 +81,7 @@ const RouteWipe = forwardRef<RouteWipeHandle>(function RouteWipe(_, ref) {
       <div className="shell route-wipe__inner">
         <div className="route-wipe__top mono">
           <span>LU YU — Route transition</span>
-          <span>2020 / 2026</span>
+          <span>2024 / 2026</span>
         </div>
 
         <div className="route-wipe__center">

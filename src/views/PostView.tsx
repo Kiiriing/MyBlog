@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { getAdjacentPost, getPost } from '../data/posts'
+import { getAdjacentPost, getPost, posts } from '../data/posts'
 import ArtworkFrame from '../components/ArtworkFrame'
 import SiteFooter from '../components/SiteFooter'
 import '../styles/components/PostView.css'
@@ -9,6 +9,7 @@ export default function PostView() {
   const { slug = '' } = useParams()
   const post = getPost(slug)
   const adjacent = getAdjacentPost(slug)
+  const total = String(posts.length).padStart(2, '0')
 
   const article = useRef<HTMLElement>(null)
   const progressEl = useRef<HTMLSpanElement>(null)
@@ -90,7 +91,9 @@ export default function PostView() {
               <span aria-hidden="true">←</span>
               <span>Journal / 手记</span>
             </Link>
-            <span className="mono post-head__no">{post.index} / 05</span>
+            <span className="mono post-head__no">
+              {post.index} / {total}
+            </span>
           </div>
 
           <div className="post-head__meta">

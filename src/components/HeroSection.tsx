@@ -151,7 +151,7 @@ export default function HeroSection() {
       <div className="hero__top shell">
         <div className="hero__edition">
           <span className="mono">Portfolio / Vol. 06</span>
-          <span className="mono">2020 — 2026</span>
+          <span className="mono">2024 — 2026</span>
         </div>
         <span className="hero__top-note mono">Index / 01 — Full-stack</span>
       </div>
@@ -172,8 +172,8 @@ export default function HeroSection() {
           <div className="hero__sub">
             <p className="hero__cn hero-fade">{site.intro}</p>
             <p className="hero__desc hero-fade">
-              全栈网页开发者。从界面、动效到 API 与数据库，一个人把产品 从原型推进到上线；在意性能、边界条件，也在意那些
-              不该让用户等待的瞬间。
+              在读全栈开发者。2024 年起在校内工作室写接口，2025 年成为合作企业管理系统的技术负责人：
+              NestJS + PostgreSQL + Redis 的服务端，Vue / React 的界面，一个人把需求推到上线。
             </p>
             <p className="hero__stack hero-fade mono">
               {site.stack.map((tech, index) => (

@@ -82,7 +82,7 @@ export default function SiteFooter() {
       id="contact"
       ref={footer}
       className="site-footer"
-      data-section="06"
+      data-section="08"
       data-label="Contact"
       onPointerMove={onPointerMove}
       onPointerLeave={onPointerLeave}
@@ -97,7 +97,7 @@ export default function SiteFooter() {
 
       <div className="shell site-footer__inner">
         <header className="site-footer__head">
-          <span className="eyebrow">06 / Contact · 联系</span>
+          <span className="eyebrow">08 / Contact · 联系</span>
           <span className="site-footer__status mono">
             <span className="dot" />
             {site.availability}

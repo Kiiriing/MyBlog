@@ -2,23 +2,10 @@ import { useEffect, useRef } from 'react'
 import { gsap, ScrollTrigger } from '../lib/gsap'
 import { prefersReducedMotion, scrollToSection } from '../composables/useSmoothScroll'
 import { site } from '../data/site'
+import { capabilities, stats } from '../data/profile'
 import ArtworkFrame from './ArtworkFrame'
 import { useReveal } from '../hooks/useReveal'
 import '../styles/components/AboutSection.css'
-
-const capabilities = [
-  { no: '01', en: 'Full-stack Engineering', cn: '全栈开发' },
-  { no: '02', en: 'Front-end Architecture', cn: '前端架构' },
-  { no: '03', en: 'API & Data', cn: '接口与数据' },
-  { no: '04', en: 'Performance', cn: '性能优化' },
-  { no: '05', en: 'Interaction & Motion', cn: '交互与动效' }
-]
-
-const stats = [
-  { value: 8, label: 'Years building', suffix: '' },
-  { value: 46, label: 'Products shipped', suffix: '' },
-  { value: 99, label: 'Lighthouse median', suffix: '' }
-]
 
 export default function AboutSection() {
   const visual = useRef<HTMLDivElement>(null)
@@ -103,7 +90,7 @@ export default function AboutSection() {
             duration: 1.7,
             ease: 'power2.out',
             onUpdate: () => {
-              el.textContent = String(Math.round(counter.value)).padStart(2, '0')
+              el.textContent = `${Math.round(counter.value)}${stat.suffix}`
             }
           })
         })
@@ -198,24 +185,27 @@ export default function AboutSection() {
 
             <div className="about__copy">
               <p ref={copy1}>
-                我是全栈网页开发者，2020 年开始写前端，后来把后端、数据库 与部署也一并揽下；现在在北京，独立完成从原型到上线的完整产品。
+                我是Kiiriing，一名在读的全栈开发者。2024 年起在校内工作室和校企项目里写接口，2025 年成为合作企业管理系统的技术负责人（CTO），带团队把 NestJS + PostgreSQL 的服务推进到可以对外合作的状态。
               </p>
               <p ref={copy2}>
-                关注前端架构、接口设计与性能。喜欢把复杂度留在系统里， 把简单留给用户：让首屏更轻，让边界条件有答案，
-                让每一次点击都有明确的下一步。
+                写过 Vue 3 也写过 React 19，从 Flask 到 NestJS，从 MySQL 到 PostgreSQL。关注接口设计、数据库索引与性能，
+                也关注界面上的每一次反馈：让边界条件有答案，让每一次点击都有明确的下一步。
               </p>
             </div>
 
             <div ref={capRef} className="about__capabilities">
               <div className="about__cap-header mono">
                 <span>Capabilities</span>
-                <span>05</span>
+                <span>0{capabilities.length}</span>
               </div>
               <ul>
                 {capabilities.map((cap) => (
                   <li key={cap.no} className="about__cap">
                     <span className="about__cap-no">{cap.no}</span>
-                    <span className="about__cap-en">{cap.en}</span>
+                    <span className="about__cap-main">
+                      <span className="about__cap-en">{cap.en}</span>
+                      <span className="about__cap-items mono">{cap.items.join(' / ')}</span>
+                    </span>
                     <span className="about__cap-cn">{cap.cn}</span>
                     <span className="about__cap-plus" aria-hidden="true">
                       +
@@ -234,7 +224,10 @@ export default function AboutSection() {
             >
               {stats.map((stat) => (
                 <div key={stat.label} className="about__stat">
-                  <strong data-stat>{String(stat.value).padStart(2, '0')}</strong>
+                  <strong data-stat>
+                    {stat.value}
+                    {stat.suffix}
+                  </strong>
                   <span className="mono">{stat.label}</span>
                 </div>
               ))}
@@ -242,7 +235,7 @@ export default function AboutSection() {
 
             <div ref={availability} className="about__availability">
               <span className="dot" />
-              <p>Currently taking on full-stack projects and engineering roles for late 2026.</p>
+              <p>现在开放 2026 年的实习与全栈岗位机会，也接可以一起推进的小项目。</p>
               <a
                 href={`mailto:${site.email}`}
                 className="about__mail link-underline"
