@@ -61,7 +61,7 @@ Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 ## 交互与可访问性
 
 - 自定义光标（仅在光标实际可见时隐藏系统光标，离开窗口 / 失焦自动恢复）、预加载揭幕、全屏菜单、颗粒质感、页面过渡
-- 首页 Hero：左侧标题逐字入场、`hero__lead` 与底部提示随滚动产生视差；右侧 DitherVeil 用 `floyd` 抖动把镀铬头像压成 1-bit 点阵，鼠标划过的拖尾会烧穿成全彩、松开后逐格编织回点阵，点击产生冲击波
+- 首页 Hero：左侧标题逐字入场、`hero__lead` 与底部提示随滚动产生视差；右侧 DitherVeil 用 `floyd` 抖动把镀铬头像压成 1-bit 点阵，透明底会被 alpha 裁掉，点阵直接浮在页面网格上；鼠标划过的拖尾会烧穿成全彩、松开后逐格编织回点阵，点击产生冲击波
 - 进入首页（无 hash）时始终落在顶部：接管 `history.scrollRestoration` 并在预加载结束后回滚到 0，修复刷新后「自动跳到关于我」的问题
 - 路由切换时以橙色幕布进行擦除式转场（含目标页面标签与路径）
 - 项目索引：分类筛选、计数过渡、整行 paper 色块从中心揭幕、项目数字变实色、光标跟随案例预览卡，键盘 focus 同样触发揭幕
@@ -98,6 +98,12 @@ public/art/     本地视觉素材（SVG / PNG）
 ```
 
 ## 更新日志
+
+### 2026-10-31 — 抖动头像去背景、放大并左移
+
+- `src/components/DitherVeil.jsx`：新增透明底支持——`measureEdge` 额外统计图片边缘 alpha，`uCutout` uniform 在 fragment 里用纹理 alpha 裁掉背景，渲染器改为 `alpha: true`；画布背景不再铺 ink 色，网格与环境光可以透出，只剩主体点阵。非透明图片（`cutout = 0`）行为保持原样。
+- `src/styles/components/HeroSection.css`：列宽 `clamp(300px, 36vw, 480px)` → `clamp(340px, 40vw, 540px)`；`.hero__veil` 增加 `margin-right: clamp(10px, 1.8vw, 28px)`，让面板左移、避开右侧 `INDEX` 与计数标注。
+- 验证：`npm run build` 通过；preview 截图确认 1440×900 / 1280×800 下背景完全透明、头像放大且左移，390×844 仍不渲染。
 
 ### 2026-10-31 — 抖动面板按 React Bits 官方示例还原
 

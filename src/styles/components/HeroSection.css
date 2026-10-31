@@ -83,7 +83,7 @@
 .hero__body {
   display: grid;
   flex: 1;
-  grid-template-columns: minmax(0, 1fr) clamp(300px, 36vw, 480px);
+  grid-template-columns: minmax(0, 1fr) clamp(340px, 40vw, 540px);
   gap: clamp(30px, 4.5vw, 80px);
   align-items: center;
   padding-block: clamp(16px, 2.6vh, 34px);
@@ -185,7 +185,7 @@
 
 /* Dither veil ------------------------------------------------------------ */
 
-/* 画布自带 ink 底色，并与页面底色一致：无边框、无标签，只留点阵本身 */
+/* 透明底图片会按 alpha 裁掉画布背景：无边框、无标签，只留点阵本身 */
 .hero__veil {
   position: relative;
   align-self: stretch;
@@ -193,6 +193,8 @@
   width: 100%;
   min-width: 0;
   min-height: 0;
+  /* 左移一点，避开右侧固定的 INDEX / 计数标注 */
+  margin-right: clamp(10px, 1.8vw, 28px);
 }
 
 .hero-fade {

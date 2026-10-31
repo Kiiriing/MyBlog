@@ -59,6 +59,7 @@ const measureEdge = (context, image) => {
   const sum = [0, 0, 0];
   const squares = [0, 0, 0];
   let count = 0;
+  let alphaSum = 0;
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
       if (x > 0 && y > 0 && x < size - 1 && y < size - 1) continue;
@@ -67,13 +68,15 @@ const measureEdge = (context, image) => {
         sum[c] += v;
         squares[c] += v * v;
       }
+      alphaSum += data[(y * size + x) * 4 + 3] / 255;
       count++;
     }
   }
   const matte = [sum[0] / count, sum[1] / count, sum[2] / count];
   const spread =
     matte.reduce((total, mean, c) => total + Math.sqrt(Math.max(0, squares[c] / count - mean * mean)), 0) / 3;
-  return { matte, plain: spread < 0.06 };
+  /* 透明底 PNG：用图片 alpha 作为遮罩，画布背景透明，只留主体点阵 */
+  return { matte, plain: spread < 0.06, cutout: alphaSum / count < 0.5 };
 };
 
 let blueNoise = null;
@@ -269,6 +272,7 @@ uniform float uIntro;
 uniform float uHold;
 uniform vec3 uMatte;
 uniform float uKey;
+uniform float uCutout;
 uniform vec2 uSize;
 uniform vec4 uBursts[4];
 uniform float uBurstWidth;
@@ -337,11 +341,14 @@ void main() {
 
   vec2 sampleUv = imageUv(cellUv);
   float framed = within(sampleUv);
+  vec4 tex = textureLod(tImage, sampleUv, uLod);
+  /* 有 alpha 通道时按图片透明度裁掉背景，只保留主体 */
+  float subject = mix(1.0, smoothstep(0.02, 0.18, tex.a), uCutout);
   vec3 level;
   if (uPattern == 3) {
     level = texelFetch(tDiffused, ivec2(cell), 0).rgb;
   } else {
-    vec3 c = mix(uMatte, textureLod(tImage, sampleUv, uLod).rgb, framed);
+    vec3 c = mix(uMatte, tex.rgb, framed);
     float t = uPattern == 1 ? blueNoise(cell) : (uPattern == 2 ? engraving(cell) : bayer(cell));
     level = quantize(toned(c), t);
   }
@@ -364,7 +371,7 @@ void main() {
   vec2 aspect = vec2(uResolution.x / uResolution.y, 1.0);
   float spread = length((cellUv - 0.5) * aspect) / length(aspect * 0.5);
   float appear = step(spread * 0.72 + bayer(cell + vec2(3.0, 5.0)) * 0.28, uIntro * 1.001);
-  fragColor = vec4(mix(uInk, color, appear), 1.0);
+  fragColor = vec4(mix(uInk, color, appear), subject * appear);
 }
 `;
 
@@ -422,7 +429,7 @@ const DitherVeil = ({
     if (!container) return undefined;
 
     const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    const renderer = new Renderer({ dpr: Math.min(window.devicePixelRatio || 1, 2), alpha: false, antialias: false });
+    const renderer = new Renderer({ dpr: Math.min(window.devicePixelRatio || 1, 2), alpha: true, antialias: false });
     const gl = renderer.gl;
     const canvas = gl.canvas;
     canvas.style.display = 'block';
@@ -497,6 +504,7 @@ const DitherVeil = ({
       uHold: { value: HOLD },
       uMatte: { value: [0, 0, 0] },
       uKey: { value: 0 },
+      uCutout: { value: 0 },
       uSize: { value: [1, 1] },
       uBursts: { value: Array.from({ length: MAX_BURSTS * 4 }, () => 0) },
       uBurstWidth: { value: 60 }
@@ -735,6 +743,7 @@ const DitherVeil = ({
           const edge = measureEdge(samplerContext, img);
           viewUniforms.uMatte.value = edge.matte;
           viewUniforms.uKey.value = edge.plain ? 1 : 0;
+          viewUniforms.uCutout.value = edge.cutout ? 1 : 0;
         }
       } catch {}
       introStart = performance.now();
