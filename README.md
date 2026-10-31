@@ -99,6 +99,14 @@ public/art/     本地视觉素材（SVG / PNG）
 
 ## 更新日志
 
+### 2026-10-31 — 修复窄屏 / 手机端抖动面板消失
+
+- `src/components/HeroSection.tsx`：删掉 `matchMedia('(min-width: 901px)')` 条件渲染与 `showVeil` 状态，`DitherVeil` 在所有断点都渲染（依旧是 `React.lazy` 异步加载，桌面首屏不阻塞）。
+- `src/styles/components/HeroSection.css`：≤900px 不再 `display: none`，面板改为文字下方居中展示：`width: min(100%, 400px)`、`aspect-ratio: 1000 / 1033`、`max-height: clamp(170px, 36svh, 380px)`，并把该断点的 `gap` 收窄到 `clamp(18px, 3vh, 34px)`。
+- `src/components/DitherVeil.jsx`：创建 `Renderer` 时加 `try/catch` 并检查 `isWebgl2`；WebGL2 不可用（部分手机浏览器 / 省电模式）时改为挂载静态图片，避免整块面板空白。
+- `src/styles/components/DitherVeil.css`：新增 `.dither-veil__fallback`，按 `contain / cover` 填充容器。
+- 验证：`npm run build` 通过；preview 下 headless 截图确认 390×844 / 360×640 / 320×568 / 768×1024 面板完整可见、1440×900 桌面布局无回归；`--disable-webgl` 时降级静态图正常显示。
+
 ### 2026-10-31 — 抖动头像去背景、放大并左移
 
 - `src/components/DitherVeil.jsx`：新增透明底支持——`measureEdge` 额外统计图片边缘 alpha，`uCutout` uniform 在 fragment 里用纹理 alpha 裁掉背景，渲染器改为 `alpha: true`；画布背景不再铺 ink 色，网格与环境光可以透出，只剩主体点阵。非透明图片（`cutout = 0`）行为保持原样。

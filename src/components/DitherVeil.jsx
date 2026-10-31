@@ -429,7 +429,24 @@ const DitherVeil = ({
     if (!container) return undefined;
 
     const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    const renderer = new Renderer({ dpr: Math.min(window.devicePixelRatio || 1, 2), alpha: true, antialias: false });
+    let renderer = null;
+    try {
+      renderer = new Renderer({ dpr: Math.min(window.devicePixelRatio || 1, 2), alpha: true, antialias: false });
+    } catch {
+      renderer = null;
+    }
+    /* WebGL2 不可用（部分手机浏览器 / 省电模式）时退化为静态图，避免整块面板消失 */
+    if (!renderer?.gl || !renderer.isWebgl2) {
+      const fallback = new Image();
+      fallback.src = src;
+      fallback.alt = '';
+      fallback.className = 'dither-veil__fallback';
+      fallback.style.objectFit = fit === 'cover' ? 'cover' : 'contain';
+      container.appendChild(fallback);
+      return () => {
+        if (fallback.parentNode === container) container.removeChild(fallback);
+      };
+    }
     const gl = renderer.gl;
     const canvas = gl.canvas;
     canvas.style.display = 'block';

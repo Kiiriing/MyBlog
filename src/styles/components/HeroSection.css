@@ -374,15 +374,22 @@
   .hero__body {
     grid-template-columns: minmax(0, 1fr);
     align-items: start;
-    gap: clamp(26px, 4vh, 44px);
+    gap: clamp(18px, 3vh, 34px);
   }
 
   .hero__lead {
     justify-content: flex-start;
   }
 
+  /* 窄屏不再隐藏面板：改为文字下方居中的展示块，按图片比例给出确定高度 */
   .hero__veil {
-    display: none;
+    align-self: start;
+    justify-self: center;
+    width: min(100%, 400px);
+    aspect-ratio: 1000 / 1033;
+    max-height: clamp(170px, 36svh, 380px);
+    margin-right: 0;
+    margin-inline: auto;
   }
 }
 

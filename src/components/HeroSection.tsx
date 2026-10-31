@@ -5,7 +5,7 @@ import { useUi } from '../store/ui'
 import { site } from '../data/site'
 import '../styles/components/HeroSection.css'
 
-/* WebGL 抖动之幕只在桌面端渲染，懒加载让移动端完全不下载 ogl */
+/* WebGL 抖动之幕按需加载：首屏不进入主包，所有断点都渲染（窄屏改为下方居中展示） */
 const DitherVeil = lazy(() => import('./DitherVeil'))
 
 export default function HeroSection() {
@@ -14,22 +14,10 @@ export default function HeroSection() {
   const title = useRef<HTMLHeadingElement>(null)
 
   const [ready, setReady] = useState(false)
-  const [showVeil, setShowVeil] = useState(() =>
-    typeof window === 'undefined' ? false : window.matchMedia('(min-width: 901px)').matches
-  )
 
   const splits = useRef<any[]>([])
   const timeline = useRef<gsap.core.Timeline | null>(null)
   const hasPlayed = useRef(false)
-
-  /* Veil ---------------------------------------------------------------- */
-
-  useEffect(() => {
-    const mq = window.matchMedia('(min-width: 901px)')
-    const onChange = () => setShowVeil(mq.matches)
-    mq.addEventListener('change', onChange)
-    return () => mq.removeEventListener('change', onChange)
-  }, [])
 
   /* Scroll ---------------------------------------------------------------- */
 
@@ -199,11 +187,9 @@ export default function HeroSection() {
         </div>
 
         <div className="hero__veil hero-fade" aria-hidden="true">
-          {showVeil ? (
-            <Suspense fallback={null}>
-              <DitherVeil src="/art/chrome-head.png" fit="contain" inkColor="#08080a" />
-            </Suspense>
-          ) : null}
+          <Suspense fallback={null}>
+            <DitherVeil src="/art/chrome-head.png" fit="contain" inkColor="#08080a" />
+          </Suspense>
         </div>
       </div>
 
