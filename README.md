@@ -8,6 +8,7 @@
 - **Vite 8**
 - **GSAP 3.15**（ScrollTrigger / SplitText / quickTo）
 - **Lenis** 平滑滚动，与 GSAP ticker 同步
+- 逐字动画组件 `src/components/SplitText.vue`：React Bits `SplitText` 的 Vue 移植（GSAP 实现，无需 React / Tailwind）
 - 首屏为单列排版，标题区占满宽度，右侧不再有面板；动效集中在标题拆字、滚动视差与底部提示
 - 原生 SVG 程序化视觉素材（`public/art`），无外部图片依赖
 
@@ -48,6 +49,12 @@ Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 站内锚点：`/#manifesto`、`/#work`、`/#journal`、`/#contact`。直接访问时会等待预加载与滚动解锁后再定位。不带 hash 进入首页（含刷新）始终从顶部开始，不会恢复上一次的滚动位置。
 
 ## 内容与替换
+
+- `src/components/SplitText.vue`：把文字拆成字符 / 单词 / 行并逐字入场，支持 `effect`（`rise` / `fade` / `blur` / `flip` / `pop` / `skew` / `wave`）、`trigger`（`view` / `load` / `hover` / `click`）、`mask`、`loop`、`hoverEffect`（`lift` / `wave`）。用法示例：
+  ```vue
+  <SplitText text="Full-stack" split-type="chars" effect="wave" trigger="view" />
+  ```
+  React Bits 的原始组件是 React + Tailwind + shadcn registry，无法直接装进本项目的 Vue + Vite 环境，这里用项目已有的 GSAP `SplitText` 复刻了同样的 props 与效果。
 
 - `src/data/site.js`：姓名、职位、邮箱、社交链接、技术栈与菜单文案。
 - `src/data/works.js`：五个全栈项目。每个项目包含 `stack`（技术栈）、`status`（上线状态）、`links`（Live / 源码 / 预约演示）与工程向的 `intro`、`notes`、`gallery`。
@@ -93,6 +100,12 @@ public/art/     本地 SVG 视觉素材
 ```
 
 ## 更新日志
+
+### 2026-10-31 — 新增 SplitText 的 Vue 版（替代 React Bits 安装）
+
+- `npx shadcn add @react-bits/SplitText-JS-CSS` 失败原因：React Bits 组件是 React + `.jsx`，shadcn 还要求 Tailwind 配置与 tsconfig 路径别名；本项目是 Vue 3 + Vite，补齐配置也无法让 React 组件在 Vue 里渲染。
+- 新增 `src/components/SplitText.vue`：用项目已有 GSAP `SplitText` 复刻原组件的 props 与效果（`rise / fade / blur / flip / pop / skew / wave`、`view / load / hover / click`、`mask`、`loop`、`hoverEffect` 的 `lift / wave`、`accentColor`），零新增依赖。
+- 开发环境用 404 页临时接入验证：`404` 正常拆成 3 个字符、动画结束后 `opacity: 1`，验证后已恢复该页原样。
 
 ### 2026-10-31 — 移除首屏右侧空画框
 
