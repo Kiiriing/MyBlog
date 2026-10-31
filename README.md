@@ -9,6 +9,7 @@
 - **GSAP 3.15**（ScrollTrigger / SplitText / quickTo / ticker）
 - **StrokeText**（React Bits 描边绘制文字，`src/components/StrokeText.tsx`）：首屏两行标题先描边勾出轮廓，再由左向右擦除出实心字形
 - **TextType**（React Bits 打字机文字，`src/components/TextType.tsx`）：首屏自述段落按字符逐字打出，光标跟随文字并持续闪烁
+- **GlowCursor**（React Bits 流体光迹，`src/components/GlowCursor.tsx`）：纯 WebGL2 的鼠标拖尾（半浮点帧缓冲 + MacCormack 平流 + 20 步压力迭代 + 5 级 bloom），深色页以 `screen` 加光、奶油色页换成组件的 light 主题落墨
 - **ogl 1.0**：承载 React Bits `DitherVeil` 抖动之幕（WebGL2）
 - **Tailwind CSS v4**（`@tailwindcss/vite`）与 **shadcn**（`components.json`），仅用于接入 registry 组件；项目自有 CSS 不分层，优先级更高
 - **Lenis** 平滑滚动，与 GSAP ticker 同步
@@ -104,6 +105,14 @@ public/art/     本地视觉素材（SVG / PNG）
 ```
 
 ## 更新日志
+
+### 2026-11-01 — 全站接入 React Bits GlowCursor 鼠标光迹
+
+- 新增 `src/components/GlowCursor.tsx`：按 reactbits.dev/animations/glow-cursor 的实现 1:1 移植为 TSX。着色器（`SPLAT / ADVECT / MACCORMACK / DIVERGENCE / SCALE / PRESSURE / GRADIENT / SHADE / PREFILTER / DOWN / UP / DISPLAY`）、品质档位（sim 96/128/160、dye 384/576/768）、20 步压力迭代、5 级 bloom、点击 burst、静止自动清空全部与原版一致；参数默认值（`color #5f8bff`、`intensity 1.3`、`trailWidth 3`、`linger 1.4`、`glow 1.2`、`hotspot 0.8`、`followSpeed 0.6`、`quality high`、`maxDevicePixelRatio 2`）保持不变。相比原版仅补两处：缺少 `EXT_color_buffer_float` 时直接不启动；卸载时调用 `WEBGL_lose_context` 回收上下文。
+- 新增 `src/styles/components/GlowCursor.css`：组件原样式 + 站内用法 `.glow-cursor--fixed`（`position: fixed; inset: 0; z-index: 785; pointer-events: none`）。`mix-blend-mode` 必须挂在 fixed 容器上——容器会自成层叠上下文，画布自己的 `screen` 只与空背景混合；挂到容器后才与整页背景混合。触屏（`hover: none` / `pointer: coarse`）隐藏。
+- `src/App.tsx`：作为整屏固定叠加层接在 `CustomCursor` 之前，压在正文之上、页头（900）/菜单（800）/路由转场（940）之下，不拦截交互。粗指针设备整层不挂载（省掉一个 WebGL2 上下文与几张浮点贴图）；`key` 随深浅主题变化，路由切换时重挂载，旧主题的残留光迹不会跟到下一页。
+- 深浅主题：深色页用默认 dark 主题 + `screen` 加光；`/journal`、`/journal/:slug` 这类 `.theme-paper` 奶油色页改用 light 主题（落墨式渲染、`normal` 混合，墨色 `#1b1a17`），避免加光把纸底洗白、压掉正文。
+- 验证：`npm run build` 通过；`npm run preview` 下 headless Chrome 1440×900 实测 `webgl2 / EXT_color_buffer_float` 可用，叠加层 `z-index 785`、`position fixed`、rect `1440×900`，画布 `1440×900` + `screen`；光迹压过「Welcome」标题时奶油色字形不被染色，点击 burst 生成涡旋光团，静止约 2.6s 后自动清空画布（再移动可重新唤醒）；390×844 触屏模拟下叠加层不存在、首屏 844px、无横向溢出；`/journal` 与 `/journal/idempotent-orders` 为墨色光迹，首页点「手记」切页后无上一页残留。
 
 ### 2026-11-01 — 首屏标题改用 React Bits StrokeText 描边动效，打字机移到自述
 

@@ -11,6 +11,7 @@ import { finishBoot, getUi, setMenuOpen, setUi, useUi } from './store/ui'
 import { AppRoutes, routeNameFor } from './router'
 import Preloader from './components/Preloader'
 import CustomCursor from './components/CustomCursor'
+import GlowCursor from './components/GlowCursor'
 import GrainOverlay from './components/GrainOverlay'
 import SiteHeader from './components/SiteHeader'
 import MenuOverlay from './components/MenuOverlay'
@@ -36,6 +37,10 @@ export default function App() {
   const [leaving, setLeaving] = useState(false)
   const [pageReady, setPageReady] = useState(true)
   const [scrolled, setScrolled] = useState(false)
+  /* 触屏没有指针轨迹，不跑这套 WebGL 流体模拟 */
+  const [finePointer] = useState(
+    () => window.matchMedia('(hover: hover) and (pointer: fine)').matches
+  )
 
   const wipe = useRef<RouteWipeHandle>(null)
   const locationRef = useRef(location)
@@ -44,6 +49,9 @@ export default function App() {
 
   locationRef.current = location
   const isHome = rendered.pathname === '/'
+  /* 手记与文章页是 `.theme-paper` 的奶油色底，加光（screen）会把整页洗白，
+     换成 GlowCursor 自带的 light 主题：同样的流体，改成落墨式渲染、正常混合。 */
+  const isPaper = rendered.pathname === '/journal' || rendered.pathname.startsWith('/journal/')
 
   function later(fn: () => void, delay: number) {
     const id = window.setTimeout(fn, delay)
@@ -141,6 +149,16 @@ export default function App() {
 
       {showPreloader ? <Preloader onIntro={onIntro} onDone={onPreloaderDone} /> : null}
 
+      {/* 触屏没有指针轨迹，整层不挂载：省掉一个 WebGL2 上下文与几张浮点贴图。
+          key 按深浅主题变化，路由切换时整层重挂载，残留的旧主题光迹不会跟到下一页。 */}
+      {finePointer ? (
+        <GlowCursor
+          key={isPaper ? 'paper' : 'dark'}
+          className={`glow-cursor--fixed${isPaper ? ' is-paper' : ''}`}
+          theme={isPaper ? 'light' : 'dark'}
+          color={isPaper ? '#1b1a17' : undefined}
+        />
+      ) : null}
       <CustomCursor />
       <GrainOverlay />
       <RouteWipe ref={wipe} />
