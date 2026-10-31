@@ -8,7 +8,7 @@
 - **Vite 8**
 - **GSAP 3.15**（ScrollTrigger / SplitText / quickTo）
 - **Lenis** 平滑滚动，与 GSAP ticker 同步
-- **交互场 Hero**：Canvas 2D 位移点阵 + 指针引力井 + 波纹 + 信号曲线 + HUD 读数，纯 DOM / Canvas / GSAP，不加载 WebGL 场景
+- **交互场 Hero**：WebGL（`ogl`）实现的 `<DitherVeil />` 抖动之幕——把自画像抖动成 ink / paper 双色点阵，指针周围开出全彩揭示窗口并留下渐隐轨迹，点击产生彩色冲击波；`Veil / Index` 双模式保留精选项目索引
 - 原生 SVG 程序化视觉素材（`public/art`），无外部图片依赖
 
 运行时要求 **Node.js ≥ 22.12**（当前已验证 Node 26 / npm 11）。
@@ -58,7 +58,7 @@ Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 ## 交互与可访问性
 
 - 自定义光标（仅在光标实际可见时隐藏系统光标，离开窗口 / 失焦自动恢复）、预加载揭幕、全屏菜单、颗粒质感、页面过渡
-- 首页 Hero：右侧「交互场」实时响应指针移动 / 拖拽 / 点击，产生引力井形变、波纹与信号曲线，并回显 X / Y / 能量 / 波纹数 / STEREO / ZOOM 读数；空闲时由幽灵指针自行巡游，另有 `Send a pulse` 按钮；桌面与移动端都不依赖固定视口高度
+- 首页 Hero：右侧面板是 `<DitherVeil />`（`src/components/DitherVeil.vue`）——把 `public/art/hero-veil.svg` 抖动成 ink / paper 双色点阵；指针移动开出软边全彩圆窗并留下渐隐轨迹，点击产生彩色冲击波环，空闲时由 `wander` 自动巡游。面板顶部 `Veil / Index` 切换：Veil 为抖动之幕，Index 恢复原来的 5 行精选项目索引（背景点阵压暗），底部 Pattern 按钮可切换 `bayer / noise / floyd / lines` 抖动图案，HUD 回显 CELL / LEVELS / INK
 - 进入首页（无 hash）时始终落在顶部：接管 `history.scrollRestoration` 并在预加载结束后回滚到 0，修复刷新后「自动跳到关于我」的问题
 - 路由切换时以橙色幕布进行擦除式转场（含目标页面标签与路径）
 - 项目索引：分类筛选、计数过渡、整行 paper 色块从中心揭幕、项目数字变实色、光标跟随案例预览卡，键盘 focus 同样触发揭幕
@@ -93,6 +93,13 @@ public/art/     本地 SVG 视觉素材
 ```
 
 ## 更新日志
+
+### 2026-10-31 — 首屏右侧面板改为 DitherVeil 抖动之幕
+
+- 新增 `src/components/DitherVeil.vue`：React Bits `<DitherVeil />` 的 Vue 3 移植（WebGL2 + `ogl`），包含 mask 拖尾揭示、`bayer / noise / floyd / lines` 抖动图案、鼠标全彩揭示圆窗、点击彩色冲击波与 `wander` 自动巡游。
+- 新增 `public/art/hero-veil.svg`：为抖动重绘的自画像海报（暖橙光晕、同心环、头发与五官结构），低分辨率点阵下仍能辨认。
+- `src/components/HeroSection.vue`：右侧面板改为 `Veil / Index` 双模式——Veil 为抖动之幕 + HUD + Pattern 切换，Index 保留原来的 5 行精选项目索引（点阵背景压暗），原来的项目列表内容没有丢；顶部 / 底部改为渐隐遮罩轨道，小字在点阵上也能读清；移动端面板 300px 高、保持 `touch-action: pan-y` 不阻塞纵向滚动。
+- 新增运行时依赖 `ogl`（`package.json`）。
 
 ### 2026-10-31 — Hero 换成可交互的「场」，并修复刷新自动跳转
 
