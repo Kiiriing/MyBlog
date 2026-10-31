@@ -618,12 +618,9 @@
 
   .work-index__filter-list {
     width: 100%;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-
-  .work-index__filter-list::-webkit-scrollbar {
-    display: none;
+    flex-wrap: wrap;
+    gap: 6px;
+    overflow: visible;
   }
 
   .work-index__count {
@@ -696,6 +693,19 @@
 @media (max-width: 600px) {
   .work-index__hero {
     padding-top: calc(var(--nav-h) + 26px);
+  }
+
+  .work-index__filter {
+    gap: 5px;
+    padding: 7px 12px;
+  }
+
+  .work-index__filter-en {
+    display: none;
+  }
+
+  .work-index__filter-cn {
+    font-size: 10px;
   }
 
   .work-index__hero-top {

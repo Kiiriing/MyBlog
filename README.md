@@ -103,6 +103,14 @@ public/art/     本地视觉素材（SVG / PNG）
 
 ## 更新日志
 
+### 2026-10-31 — 修复窄屏响应式：作品筛选、移动端菜单与文章标题裁切
+
+- 排查结论：媒体查询在 320 / 390 / 768 / 1024 / 1280 / 1366 以及实时拖动窗口时都正常；「不支持响应式」来自新增内容撑破容器——作品索引筛选标签变长后只能横向滚动，7 项菜单在手机上把底部信息挤出视口，文章标题的 `white-space: nowrap` 让长中文标题超出屏宽。
+- `src/styles/components/WorkIndexView.css`：≤860px 筛选行由横向滚动改为自动换行（`flex-wrap` + `width: 100%`，去掉 `overflow-x: auto`）；≤600px 只保留中文标签、缩小内边距，390px 下 5 个筛选项两行内完整可见。
+- `src/styles/components/MenuOverlay.css`：≤760px 收紧菜单内边距、条目间距与字号，390×844 下 7 项 + 邮箱 + 社交 + 时钟一屏完整显示。
+- `src/styles/components/PostView.css`：≤640px 放大标题字号改为 `clamp(2.2rem, 9.2vw, 4rem)`，并让 `.post-head__title-part` 允许换行（`white-space: normal` + `overflow-wrap: anywhere`）。
+- 验证：headless Chrome 在 390×844 与 320×568 下遍历首页、`/work`、`/journal` 及 4 篇文章、4 个作品详情，`scrollWidth === clientWidth`，无横向溢出与裁切；`npm run build` 通过。
+
 ### 2026-10-31 — 忽略临时截图产物，消除 Vite 监听 EBUSY
 
 - 原因：本地 headless Chrome 截图脚本会创建 `.tmp-chrome-profile/`，Chrome 占用 `Cookies`、`Session` 等文件时，Vite 的文件监听在 Windows 上抛出 `EBUSY: resource busy or locked`。
