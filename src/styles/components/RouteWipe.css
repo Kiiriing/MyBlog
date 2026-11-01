@@ -1,12 +1,44 @@
+/* 路由转场幕布：整块 panel 只做 translate3d，交给合成线程推进；
+   大字在自己的遮罩行里上滑（同样是 transform），
+   所以新页面挂载造成的主线程停顿不会让这段动画卡顿。 */
+
 .route-wipe {
+  --wipe-ease: cubic-bezier(0.76, 0, 0.24, 1);
+  --wipe-duration: 1.62s;
+
   position: fixed;
   inset: 0;
   z-index: 940;
-  clip-path: inset(0 0 100% 0);
-  background: var(--accent);
-  color: var(--ink);
   overflow: hidden;
   pointer-events: none;
+}
+
+.route-wipe__panel {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: var(--accent);
+  color: var(--ink);
+  transform: translate3d(0, 100%, 0);
+  backface-visibility: hidden;
+  will-change: transform;
+  /* 0–30% 盖上来，30–66% 停留（换页发生在这段），66–100% 抽走 */
+  animation: route-wipe-panel var(--wipe-duration) var(--wipe-ease) both;
+}
+
+@keyframes route-wipe-panel {
+  0% {
+    transform: translate3d(0, 100%, 0);
+  }
+
+  30%,
+  66% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  100% {
+    transform: translate3d(0, -100%, 0);
+  }
 }
 
 .route-wipe__texture {
@@ -18,7 +50,6 @@
     transparent 1px 7px
   );
   opacity: 0.5;
-  mix-blend-mode: multiply;
 }
 
 .route-wipe__mark {
@@ -49,9 +80,9 @@
   display: flex;
   justify-content: space-between;
   gap: 20px;
+  opacity: 0.7;
   font-size: 8px;
   letter-spacing: 0.16em;
-  opacity: 0.7;
 }
 
 .route-wipe__center {
@@ -62,9 +93,9 @@
 
 .route-wipe__eyebrow {
   margin-bottom: clamp(14px, 2.2vh, 26px);
+  opacity: 0.65;
   font-size: 8px;
   letter-spacing: 0.2em;
-  opacity: 0.65;
 }
 
 .route-wipe__line {
@@ -83,13 +114,17 @@
 
 .route-wipe__label {
   display: block;
+  padding-right: 0.08em;
   font-family: var(--font-serif);
   font-size: inherit;
   font-style: italic;
   font-weight: 400;
   line-height: 0.82;
   letter-spacing: -0.05em;
-  padding-right: 0.08em;
+  transform: translate3d(0, 118%, 0);
+  backface-visibility: hidden;
+  will-change: transform;
+  animation: route-wipe-rise-label var(--wipe-duration) var(--wipe-ease) both;
 }
 
 .route-wipe__line--meta {
@@ -98,9 +133,48 @@
 
 .route-wipe__sub {
   display: block;
+  opacity: 0.7;
   font-size: 9px;
   letter-spacing: 0.18em;
-  opacity: 0.7;
+  transform: translate3d(0, 118%, 0);
+  backface-visibility: hidden;
+  will-change: transform;
+  animation: route-wipe-rise-meta var(--wipe-duration) var(--wipe-ease) both;
+}
+
+/* 大字在幕布完全盖住屏幕（30%）之后才上滑，66% 之后随幕布一起抽走 */
+@keyframes route-wipe-rise-label {
+  0%,
+  30% {
+    transform: translate3d(0, 118%, 0);
+  }
+
+  44%,
+  67% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  82%,
+  100% {
+    transform: translate3d(0, -118%, 0);
+  }
+}
+
+@keyframes route-wipe-rise-meta {
+  0%,
+  34% {
+    transform: translate3d(0, 118%, 0);
+  }
+
+  48%,
+  67% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  84%,
+  100% {
+    transform: translate3d(0, -118%, 0);
+  }
 }
 
 @media (max-width: 760px) {
@@ -111,5 +185,11 @@
 
   .route-wipe__line--label {
     font-size: clamp(3.4rem, 17vw, 5.6rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .route-wipe {
+    display: none;
   }
 }

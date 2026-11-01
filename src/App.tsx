@@ -6,6 +6,7 @@ import {
   getLenis,
   initSmoothScroll,
   lockScroll,
+  prefersReducedMotion,
   scrollTo
 } from './composables/useSmoothScroll'
 import { finishBoot, getUi, setMenuOpen, setUi, useUi } from './store/ui'
@@ -104,12 +105,15 @@ export default function App() {
     }
 
     setLeaving(true)
+    /* 等幕布完全盖住屏幕再换页（幕布 30% ≈ 486ms）：新页面挂载、
+       图片解码与 ScrollTrigger 重算都发生在被遮住的那段，
+       合成线程上的幕布动画不会因为主线程停顿而卡住 */
     later(() => {
       setRendered(locationRef.current)
       setLeaving(false)
       resetScroll()
       later(() => setPageReady(true), 90)
-    }, 320)
+    }, prefersReducedMotion() ? 140 : 470)
   }, [location.pathname])
 
   /* 章节深链：子页面的「下一章」会跳回 /#experience 这类地址。

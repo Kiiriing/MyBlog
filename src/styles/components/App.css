@@ -13,7 +13,8 @@
 }
 
 .page-wrap.is-leaving {
-  animation: page-out 0.3s ease both;
+  /* 延迟 0.22s：让旧页面撑到幕布盖住屏幕（≈486ms）再淡出，中间不露底色 */
+  animation: page-out 0.3s ease 0.22s both;
 }
 
 @keyframes page-in {

@@ -110,6 +110,15 @@ public/art/     本地视觉素材（SVG / PNG；art/logo 为技术栈品牌图�
 
 ## 更新日志
 
+### 2026-11-01 — 修复路由转场「主体文字」卡顿：幕布改由合成线程推进
+
+- 问题定位：旧 `RouteWipe` 用 GSAP 时间轴逐帧写 `clip-path: inset(...)`（全屏裁剪路径每帧触发整屏重绘），而换页（整棵页面卸载 + 挂载、图片解码、`ScrollTrigger.refresh`）发生在 320ms，正好卡在幕布上升（0–450ms）与大字上滑（250–700ms）的中间。主线程一停，GSAP 的 rAF 停更，大字就表现为「停住 → 突然跳一下」。
+- `src/components/RouteWipe.tsx` 重写：不再逐帧写样式，改为按 `run.id` 重挂载整层、由 CSS 关键帧驱动；`play()` 只负责更新文案（`Now entering` / 大字 / 路径），1.72s 后自动卸载整层，不再常驻全屏 fixed 图层。
+- `src/styles/components/RouteWipe.css`：整块幕布 `.route-wipe__panel` 只做 `translate3d(0, 100%) → 0 → -100%`（0–30% 盖上来 ≈486ms、30–66% 停留、66–100% 抽走，总长 1.62s），大字与路径在各自遮罩行内做 `translate3d` 上滑，配合 `will-change`/`backface-visibility`，全程跑在合成线程上，主线程停顿不再影响动画。纹理去掉 `mix-blend-mode: multiply`（变换层内的混合分组会削弱合成优化），条纹改为普通半透明叠加，观感一致。
+- `src/App.tsx`：换页时机由 320ms 推迟到 470ms（幕布完全盖住屏幕时），让新页面挂载、`resetScroll` 与 `ScrollTrigger.refresh` 都发生在被遮住那段；reduced-motion 下 140ms 直接换页。
+- `src/styles/components/App.css`：`.page-wrap.is-leaving` 的淡出加 0.22s 延迟，旧页面撑到幕布盖住再淡出，中间不露底色。
+- 验证：`npm run build` 通过；`npm run preview` + headless Chrome 从首页点击 `/work`，在页面 rAF 内连续采样 608 帧 / 2.4s：主线程最大帧间隔 33ms（无长帧），幕布 `y 878 → 0`（≈508ms）→ `-900`（≈1700ms）单调推进，大字 `153 → 0 → -153`，新页面 `page-in` 在幕布抽走前完成，控制台无错误；截图确认盖屏与抽走时层级、纹理、巨字均无回归。
+
 ### 2026-11-01 — 全站叙事骨架：三幕章节、幕间页、章节脊柱与「下一章」翻页
 
 - 新增 `src/data/chapters.ts`：全站唯一叙事数据源。8 章（`01 index` → `08 contact`）各带编号、幕次（Act I Origin / Act II Craft / Act III Notes）、中英文标签、一句判断与 `path`；另有 2 条幕间文案（`craft` / `notes`）。章节脊柱、幕间页、子页面章节标签与「下一章」全部读这份数据，编号与文案不再重复。
