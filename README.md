@@ -17,7 +17,7 @@
 - **LetterGlitch**（React Bits 字符故障背景，`src/components/LetterGlitch.tsx`）：首屏整屏铺满的 WebGL2 字符场（字形图集 + 状态贴图、流动噪声、游走撕裂与指针火花），默认参数与官方一致，`prefers-reduced-motion` 下退化为静止字符
 - **LogoLoop**（React Bits 技术栈长条，`src/components/LogoLoop.jsx` + 类型声明 `.d.ts`）：关于页底部的 25 个技术栈品牌图标（`public/art/logo`），按语言 → 前端 / 后端框架 → 运行时 → 数据库 → 构建与工具 → 部署与系统 → 编辑器分层排列，连续滚动、可拖拽甩动、悬停停下并恢复品牌色，`prefers-reduced-motion` 下保持静止排列
 - **DitherVeil**（React Bits 抖动之幕，`src/components/DitherVeil.jsx`）+ **ogl 1.0**（WebGL2）：把镀铬头像压成 1-bit 点阵
-- **Web Audio**（`src/lib/vinylAudio.ts`）：左下角黑胶播放器的曲目读真实音频——`public/art/music` 下的 mp3 经 `HTMLAudioElement` 解码，再走 `MediaElementSource → 母带增益 → AnalyserNode → 输出`，频谱柱读真实波形；换曲把母带压下去再拉起，保留黑胶针脚底噪。目前三首：`☔️` / `Cry For Me` / `溯`，内圈封面依次是 `covers/#1.jpg` / `#2.jpg` / `#3.jpg`，其余曲位留空（补一个 `{ file, cover, duration }` 即可加歌），支持进度拖动、播完自动切下一首，预加载结束后自动播放（被自动播放策略拦下时，首次点击 / 按键解锁音频）
+- **Web Audio**（`src/lib/vinylAudio.ts`）：左下角黑胶播放器的曲目读真实音频——`public/art/music` 下的 mp3 经 `HTMLAudioElement` 解码，再走 `MediaElementSource → 母带增益 → AnalyserNode → 输出`，频谱柱读真实波形；换曲把母带压下去再拉起，保留黑胶针脚底噪。目前五首：`☔️` / `Cry For Me` / `溯` / `SPECIALZ` / `You Got Me (Mashup)`，内圈封面依次是 `covers/cover-1.jpg` ~ `cover-5.jpg`，其余曲位留空（补一个 `{ file, cover, duration }` 即可加歌），支持进度拖动、播完自动切下一首，预加载结束后自动播放（被自动播放策略拦下时，首次点击 / 按键解锁音频）
 - 组件样式集中在 `src/styles/components/*.css`（37 个组件样式文件），由各组件按需引入
 - 原生 SVG 程序化视觉素材（`public/art`）为主；音频与唱片封面素材放在 `public/art/music`（mp3 + `covers/`）
 

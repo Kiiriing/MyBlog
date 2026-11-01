@@ -5,12 +5,12 @@
    换曲时把母带增益压下去再拉起，听感上像把唱针抬起又落下。
 
    曲目表按站点的气质排成一张「唱片」，side 里的编号就是曲序。
-   现在放了三首真实文件，后面的位置先空着：
+   现在放了五首真实文件，后面的位置先空着：
    有新歌时把 mp3 放进 public/art/music（封面可放 public/art/music/covers），
    再往 vinylTracks 里补一个 { file, cover, duration } 即可。
 
-   注意文件名里的 # 会被当成 URL fragment，中文与 emoji 也要转义，
-   所以统一交给 musicAsset() 做 encodeURIComponent。 */
+   素材文件名里不要出现 #：它会被当成 URL fragment，静态服务器只会把请求打到目录上。
+   中文、emoji 与空格交给 musicAsset() 的 encodeURIComponent 转义即可。 */
 
 export type VinylTrack = {
   title: string
@@ -36,25 +36,41 @@ export const vinylTracks: VinylTrack[] = [
     cn: 'Radiax',
     side: 'SIDE A · 01',
     file: 'Radiax - ☔️.mp3',
-    cover: '/art/music/covers/#1.jpg',
+    cover: '/art/music/covers/cover-1.jpg',
     duration: 117.13
   },
   {
     title: 'Cry For Me',
     cn: 'feat. 愛海 · Michita',
     side: 'SIDE A · 02',
-    file: 'CryForMe.Feat.愛海.-Michita#2CbowT.mp3',
-    cover: '/art/music/covers/#2.jpg',
+    file: 'CryForMe.Feat.愛海.-Michita.mp3',
+    cover: '/art/music/covers/cover-2.jpg',
     duration: 303.05
   },
   {
-    /* 文件名是这首歌唯一能读到的信息（mp3 里没写 ID3 标签），封面也是照着同一个气质画的 */
+    /* 文件名是这首歌唯一能读到的信息（mp3 里没写 ID3 标签） */
     title: '溯',
     cn: 'Sù',
     side: 'SIDE A · 03',
     file: '溯.mp3',
-    cover: '/art/music/covers/#3.jpg',
+    cover: '/art/music/covers/cover-3.jpg',
     duration: 192.03
+  },
+  {
+    title: 'SPECIALZ',
+    cn: 'King Gnu',
+    side: 'SIDE A · 04',
+    file: 'SPECIALZ-King+Gnu.mp3',
+    cover: '/art/music/covers/cover-4.jpg',
+    duration: 239.28
+  },
+  {
+    title: 'You Got Me (Mashup)',
+    cn: 'MaiGet',
+    side: 'SIDE A · 05',
+    file: 'MaiGet - You Got Me (Mashup).mp3',
+    cover: '/art/music/covers/cover-5.jpg',
+    duration: 128.94
   }
   /* 后面的曲位先空着：加歌时在这里补 { title, cn, side, file, cover, duration } */
 ]
@@ -68,7 +84,7 @@ export class VinylEngine {
   private audio: HTMLAudioElement | null = null
 
   private index = 0
-  private volume = 0.7
+  private volume = 0.3
   private playing = false
   private loadedFile = ''
   private switchTimer = 0

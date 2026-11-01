@@ -53,7 +53,7 @@ export default function VinylPlayer() {
     head: null as Edge | null
   })
 
-  const volumeRef = useRef(0.7)
+  const volumeRef = useRef(0.3)
   const autoStarted = useRef(false)
   const userPaused = useRef(false)
   const scrubbing = useRef(false)
@@ -65,7 +65,7 @@ export default function VinylPlayer() {
   const [playing, setPlaying] = useState(false)
   const [audible, setAudible] = useState(false)
   const [trackIndex, setTrackIndex] = useState(0)
-  const [volume, setVolume] = useState(0.7)
+  const [volume, setVolume] = useState(0.3)
   const [volOpen, setVolOpen] = useState(false)
   const [volHover, setVolHover] = useState(false)
   const [tone, setTone] = useState<'dark' | 'paper'>('dark')
