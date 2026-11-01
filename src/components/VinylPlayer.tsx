@@ -93,10 +93,13 @@ export default function VinylPlayer() {
     setTrackDuration(vinylTracks[trackIndex].duration ?? 0)
   }, [trackIndex])
 
-  /* 挂载时就把首曲排进下载 / 解码队列：预加载动画结束时音频已经准备好，
-     自动播放不用再等文件，也不会先卡一下才出声 */
+  /* 挂载时就把首曲排进下载 / 解码队列，等下载开始后再预热音频图：
+     预加载结束时文件与音频节点都已就绪，标题动画启动那一刻就能直接出声 */
   useEffect(() => {
-    getEngine().preload()
+    const engine = getEngine()
+    engine.preload()
+    const id = window.setTimeout(() => engine.warm(), 320)
+    return () => window.clearTimeout(id)
   }, [getEngine])
 
   /* 音量槽悬停：指针一进入（喇叭或左侧滑槽）就展开；
@@ -277,17 +280,14 @@ export default function VinylPlayer() {
 
   useEffect(() => {
     if (!ui.introDone || autoStarted.current) return
-    /* 首曲已在预加载阶段就绪，预加载一结束就开声，不再额外等 0.9s */
-    const timer = window.setTimeout(() => {
-      autoStarted.current = true
-      if (userPaused.current) return
-      const engine = getEngine()
-      engine.setVolume(volumeRef.current)
-      engine.setTrack(0)
-      engine.play()
-      setPlaying(true)
-    }, 60)
-    return () => window.clearTimeout(timer)
+    /* introDone 就是首页标题动画起笔的时刻：同步开声，不加任何延迟 */
+    autoStarted.current = true
+    if (userPaused.current) return
+    const engine = getEngine()
+    engine.setVolume(volumeRef.current)
+    engine.setTrack(0)
+    engine.play()
+    setPlaying(true)
   }, [ui.introDone, getEngine])
 
   /* 自动播放可能被浏览器拦下：轮询上下文状态，没声时在唱片上方提示一次点击即可 */

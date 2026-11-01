@@ -203,6 +203,20 @@ export class VinylEngine {
     this.load()
   }
 
+  /** 预热音频图：提前建好 AudioContext、媒体源、频谱与底噪（母带增益为 0，不出声）。
+      intro 开始的那一刻只剩 play() 与音量拉起，避免在标题动画启动时再创建音频节点造成卡顿 */
+  warm() {
+    this.ensure()
+    const ctx = this.ctx
+    if (!ctx) return
+    if (ctx.state === 'suspended') {
+      void ctx.resume().catch(() => {
+        /* 没有用户手势时上下文会保持 suspended，等 armUnlock 再恢复 */
+      })
+    }
+    this.startNoise()
+  }
+
   setVolume(value: number) {
     this.volume = Math.max(0, Math.min(1, value))
     if (!this.ctx || !this.master) return
