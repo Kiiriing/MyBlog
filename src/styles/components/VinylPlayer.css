@@ -241,13 +241,6 @@
   transform: translate(-50%, 0);
 }
 
-/* 自动播放被浏览器拦下、音乐只能静音走时，提示常亮：点一下就有声音 */
-.vinyl-player.is-silent .vinyl-player__hint {
-  opacity: 1;
-  transform: translate(-50%, 0);
-  color: var(--vp-fg);
-}
-
 /* 控制条 ---------------------------------------------------------------- */
 
 /* 宽度与透明度由 GSAP 逐帧写（见组件里的展开 / 收起时间轴），
