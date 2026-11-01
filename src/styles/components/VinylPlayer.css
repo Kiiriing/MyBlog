@@ -4,7 +4,7 @@
 
 .vinyl-player {
   --vp-disc: clamp(74px, 6.6vw, 92px);
-  --vp-panel: 268px;
+  --vp-panel: 286px;
 
   --vp-fg: #f2ede4;
   --vp-dim: rgba(242, 237, 228, 0.58);
@@ -32,7 +32,7 @@
   --vp-fg: #11100e;
   --vp-dim: rgba(17, 16, 14, 0.62);
   --vp-line: rgba(17, 16, 14, 0.26);
-  --vp-panel-bg: rgba(239, 232, 219, 0.84);
+  --vp-panel-bg: rgba(239, 232, 219, 0.86);
   --vp-panel-border: rgba(17, 16, 14, 0.18);
 }
 
@@ -42,14 +42,9 @@
   position: relative;
   width: var(--vp-disc);
   flex-shrink: 0;
-  transition: transform 0.58s var(--ease-out);
 }
 
-/* 展开时整张唱片向左让出控制条的位置 */
-.vinyl-player.is-open .vinyl-player__head {
-  transform: translate3d(-14px, 0, 0);
-}
-
+/* 展开时整张唱片向左让出控制条的位置（位移由 GSAP 编排，这里只留 hover 的缩放） */
 .vinyl-player__disc {
   position: relative;
   display: block;
@@ -58,6 +53,16 @@
   border-radius: 50%;
   touch-action: none;
   -webkit-tap-highlight-color: transparent;
+  transition: transform 0.5s var(--ease-out);
+}
+
+.vinyl-player__disc:hover {
+  transform: scale(1.03);
+}
+
+.vinyl-player.is-dragging .vinyl-player__disc {
+  transform: scale(1.05);
+  transition: none;
 }
 
 .vinyl-player__platter {
@@ -217,20 +222,17 @@
 
 /* 控制条 ---------------------------------------------------------------- */
 
+/* 宽度与透明度由 GSAP 逐帧写（见组件里的展开 / 收起时间轴），
+   这里只负责初始收起状态与把内容裁在盒子内 */
 .vinyl-player__panel {
   width: 0;
   margin-left: 12px;
   overflow: hidden;
   opacity: 0;
   pointer-events: none;
-  transition:
-    width 0.58s var(--ease-out),
-    opacity 0.3s ease;
 }
 
 .vinyl-player.is-open .vinyl-player__panel {
-  width: var(--vp-panel);
-  opacity: 1;
   pointer-events: auto;
 }
 
@@ -238,8 +240,8 @@
   display: flex;
   width: var(--vp-panel);
   flex-direction: column;
-  gap: 7px;
-  padding: 11px 13px 12px;
+  gap: 8px;
+  padding: 12px 13px 13px;
   border: 1px solid var(--vp-panel-border);
   border-left: 2px solid var(--accent);
   border-radius: 2px;
@@ -264,6 +266,7 @@
 
 .vinyl-player__time {
   font-variant-numeric: tabular-nums;
+  letter-spacing: 0.1em;
 }
 
 .vinyl-player__title {
@@ -287,6 +290,70 @@
   font-size: 10px;
   letter-spacing: 0.14em;
   transition: color 0.45s ease;
+}
+
+/* 进度条：整条轨道都是这首歌的时间轴，左侧强调色是已播放部分 */
+.vinyl-player__progress {
+  display: flex;
+  height: 12px;
+  align-items: center;
+}
+
+.vinyl-player__progress input {
+  width: 100%;
+  height: 12px;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.vinyl-player__progress input::-webkit-slider-runnable-track {
+  height: 2px;
+  background: linear-gradient(
+    to right,
+    var(--accent) 0 var(--vp-progress, 0%),
+    var(--vp-line) var(--vp-progress, 0%) 100%
+  );
+}
+
+.vinyl-player__progress input::-webkit-slider-thumb {
+  width: 7px;
+  height: 7px;
+  margin-top: -2.5px;
+  border-radius: 50%;
+  background: var(--vp-fg);
+  box-shadow: 0 0 0 2px var(--vp-panel-bg);
+  transition:
+    transform 0.25s ease,
+    background-color 0.25s ease;
+  -webkit-appearance: none;
+}
+
+.vinyl-player__progress input:hover::-webkit-slider-thumb,
+.vinyl-player__progress input:focus-visible::-webkit-slider-thumb {
+  background: var(--accent);
+  transform: scale(1.35);
+}
+
+.vinyl-player__progress input::-moz-range-track {
+  height: 2px;
+  background: var(--vp-line);
+}
+
+.vinyl-player__progress input::-moz-range-progress {
+  height: 2px;
+  background: var(--accent);
+}
+
+.vinyl-player__progress input::-moz-range-thumb {
+  width: 7px;
+  height: 7px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--vp-fg);
 }
 
 .vinyl-player__controls {
@@ -322,6 +389,7 @@
 }
 
 .vinyl-player__btn--play {
+  position: relative;
   border-color: var(--vp-fg);
 }
 
@@ -331,66 +399,14 @@
   color: #11100e;
 }
 
-/* 音量：轨道用渐变直接表达当前音量，滑块遇到强调色 */
-.vinyl-player__vol {
-  display: flex;
-  flex: 1;
-  align-items: center;
-  min-width: 52px;
-  height: 24px;
-}
-
-.vinyl-player__vol input {
-  width: 100%;
-  height: 16px;
-  margin: 0;
-  padding: 0;
-  background: transparent;
-  cursor: pointer;
-  appearance: none;
-  -webkit-appearance: none;
-}
-
-.vinyl-player__vol input::-webkit-slider-runnable-track {
-  height: 1px;
-  background: linear-gradient(
-    to right,
-    var(--vp-fg) 0 var(--vp-vol, 70%),
-    var(--vp-line) var(--vp-vol, 70%) 100%
-  );
-}
-
-.vinyl-player__vol input::-webkit-slider-thumb {
-  width: 7px;
-  height: 7px;
-  margin-top: -3px;
+/* 点击播放键时向外扩散的一圈强调色（ClickSpark 的极简版） */
+.vinyl-player__spark {
+  position: absolute;
+  inset: -1px;
+  border: 1px solid var(--accent);
   border-radius: 50%;
-  background: var(--vp-fg);
-  box-shadow: 0 0 0 2px var(--vp-panel-bg);
-  transition: transform 0.25s ease;
-  -webkit-appearance: none;
-}
-
-.vinyl-player__vol input:hover::-webkit-slider-thumb {
-  transform: scale(1.3);
-}
-
-.vinyl-player__vol input::-moz-range-track {
-  height: 1px;
-  background: var(--vp-line);
-}
-
-.vinyl-player__vol input::-moz-range-progress {
-  height: 1px;
-  background: var(--vp-fg);
-}
-
-.vinyl-player__vol input::-moz-range-thumb {
-  width: 7px;
-  height: 7px;
-  border: 0;
-  border-radius: 50%;
-  background: var(--vp-fg);
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* 频谱柱：播放时由 AnalyserNode 的数据直接写 transform，暂停时落回一条线 */
@@ -400,6 +416,7 @@
   flex-shrink: 0;
   align-items: flex-end;
   gap: 2px;
+  margin-left: 4px;
 }
 
 .vinyl-player__meter span {
@@ -417,19 +434,135 @@
   opacity: 0.62;
 }
 
+/* 音量：小喇叭固定 24px，悬停 / 聚焦 / 点按时向左展开一条细音量槽 */
+.vinyl-player__vol {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  margin-left: auto;
+}
+
+.vinyl-player__vol-btn {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--vp-fg);
+  transition: color 0.3s ease;
+}
+
+.vinyl-player__vol-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.vinyl-player__vol-btn:hover,
+.vinyl-player__vol-btn[aria-expanded='true'] {
+  color: var(--accent);
+}
+
+.vinyl-player__vol-flyout {
+  position: absolute;
+  top: 50%;
+  right: 26px;
+  z-index: 2;
+  display: flex;
+  width: 82px;
+  height: 22px;
+  align-items: center;
+  padding: 0 9px;
+  border: 1px solid var(--vp-panel-border);
+  border-radius: 2px;
+  background: var(--vp-panel-bg);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(8px, -50%) scale(0.86);
+  transform-origin: right center;
+  transition:
+    opacity 0.24s ease,
+    transform 0.34s var(--ease-out);
+}
+
+.vinyl-player__vol:hover .vinyl-player__vol-flyout,
+.vinyl-player__vol:focus-within .vinyl-player__vol-flyout,
+.vinyl-player.is-vol-open .vinyl-player__vol-flyout {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(0, -50%) scale(1);
+}
+
+.vinyl-player__vol-flyout input {
+  width: 100%;
+  height: 14px;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.vinyl-player__vol-flyout input::-webkit-slider-runnable-track {
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    var(--vp-fg) 0 var(--vp-vol, 70%),
+    var(--vp-line) var(--vp-vol, 70%) 100%
+  );
+}
+
+.vinyl-player__vol-flyout input::-webkit-slider-thumb {
+  width: 6px;
+  height: 6px;
+  margin-top: -2.5px;
+  border-radius: 50%;
+  background: var(--vp-fg);
+  box-shadow: 0 0 0 2px var(--vp-panel-bg);
+  transition: transform 0.25s ease;
+  -webkit-appearance: none;
+}
+
+.vinyl-player__vol-flyout input:hover::-webkit-slider-thumb {
+  transform: scale(1.3);
+}
+
+.vinyl-player__vol-flyout input::-moz-range-track {
+  height: 1px;
+  background: var(--vp-line);
+}
+
+.vinyl-player__vol-flyout input::-moz-range-progress {
+  height: 1px;
+  background: var(--vp-fg);
+}
+
+.vinyl-player__vol-flyout input::-moz-range-thumb {
+  width: 6px;
+  height: 6px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--vp-fg);
+}
+
 /* 尺寸 ---------------------------------------------------------------- */
 
 @media (max-width: 760px) {
   .vinyl-player {
     --vp-disc: 66px;
-    --vp-panel: 232px;
+    --vp-panel: 248px;
     left: 14px;
     bottom: 14px;
   }
 
   .vinyl-player__panel-inner {
-    gap: 6px;
-    padding: 9px 11px 10px;
+    gap: 7px;
+    padding: 10px 11px 11px;
   }
 
   .vinyl-player__title-en {
@@ -437,18 +570,34 @@
   }
 
   .vinyl-player__controls {
-    gap: 7px;
+    gap: 8px;
   }
 
   .vinyl-player__btn {
     width: 23px;
     height: 23px;
   }
+
+  /* 窄屏触摸为主：音量槽向上收起，避免和进度条挤在一起 */
+  .vinyl-player__vol-flyout {
+    right: auto;
+    left: 50%;
+    bottom: calc(100% + 8px);
+    top: auto;
+    transform: translate(-50%, 6px) scale(0.9);
+    transform-origin: bottom center;
+  }
+
+  .vinyl-player__vol:hover .vinyl-player__vol-flyout,
+  .vinyl-player__vol:focus-within .vinyl-player__vol-flyout,
+  .vinyl-player.is-vol-open .vinyl-player__vol-flyout {
+    transform: translate(-50%, 0) scale(1);
+  }
 }
 
 @media (max-width: 380px) {
   .vinyl-player {
-    --vp-panel: 214px;
+    --vp-panel: 228px;
   }
 
   .vinyl-player__meter {
@@ -461,10 +610,11 @@
     transition: none;
   }
 
-  .vinyl-player__panel,
-  .vinyl-player__head,
+  .vinyl-player__disc,
   .vinyl-player__arm,
-  .vinyl-player__hint {
+  .vinyl-player__hint,
+  .vinyl-player__vol-flyout,
+  .vinyl-player__spark {
     transition-duration: 0.01ms;
   }
 

@@ -4,13 +4,19 @@
    换曲时新旧总线交叉淡入淡出，暂停只是把总线淡到 0，不销毁上下文，
    这样再次播放不会重新走一遍授权与设备初始化。
 
+   进度：程序化音源本身没有「长度」，所以每首曲子自带一个虚拟 duration（秒），
+   进度只记录「从歌头开始播了多久」，拖动进度就是按目标秒数换算回琶音的第几步重新起步。
+   到结尾后由组件调用 setTrack 切下一首。
+
    想换成真实歌曲：把 mp3 放进 public/audio，把曲目改成读取 src 的 HTMLAudioElement，
-   播放/暂停/换曲/音量四件事的对外接口保持不变即可。 */
+   播放/暂停/换曲/音量/进度五件事的对外接口保持不变即可。 */
 
 export type VinylTrack = {
   title: string
   cn: string
   side: string
+  /** 这首歌的「长度」（秒）：驱动进度条、时间显示与自动切下一首 */
+  duration: number
   /** 每个音符的间隔（秒） */
   step: number
   wave: OscillatorType
@@ -28,6 +34,7 @@ export const vinylTracks: VinylTrack[] = [
     title: 'Night Transit',
     cn: '夜间通勤',
     side: 'SIDE A · 01',
+    duration: 96,
     step: 0.62,
     wave: 'triangle',
     root: 220,
@@ -39,6 +46,7 @@ export const vinylTracks: VinylTrack[] = [
     title: 'Paper Static',
     cn: '纸面杂音',
     side: 'SIDE A · 02',
+    duration: 78,
     step: 0.5,
     wave: 'sine',
     root: 261.63,
@@ -50,6 +58,7 @@ export const vinylTracks: VinylTrack[] = [
     title: 'Late Reply',
     cn: '迟到的回信',
     side: 'SIDE B · 03',
+    duration: 112,
     step: 0.72,
     wave: 'triangle',
     root: 174.61,
@@ -61,6 +70,7 @@ export const vinylTracks: VinylTrack[] = [
     title: 'Accent Drift',
     cn: '强调色漂移',
     side: 'SIDE B · 04',
+    duration: 72,
     step: 0.44,
     wave: 'sine',
     root: 196,
@@ -87,6 +97,11 @@ export class VinylEngine {
   private playing = false
   private bins: Uint8Array | null = null
 
+  /** 歌曲时间：posBase 是上一次暂停/换曲时的秒数，posAt 是那次之后开始走的时刻 */
+  private posBase = 0
+  private posAt = 0
+  private unlock: (() => void) | null = null
+
   get isPlaying() {
     return this.playing
   }
@@ -95,14 +110,32 @@ export class VinylEngine {
     return this.index
   }
 
-  /** 换曲：在播放中会做一次 0.7s 的交叉淡入淡出 */
+  /** 当前曲子的虚拟长度（秒） */
+  get duration() {
+    return vinylTracks[this.index].duration
+  }
+
+  /** 浏览器自动播放策略会让 AudioContext 停在 suspended；true 表示声音真的在出 */
+  get audible() {
+    return Boolean(this.ctx && this.ctx.state === 'running')
+  }
+
+  /** 当前播放到的秒数（暂停时停在暂停点） */
+  position() {
+    const raw = this.playing ? this.posBase + (performance.now() - this.posAt) / 1000 : this.posBase
+    return Math.max(0, Math.min(this.duration, raw))
+  }
+
+  /** 换曲：在播放中会做一次 0.7s 的交叉淡入淡出，进度回到歌头 */
   setTrack(index: number) {
     const next = Math.max(0, Math.min(vinylTracks.length - 1, index))
     if (next === this.index) return
     this.index = next
+    this.posBase = 0
+    this.posAt = performance.now()
     if (!this.playing) return
     this.closeBus(0.7)
-    this.openBus()
+    this.openBus(0)
     this.startLoop()
   }
 
@@ -112,28 +145,51 @@ export class VinylEngine {
     this.master.gain.setTargetAtTime(this.volume, this.ctx.currentTime, 0.12)
   }
 
+  /** 拖动进度条：按目标秒数换算成琶音的第几步重新起步 */
+  seek(value: number) {
+    const track = vinylTracks[this.index]
+    const target = Math.max(0, Math.min(track.duration, value))
+    this.posBase = target
+    this.posAt = performance.now()
+    if (!this.playing) return
+    const ctx = this.ctx
+    if (!ctx) return
+    const fromStep = Math.floor(target / track.step)
+    this.closeBus(0.26)
+    this.openBus(fromStep)
+    this.startLoop()
+  }
+
   play() {
     const ctx = this.ensure()
     if (!ctx || !this.master) return
+    if (this.playing) return
 
     this.playing = true
-    if (ctx.state === 'suspended') void ctx.resume()
+    if (this.posBase >= this.duration) this.posBase = 0
+    this.posAt = performance.now()
+
+    /* 没有用户手势时浏览器只允许建上下文、不放声：录一次手势，之后自动接上 */
+    if (ctx.state === 'suspended') {
+      void ctx.resume()
+      this.armUnlock(ctx)
+    }
 
     this.master.gain.setTargetAtTime(this.volume, ctx.currentTime, 0.18)
-    this.openBus()
+    const track = vinylTracks[this.index]
+    this.openBus(Math.floor(this.posBase / track.step))
     this.startNoise()
     this.startLoop()
   }
 
   pause() {
-    if (!this.ctx || !this.playing) {
-      this.playing = false
-      return
-    }
+    if (!this.playing) return
+    this.posBase = this.position()
     this.playing = false
     this.stopLoop()
     this.closeBus(0.55)
-    if (this.noise) this.noise.gain.setTargetAtTime(0, this.ctx.currentTime, 0.18)
+    const ctx = this.ctx
+    if (ctx && this.noise) this.noise.gain.setTargetAtTime(0, ctx.currentTime, 0.18)
   }
 
   /* 频谱：供组件画柱状图。返回的数组是复用的，调用方只读不存。 */
@@ -149,6 +205,7 @@ export class VinylEngine {
 
   dispose() {
     this.stopLoop()
+    this.dropUnlock()
     this.bus?.disconnect()
     this.noise?.disconnect()
     this.bus = null
@@ -187,8 +244,30 @@ export class VinylEngine {
     return ctx
   }
 
+  /** 浏览器要求先有一次用户手势才允许出声，这里等第一次点击 / 按键 */
+  private armUnlock(ctx: AudioContext) {
+    if (this.unlock) return
+    const unlock = () => {
+      this.dropUnlock()
+      if (ctx.state === 'suspended') void ctx.resume()
+    }
+    this.unlock = unlock
+    window.addEventListener('pointerdown', unlock, { passive: true })
+    window.addEventListener('keydown', unlock)
+    window.addEventListener('touchstart', unlock, { passive: true })
+  }
+
+  private dropUnlock() {
+    const unlock = this.unlock
+    if (!unlock) return
+    this.unlock = null
+    window.removeEventListener('pointerdown', unlock)
+    window.removeEventListener('keydown', unlock)
+    window.removeEventListener('touchstart', unlock)
+  }
+
   /** 交叉淡入：每首曲子一条总线，换曲时旧总线淡出后断开 */
-  private openBus() {
+  private openBus(fromStep = 0) {
     const ctx = this.ctx
     const master = this.master
     if (!ctx || !master) return
@@ -198,7 +277,7 @@ export class VinylEngine {
     bus.connect(master)
     bus.gain.setTargetAtTime(1, ctx.currentTime, 0.22)
     this.bus = bus
-    this.step = 0
+    this.step = fromStep
   }
 
   private closeBus(seconds: number) {

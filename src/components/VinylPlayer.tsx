@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react'
 import { useLocation } from 'react-router-dom'
+import { gsap } from '../lib/gsap'
 import { prefersReducedMotion } from '../composables/useSmoothScroll'
 import { useUi } from '../store/ui'
 import { VinylEngine, vinylTracks } from '../lib/vinylAudio'
@@ -11,14 +12,16 @@ const MARGIN = 8
 const DRAG_THRESHOLD = 5
 
 type Offset = { x: number; y: number }
+type Edge = { left: number; right: number; top: number; bottom: number }
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max)
 }
 
 function clockOf(seconds: number) {
-  const m = Math.floor(seconds / 60)
-  const s = seconds % 60
+  const total = Math.max(0, Math.floor(seconds))
+  const m = Math.floor(total / 60)
+  const s = total % 60
   return `${m}:${String(s).padStart(2, '0')}`
 }
 
@@ -29,10 +32,17 @@ function clockOf(seconds: number) {
 export default function VinylPlayer() {
   const ui = useUi()
   const location = useLocation()
+
   const rootRef = useRef<HTMLDivElement>(null)
+  const headRef = useRef<HTMLDivElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
+  const innerRef = useRef<HTMLDivElement>(null)
+  const titleRef = useRef<HTMLDivElement>(null)
   const meterRef = useRef<HTMLSpanElement>(null)
+  const sparkRef = useRef<HTMLSpanElement>(null)
   const engineRef = useRef<VinylEngine | null>(null)
   const toneFrame = useRef(0)
+
   const dragRef = useRef({
     active: false,
     moved: false,
@@ -40,17 +50,24 @@ export default function VinylPlayer() {
     startY: 0,
     baseX: 0,
     baseY: 0,
-    rect: null as DOMRect | null
+    head: null as Edge | null
   })
+
+  const volumeRef = useRef(0.7)
+  const autoStarted = useRef(false)
+  const userPaused = useRef(false)
+  const scrubbing = useRef(false)
 
   const [offset, setOffset] = useState<Offset>({ x: 0, y: 0 })
   const [dragging, setDragging] = useState(false)
   const [open, setOpen] = useState(false)
   const [playing, setPlaying] = useState(false)
+  const [audible, setAudible] = useState(false)
   const [trackIndex, setTrackIndex] = useState(0)
   const [volume, setVolume] = useState(0.7)
+  const [volOpen, setVolOpen] = useState(false)
   const [tone, setTone] = useState<'dark' | 'paper'>('dark')
-  const [elapsed, setElapsed] = useState(0)
+  const [position, setPosition] = useState(0)
 
   const track = vinylTracks[trackIndex]
 
@@ -107,21 +124,73 @@ export default function VinylPlayer() {
     return () => window.clearTimeout(timer)
   }, [location.pathname, scheduleTone])
 
-  /* 展开/拖动后控件位置变了，重新嗅一次；展开时若右侧越界，把整块挪回可视区 */
+  /* 展开 / 收起：宽度与内容交给 GSAP 编排，收起时内容先退、面板后收，展开时反过来。
+     比单纯给 width 加 CSS 过渡更顺：内容按 0.06s 依次进场，唱片与面板同时位移。 */
   useEffect(() => {
-    scheduleTone()
-    if (!open) return
-    const timer = window.setTimeout(() => {
-      const root = rootRef.current
-      if (!root) return
-      const rect = root.getBoundingClientRect()
-      const overflow = rect.right + MARGIN - (window.innerWidth - MARGIN)
-      if (overflow > 0) setOffset((current) => ({ ...current, x: current.x - overflow }))
-    }, 620)
-    return () => window.clearTimeout(timer)
-  }, [open, offset, scheduleTone])
+    const panel = panelRef.current
+    const inner = innerRef.current
+    const head = headRef.current
+    if (!panel) return
 
-  /* 视口变小时把控件拉回屏幕内 */
+    const speed = prefersReducedMotion() ? 0.01 : 1
+    const full = Math.round(inner?.offsetWidth || 0) || 268
+    const items = inner ? (Array.from(inner.children) as HTMLElement[]) : []
+    let timeline: ReturnType<typeof gsap.timeline> | null = null
+
+    gsap.killTweensOf([panel, head, ...items].filter(Boolean) as HTMLElement[])
+    scheduleTone()
+
+    if (open) {
+      timeline = gsap.timeline({ defaults: { ease: 'power3.out' } })
+      timeline.to(panel, { width: full, opacity: 1, duration: 0.62 * speed, ease: 'expo.out' }, 0)
+      if (head) timeline.to(head, { x: -14, duration: 0.62 * speed, ease: 'expo.out' }, 0)
+      if (items.length) {
+        timeline.fromTo(
+          items,
+          { opacity: 0, x: -10 },
+          { opacity: 1, x: 0, duration: 0.42 * speed, stagger: 0.06 * speed, ease: 'power2.out' },
+          0.1 * speed
+        )
+      }
+    } else {
+      timeline = gsap.timeline({ defaults: { ease: 'power2.in' } })
+      if (items.length) {
+        timeline.to(items, { opacity: 0, x: -6, duration: 0.2 * speed, stagger: 0.035 * speed }, 0)
+      }
+      timeline.to(panel, { width: 0, opacity: 0, duration: 0.44 * speed, ease: 'expo.in' }, 0.06)
+      if (head) timeline.to(head, { x: 0, duration: 0.52 * speed, ease: 'power3.out' }, 0.06)
+    }
+
+    /* 展开后整块变宽，若右侧越界就把播放器往回拉一点，保证控制条完整可见 */
+    let pullTimer = 0
+    if (open) {
+      pullTimer = window.setTimeout(() => {
+        const root = rootRef.current
+        if (!root) return
+        const rect = root.getBoundingClientRect()
+        const overflow = rect.right + MARGIN - (window.innerWidth - MARGIN)
+        if (overflow > 0) setOffset((current) => ({ ...current, x: current.x - overflow }))
+      }, 680)
+    }
+
+    return () => {
+      if (pullTimer) window.clearTimeout(pullTimer)
+      timeline?.kill()
+    }
+  }, [open, scheduleTone])
+
+  /* 换曲时标题做一次进场位移，像一页唱片说明被翻过去 */
+  useEffect(() => {
+    const title = titleRef.current
+    if (!title || prefersReducedMotion()) return
+    gsap.fromTo(
+      title,
+      { opacity: 0, x: 10 },
+      { opacity: 1, x: 0, duration: 0.45, ease: 'power3.out', overwrite: true }
+    )
+  }, [trackIndex])
+
+  /* 视口变小时把控件拉回屏幕内；跨过断点时面板宽度由 CSS 变量换了，同步一下 GSAP 写的宽度 */
   useEffect(() => {
     function keepInside() {
       const root = rootRef.current
@@ -140,20 +209,58 @@ export default function VinylPlayer() {
             ? window.innerHeight - MARGIN - rect.bottom
             : 0
       if (dx || dy) setOffset((current) => ({ x: current.x + dx, y: current.y + dy }))
+      if (open) {
+        const panel = panelRef.current
+        const inner = innerRef.current
+        if (panel && inner) gsap.set(panel, { width: inner.offsetWidth })
+      }
       scheduleTone()
     }
 
     window.addEventListener('resize', keepInside)
     return () => window.removeEventListener('resize', keepInside)
-  }, [scheduleTone])
+  }, [open, scheduleTone])
 
-  /* 播放中每秒走一次计时 -------------------------------------------------- */
+  /* 进入页面加载完成后自动播放 ------------------------------------------- */
+
+  useEffect(() => {
+    if (!ui.introDone || autoStarted.current) return
+    const timer = window.setTimeout(() => {
+      autoStarted.current = true
+      if (userPaused.current) return
+      const engine = getEngine()
+      engine.setVolume(volumeRef.current)
+      engine.setTrack(0)
+      engine.play()
+      setPlaying(true)
+    }, 900)
+    return () => window.clearTimeout(timer)
+  }, [ui.introDone, getEngine])
+
+  /* 自动播放可能被浏览器拦下：轮询上下文状态，没声时在唱片上方提示一次点击即可 */
+  useEffect(() => {
+    if (!playing) return
+    setAudible(Boolean(engineRef.current?.audible))
+    const id = window.setInterval(() => setAudible(Boolean(engineRef.current?.audible)), 900)
+    return () => window.clearInterval(id)
+  }, [playing])
+
+  /* 进度与自动切歌 -------------------------------------------------------- */
 
   useEffect(() => {
     if (!playing) return
-    const id = window.setInterval(() => setElapsed((value) => value + 1), 1000)
+    const id = window.setInterval(() => {
+      const engine = engineRef.current
+      if (!engine || scrubbing.current) return
+      const next = engine.position()
+      if (next >= track.duration - 0.12) {
+        shiftTrack(1)
+        return
+      }
+      setPosition(next)
+    }, 200)
     return () => window.clearInterval(id)
-  }, [playing, trackIndex])
+  }, [playing, trackIndex, track.duration])
 
   /* 频谱 ---------------------------------------------------------------- */
 
@@ -190,6 +297,20 @@ export default function VinylPlayer() {
     return () => window.cancelAnimationFrame(frame)
   }, [playing])
 
+  /* 点页面其它地方就把控制条合上 */
+  useEffect(() => {
+    if (!open) return
+    function onPointerDown(event: PointerEvent) {
+      const root = rootRef.current
+      if (!root) return
+      if (root.contains(event.target as Node)) return
+      setOpen(false)
+      setVolOpen(false)
+    }
+    document.addEventListener('pointerdown', onPointerDown, true)
+    return () => document.removeEventListener('pointerdown', onPointerDown, true)
+  }, [open])
+
   useEffect(
     () => () => {
       engineRef.current?.dispose()
@@ -201,14 +322,29 @@ export default function VinylPlayer() {
 
   /* 交互 ---------------------------------------------------------------- */
 
+  function pulseSpark() {
+    const spark = sparkRef.current
+    if (!spark || prefersReducedMotion()) return
+    gsap.fromTo(
+      spark,
+      { opacity: 0.85, scale: 0.6 },
+      { opacity: 0, scale: 2, duration: 0.65, ease: 'power2.out', overwrite: true }
+    )
+  }
+
   function togglePlay() {
+    pulseSpark()
     const engine = getEngine()
     if (playing) {
+      /* 自动播放被浏览器拦下时第一次点击只负责唤醒声音，不当作暂停 */
+      if (!engine.audible) return
+      userPaused.current = true
       engine.pause()
       setPlaying(false)
       return
     }
-    engine.setVolume(volume)
+    userPaused.current = false
+    engine.setVolume(volumeRef.current)
     engine.setTrack(trackIndex)
     engine.play()
     setPlaying(true)
@@ -217,19 +353,29 @@ export default function VinylPlayer() {
   function shiftTrack(direction: number) {
     const next = (trackIndex + direction + vinylTracks.length) % vinylTracks.length
     setTrackIndex(next)
-    setElapsed(0)
+    setPosition(0)
     getEngine().setTrack(next)
   }
 
   function changeVolume(value: number) {
+    volumeRef.current = value
     setVolume(value)
     getEngine().setVolume(value)
   }
 
+  function seekTo(value: number) {
+    setPosition(value)
+    getEngine().seek(value)
+  }
+
+  /* 拖拽：以「唱片本体」为夹紧基准，所以控制条展开后也能在整页范围内移动；
+     松手后再检查整块（唱片 + 控制条）有没有出屏，需要时用过渡把它拉回来。 */
   function onDiscDown(event: ReactPointerEvent<HTMLButtonElement>) {
     if (event.button !== 0 || !event.isPrimary) return
     const root = rootRef.current
     if (!root) return
+    const head = headRef.current?.getBoundingClientRect()
+    const bounds = head ?? root.getBoundingClientRect()
 
     dragRef.current = {
       active: true,
@@ -238,7 +384,7 @@ export default function VinylPlayer() {
       startY: event.clientY,
       baseX: offset.x,
       baseY: offset.y,
-      rect: root.getBoundingClientRect()
+      head: { left: bounds.left, right: bounds.right, top: bounds.top, bottom: bounds.bottom }
     }
     setDragging(true)
     event.currentTarget.setPointerCapture(event.pointerId)
@@ -246,7 +392,7 @@ export default function VinylPlayer() {
 
   function onDiscMove(event: ReactPointerEvent<HTMLButtonElement>) {
     const drag = dragRef.current
-    if (!drag.active || !drag.rect) return
+    if (!drag.active || !drag.head) return
 
     const dx = event.clientX - drag.startX
     const dy = event.clientY - drag.startY
@@ -255,10 +401,10 @@ export default function VinylPlayer() {
       drag.moved = true
     }
 
-    const rect = drag.rect
+    const head = drag.head
     setOffset({
-      x: clamp(drag.baseX + dx, MARGIN - rect.left, window.innerWidth - MARGIN - rect.right),
-      y: clamp(drag.baseY + dy, MARGIN - rect.top, window.innerHeight - MARGIN - rect.bottom)
+      x: clamp(drag.baseX + dx, MARGIN - head.left, window.innerWidth - MARGIN - head.right),
+      y: clamp(drag.baseY + dy, MARGIN - head.top, window.innerHeight - MARGIN - head.bottom)
     })
   }
 
@@ -272,29 +418,61 @@ export default function VinylPlayer() {
     }
   }
 
+  function settle() {
+    window.setTimeout(() => {
+      const root = rootRef.current
+      if (!root) return
+      const rect = root.getBoundingClientRect()
+      let dx = 0
+      let dy = 0
+      if (rect.right + MARGIN > window.innerWidth) dx = window.innerWidth - MARGIN - rect.right
+      else if (rect.left < MARGIN) dx = MARGIN - rect.left
+      if (rect.bottom + MARGIN > window.innerHeight) dy = window.innerHeight - MARGIN - rect.bottom
+      else if (rect.top < MARGIN) dy = MARGIN - rect.top
+      if (dx || dy) setOffset((current) => ({ x: current.x + dx, y: current.y + dy }))
+      scheduleTone()
+    }, 90)
+  }
+
   function onDiscUp(event: ReactPointerEvent<HTMLButtonElement>) {
     const drag = dragRef.current
     if (!drag.active) return
     const tapped = !drag.moved
+    const moved = drag.moved
     endDrag(event)
     if (tapped) setOpen((value) => !value)
+    else if (moved) settle()
   }
 
-  const hint = playing ? 'Now playing' : open ? 'Drag me' : 'Tap to open'
+  const hint = !open && playing && !audible
+    ? 'Tap for sound'
+    : playing
+      ? 'Now playing'
+      : open
+        ? 'Drag me'
+        : 'Tap to open'
+  const progress = track.duration ? clamp(position / track.duration, 0, 1) * 100 : 0
+  const muted = volume <= 0.02
 
   return (
     <div
       ref={rootRef}
-      className={`vinyl-player${open ? ' is-open' : ''}${dragging ? ' is-dragging' : ''}`}
+      className={`vinyl-player${open ? ' is-open' : ''}${dragging ? ' is-dragging' : ''}${
+        volOpen ? ' is-vol-open' : ''
+      }`}
       data-tone={tone}
       data-playing={playing ? 'true' : 'false'}
       style={{ transform: `translate3d(${offset.x}px, ${offset.y}px, 0)` }}
       role="group"
       aria-label="黑胶音乐播放器"
+      onPointerDown={(event) => {
+        const target = event.target as HTMLElement
+        if (volOpen && !target.closest('.vinyl-player__vol')) setVolOpen(false)
+      }}
       /* 菜单打开时整块让出焦点与点击，和 #main 一样退到后面 */
       inert={ui.menuOpen || undefined}
     >
-      <div className="vinyl-player__head">
+      <div ref={headRef} className="vinyl-player__head">
         <button
           className="vinyl-player__disc"
           type="button"
@@ -330,17 +508,42 @@ export default function VinylPlayer() {
         </span>
       </div>
 
-      <div className="vinyl-player__panel" inert={!open}>
-        <div className="vinyl-player__panel-inner">
+      <div ref={panelRef} className="vinyl-player__panel" inert={!open}>
+        <div ref={innerRef} className="vinyl-player__panel-inner">
           <div className="vinyl-player__meta mono">
             <span>{track.side}</span>
-            <span className="vinyl-player__time">{clockOf(elapsed)}</span>
+            <span className="vinyl-player__time">
+              {clockOf(position)} / {clockOf(track.duration)}
+            </span>
           </div>
 
-          <div className="vinyl-player__title">
+          <div ref={titleRef} className="vinyl-player__title">
             <span className="vinyl-player__title-en">{track.title}</span>
             <span className="vinyl-player__title-cn">{track.cn}</span>
           </div>
+
+          <label className="vinyl-player__progress">
+            <span className="sr-only">播放进度</span>
+            <input
+              type="range"
+              min={0}
+              max={track.duration}
+              step={0.1}
+              value={Math.min(position, track.duration)}
+              style={{ '--vp-progress': `${progress}%` } as CSSProperties}
+              aria-valuetext={`${clockOf(position)} / ${clockOf(track.duration)}`}
+              onChange={(event) => seekTo(Number(event.target.value))}
+              onPointerDown={() => {
+                scrubbing.current = true
+              }}
+              onPointerUp={() => {
+                scrubbing.current = false
+              }}
+              onPointerCancel={() => {
+                scrubbing.current = false
+              }}
+            />
+          </label>
 
           <div className="vinyl-player__controls">
             <button
@@ -363,6 +566,7 @@ export default function VinylPlayer() {
               data-cursor={playing ? 'Pause' : 'Play'}
               onClick={togglePlay}
             >
+              <span ref={sparkRef} className="vinyl-player__spark" aria-hidden="true" />
               {playing ? (
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M8 4h3v16H8zM14 4h3v16h-3z" fill="currentColor" />
@@ -387,24 +591,64 @@ export default function VinylPlayer() {
               </svg>
             </button>
 
-            <label className="vinyl-player__vol">
-              <span className="sr-only">音量</span>
-              <input
-                type="range"
-                min={0}
-                max={1}
-                step={0.01}
-                value={volume}
-                style={{ '--vp-vol': `${Math.round(volume * 100)}%` } as CSSProperties}
-                onChange={(event) => changeVolume(Number(event.target.value))}
-              />
-            </label>
-
             <span ref={meterRef} className="vinyl-player__meter" aria-hidden="true">
               {Array.from({ length: BAR_COUNT }, (_, index) => (
                 <span key={index} />
               ))}
             </span>
+
+            <div className="vinyl-player__vol">
+              <button
+                className="vinyl-player__vol-btn"
+                type="button"
+                aria-label={muted ? '取消静音并展开音量' : '音量'}
+                aria-expanded={volOpen}
+                data-cursor="Volume"
+                onClick={() => setVolOpen((value) => !value)}
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M4 9h3.2L12 5v14l-4.8-4H4z" fill="currentColor" />
+                  {muted ? (
+                    <path
+                      d="M15.5 9.2l4 5.6M19.5 9.2l-4 5.6"
+                      stroke="currentColor"
+                      strokeWidth="1.2"
+                      fill="none"
+                      strokeLinecap="round"
+                    />
+                  ) : (
+                    <>
+                      <path
+                        d="M14.6 8.8a4.6 4.6 0 0 1 0 6.4"
+                        stroke="currentColor"
+                        strokeWidth="1.2"
+                        fill="none"
+                        strokeLinecap="round"
+                      />
+                      <path
+                        d="M17.4 6.2a8.2 8.2 0 0 1 0 11.6"
+                        stroke="currentColor"
+                        strokeWidth="1.2"
+                        fill="none"
+                        strokeLinecap="round"
+                      />
+                    </>
+                  )}
+                </svg>
+              </button>
+              <span className="vinyl-player__vol-flyout">
+                <input
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  value={volume}
+                  style={{ '--vp-vol': `${Math.round(volume * 100)}%` } as CSSProperties}
+                  aria-label="音量"
+                  onChange={(event) => changeVolume(Number(event.target.value))}
+                />
+              </span>
+            </div>
           </div>
         </div>
       </div>
