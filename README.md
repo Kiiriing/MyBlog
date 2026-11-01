@@ -128,17 +128,6 @@ public/art/     本地视觉素材（SVG / PNG；art/logo 为 25 个技术栈品
 - 锚点表补上 `/#index`，部署说明明确构建产物的 History 回退规则，目录树同步 `data/chapters.ts`、`lib`、`store` 等实际文件。
 - 验证：`npm run build` 通过；本次仅文档改动，未触及运行时代码。
 
-### 2026-11-01 — 播放器封面统一改名为 `#1.jpg` / `#2.jpg` / `#3.jpg`
-
-- `public/art/music/covers/`：删除手绘的 `cry-for-me.svg` / `su.svg`，三张封面统一为 `#1.jpg`（由原 `radiax-umbrella.jpg` 改名）、`#2.jpg`、`#3.jpg`。
-- `src/lib/vinylAudio.ts`：三首曲目的 `cover` 路径同步改为 `/art/music/covers/#1.jpg`、`#2.jpg`、`#3.jpg`。
-
-### 2026-11-01 — 曲序调整：☔️ 打头，新增第三首「溯」
-
-- `src/lib/vinylAudio.ts`：曲序改为 `SIDE A · 01 ☔️ / Radiax` → `SIDE A · 02 Cry For Me / feat. 愛海 · Michita` → `SIDE A · 03 溯 / Sù`；新增第三首 `溯.mp3`（mp3 里没有 ID3 标签，标题取文件名，实测 3:12，兜底时长 192.03s）。
-- `public/art/music/covers/su.svg`：给「溯」画了同款圆形封面（深色 chrome 渐变 + 宋体字 + 橙色分隔线 + 颗粒），沿用 `cry-for-me.svg` 的版式；`cry-for-me.svg` 底部编号由 `SIDE A 01` 改为 `SIDE A 02`。
-- 验证：`npm run build` 通过（`index-*.js 610.71 kB`）；`npm run preview` + headless Chrome 1440×900 依次点「下一首」：01 ☔️ 1:57 → 02 Cry For Me 5:03 → 03 溯 3:12 → 回到 01，「上一首」从 01 回到 03，三首封面 `radiax-umbrella.jpg` / `cry-for-me.svg` / `su.svg` 全部加载成功，控制台无 error。
-
 ### 2026-11-01 — 播放器接入真实歌曲，唱片内圈改成当前歌曲的封面
 
 - `public/art/music/`：放入 `CryForMe.Feat.愛海.-Michita#2CbowT.mp3`（303.05s）与 `Radiax - ☔️.mp3`（117.13s）；`covers/radiax-umbrella.jpg` 是从 mp3 的 `APIC` 帧提取的原生封面，`covers/cry-for-me.svg` 为无内嵌封面的 `Cry For Me` 画的品牌化圆形封面（深色 chrome 渐变 + 奶油衬线斜体 + 橙色分隔线 + 颗粒）。
@@ -146,13 +135,6 @@ public/art/     本地视觉素材（SVG / PNG；art/logo 为 25 个技术栈品
 - `src/components/VinylPlayer.tsx`：`trackDuration` 状态承接 `engine.onDuration` 报回的真实长度，元数据未到时用曲目表兜底；进度条、时间显示、`aria-valuetext` 全部改用这个总长。内圈按 `track.cover` 渲染 `<img>`，没有封面时退回原来的编号标签。自动接歌判定同时加 `total > 0`，换曲淡出期间 `position()` 返回 0，防止连跳两首。
 - `src/styles/components/VinylPlayer.css`：新增 `.vinyl-player__label--art`（60% 直径、圆形裁切、内阴影收边）与 `img` 铺满 `object-fit: cover`，封面随盘面一起转。
 - 验证：`npm run build` 通过；`npm run preview` + headless Chrome 1440×900 实测——自动播放后 `0:00 / 5:03`、频谱柱真实跳动、`hint` 为 `Now playing`；点「下一首」封面换成 `radiax-umbrella.jpg`、时长 `1:57`；暂停后唱片停转、频谱归零，继续播放从暂停点接上；把进度拖到 `4:42` 再拖到结尾，200ms 内自动接到 `SIDE A · 02` 并继续走秒；mp3 请求 200 / 206、封面 200，控制台无 error；截图确认盘心为圆形照片、居中且带中心孔。
-
-### 2026-11-01 — 播放器曲目扩充到十首：按站点气质排成一张 A/B 面唱片
-
-- `src/lib/vinylAudio.ts`：`vinylTracks` 从 4 首扩到 10 首，新增 `Grain Emulsion / 颗粒乳剂`、`Cream Interval / 奶油间奏`、`Contact Sheet / 接触印样`、`Margin Note / 页边批注`、`Orange Noise / 橙色噪声`、`Sign-off / 收声`；每首按「夜行 / 纸面与印刷 / 暗房 / 批注 / 收尾」配了根音、半音序列、步长、低通截止与音量，A 面留夜行与印刷、B 面留暗房与收尾，loop 回 01 时像把唱片放回封套。
-- `side` 统一成总曲序 `SIDE A · 01–05` / `SIDE B · 06–10`，与唱片中心编号、面板左上角编号一致；`next / prev` 自动按 10 首循环，播完自动接下一首。
-- 文件头注释补充了这张「唱片」的编排思路，以及换成真实 `HTMLAudioElement` 时需要保留的五个对外接口。
-- 验证：`npm run build` 通过（`index-*.js 611.10 kB`）；`npm run preview` + headless Chrome 连点「下一首」11 次，面板依次显示 01–10 后回到 01，标题 / 中文 / 时长（1:36、1:18、1:52、1:12、1:28、1:24、1:44、1:32、1:16、1:58）与进度条 `max` 全部对应；把第 1 首进度条拖到最右端后 0.9s 内自动接到 `SIDE A · 02`，`data-playing` 保持 `true`，控制台无 error。
 
 ### 2026-11-01 — 音量槽悬停：指针移到滑槽持续展开，离开音量区域 0.5s 才收回
 
