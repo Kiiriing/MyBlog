@@ -121,7 +121,9 @@
   font-weight: 400;
   line-height: 0.82;
   letter-spacing: -0.05em;
-  transform: translate3d(0, 118%, 0);
+  /* 遮罩行比字形盒高出 0.2em 的下内边距（负 margin 抵消布局位移），
+     所以下移量必须大于 100%；132% 才让大字完全藏在遮罩下方，不外露一丝 */
+  transform: translate3d(0, 132%, 0);
   backface-visibility: hidden;
   will-change: transform;
   animation: route-wipe-rise-label var(--wipe-duration) var(--wipe-ease) both;
@@ -136,7 +138,7 @@
   opacity: 0.7;
   font-size: 9px;
   letter-spacing: 0.18em;
-  transform: translate3d(0, 118%, 0);
+  transform: translate3d(0, 132%, 0);
   backface-visibility: hidden;
   will-change: transform;
   animation: route-wipe-rise-meta var(--wipe-duration) var(--wipe-ease) both;
@@ -146,7 +148,7 @@
 @keyframes route-wipe-rise-label {
   0%,
   30% {
-    transform: translate3d(0, 118%, 0);
+    transform: translate3d(0, 132%, 0);
   }
 
   44%,
@@ -156,14 +158,14 @@
 
   82%,
   100% {
-    transform: translate3d(0, -118%, 0);
+    transform: translate3d(0, -132%, 0);
   }
 }
 
 @keyframes route-wipe-rise-meta {
   0%,
   34% {
-    transform: translate3d(0, 118%, 0);
+    transform: translate3d(0, 132%, 0);
   }
 
   48%,
@@ -173,7 +175,7 @@
 
   84%,
   100% {
-    transform: translate3d(0, -118%, 0);
+    transform: translate3d(0, -132%, 0);
   }
 }
 
