@@ -478,7 +478,6 @@ export default function VinylPlayer() {
           type="button"
           aria-expanded={open}
           aria-label={open ? '收起播放器' : '展开播放器，按住可拖动位置'}
-          data-cursor="Drag"
           onPointerDown={onDiscDown}
           onPointerMove={onDiscMove}
           onPointerUp={onDiscUp}
@@ -550,7 +549,6 @@ export default function VinylPlayer() {
               className="vinyl-player__btn"
               type="button"
               aria-label="上一首"
-              data-cursor="Prev"
               onClick={() => shiftTrack(-1)}
             >
               <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -563,7 +561,6 @@ export default function VinylPlayer() {
               className="vinyl-player__btn vinyl-player__btn--play"
               type="button"
               aria-label={playing ? '暂停' : '播放'}
-              data-cursor={playing ? 'Pause' : 'Play'}
               onClick={togglePlay}
             >
               <span ref={sparkRef} className="vinyl-player__spark" aria-hidden="true" />
@@ -582,7 +579,6 @@ export default function VinylPlayer() {
               className="vinyl-player__btn"
               type="button"
               aria-label="下一首"
-              data-cursor="Next"
               onClick={() => shiftTrack(1)}
             >
               <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -603,7 +599,6 @@ export default function VinylPlayer() {
                 type="button"
                 aria-label={muted ? '取消静音并展开音量' : '音量'}
                 aria-expanded={volOpen}
-                data-cursor="Volume"
                 onClick={() => setVolOpen((value) => !value)}
               >
                 <svg viewBox="0 0 24 24" aria-hidden="true">

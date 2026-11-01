@@ -16,6 +16,12 @@
   opacity: 1;
 }
 
+/* 黑胶播放器整块用系统光标，反色圆环与圆点都不出现 */
+.cursor.is-plain,
+.cursor-dot.is-plain {
+  opacity: 0;
+}
+
 .cursor-dot {
   width: 7px;
   height: 7px;

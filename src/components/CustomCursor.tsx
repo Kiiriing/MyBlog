@@ -5,8 +5,16 @@ import '../styles/components/CustomCursor.css'
 const SELECTORS =
   'a, button, [data-cursor], input, textarea, select, [role="button"]'
 
+/** 黑胶播放器自带唱片 / 按钮 / 滑块，整块交给系统光标，不叠加反色圆环 */
+const PLAIN_REGION = '.vinyl-player'
+
 function isFinePointer() {
   return window.matchMedia('(hover: hover) and (pointer: fine)').matches
+}
+
+function isPlainTarget(event: Event) {
+  const element = event.target as Element | null
+  return Boolean(element?.closest?.(PLAIN_REGION))
 }
 
 export default function CustomCursor() {
@@ -17,11 +25,14 @@ export default function CustomCursor() {
   const [active, setActive] = useState(false)
   const [label, setLabel] = useState('')
   const [down, setDown] = useState(false)
+  /* 指针落在黑胶播放器上时收起自定义圆环，交还系统光标 */
+  const [plain, setPlain] = useState(false)
 
   const visibleRef = useRef(false)
   const activeRef = useRef(false)
   const labelRef = useRef('')
   const downRef = useRef(false)
+  const plainRef = useRef(false)
   const quick = useRef<{
     dotX: (value: number) => void
     dotY: (value: number) => void
@@ -53,7 +64,22 @@ export default function CustomCursor() {
       toRingY(y)
     }
 
+    function applyPlain(next: boolean) {
+      if (plainRef.current === next) return
+      plainRef.current = next
+      setPlain(next)
+      /* 播放器里不显示圆环，也就没有可高亮 / 可标注的目标 */
+      if (next) {
+        activeRef.current = false
+        labelRef.current = ''
+        setActive(false)
+        setLabel('')
+      }
+    }
+
     function hide() {
+      plainRef.current = false
+      setPlain(false)
       if (!visibleRef.current) return
       visibleRef.current = false
       setVisible(false)
@@ -69,10 +95,15 @@ export default function CustomCursor() {
     function onPointerMove(event: PointerEvent) {
       if (event.pointerType === 'touch') return
       showAt(event.clientX, event.clientY)
+      applyPlain(isPlainTarget(event))
     }
 
     function onPointerOver(event: PointerEvent) {
-      const target = (event.target as Element | null)?.closest?.(SELECTORS) as HTMLElement | null
+      const inPlain = isPlainTarget(event)
+      applyPlain(inPlain)
+      const target = inPlain
+        ? null
+        : ((event.target as Element | null)?.closest?.(SELECTORS) as HTMLElement | null)
       const nextActive = Boolean(target)
       const nextLabel = target?.dataset?.cursor || ''
       activeRef.current = nextActive
@@ -84,6 +115,7 @@ export default function CustomCursor() {
     function onPointerDown(event: PointerEvent) {
       if (event.pointerType === 'touch') return
       showAt(event.clientX, event.clientY)
+      applyPlain(isPlainTarget(event))
       downRef.current = true
       setDown(true)
     }
@@ -132,7 +164,8 @@ export default function CustomCursor() {
           active ? 'is-active' : '',
           label ? 'is-labelled' : '',
           down ? 'is-down' : '',
-          visible ? 'is-visible' : ''
+          visible ? 'is-visible' : '',
+          plain ? 'is-plain' : ''
         ]
           .filter(Boolean)
           .join(' ')}
@@ -143,7 +176,7 @@ export default function CustomCursor() {
       </div>
       <div
         ref={dot}
-        className={`cursor-dot${visible ? ' is-visible' : ''}`}
+        className={`cursor-dot${visible ? ' is-visible' : ''}${plain ? ' is-plain' : ''}`}
         aria-hidden="true"
       />
     </>

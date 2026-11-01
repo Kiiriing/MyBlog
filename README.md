@@ -68,10 +68,10 @@ Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 
 ## 交互与可访问性
 
-- 自定义光标（仅在光标实际可见时隐藏系统光标，离开窗口 / 失焦自动恢复）、预加载揭幕、全屏菜单、颗粒质感、页面过渡
+- 自定义光标（仅在光标实际可见时隐藏系统光标，离开窗口 / 失焦自动恢复）、预加载揭幕、全屏菜单、颗粒质感、页面过渡；指针进入左下角黑胶播放器时，反色圆环与白点整体隐藏、控件交回系统指针，移出后恢复
 - 首页 Hero：背景由 LetterGlitch 铺满整屏（字符在流动噪声里缓亮、随机成片故障，指针经过处点亮火花、点击沿行撕裂），并在文字一侧压一层暗场保证小字号可读；左侧标题逐字入场、`hero__lead` 与底部信息随滚动产生视差；右侧 DitherVeil 用 `floyd` 抖动把镀铬头像压成 1-bit 点阵，透明底会被 alpha 裁掉，点阵直接浮在页面网格上；鼠标划过的拖尾会烧穿成全彩、松开后逐格编织回点阵，点击产生冲击波
 - 进入首页（无 hash）时始终落在顶部：接管 `history.scrollRestoration` 并在预加载结束后回滚到 0，修复刷新后「自动跳到关于我」的问题
-- 左下角黑胶播放器（`VinylPlayer`，全局常驻、跨页继续播放）：收起时只有一张唱片，点击后唱片左移、控制条向右展开（进度条 / 上一首 / 播放暂停 / 下一首 / 小喇叭音量槽 / 10 格实时频谱）；右上角是「当前时间 / 歌曲长度」，拖动进度条即时定位、播完自动接下一首；音量收成一枚喇叭，悬停或点按才滑出 82px 细音量槽（移动端向上展开）；预加载结束后自动播放，浏览器拦截时唱片照转并在唱片上方提示 `Tap for sound`，首次点击 / 按键解锁音频；展开由 GSAP 时间轴负责（宽度 `expo.out` 0.62s、内容按 0.06s 依次进场、唱片同步左移），收起时内容先退、面板后收，点击页面其它地方自动合上；按住唱片可拖到整页任意位置（夹紧以唱片本体为准，展开态不再被控制条宽度限制），松手后自动回拉保证整块不出屏；配色用 `elementsFromPoint` 读取控件下方的页面，落到 `.theme-paper` 章节自动切成奶油纸面的墨色文字，换页与拖动后都会重新采样
+- 左下角黑胶播放器（`VinylPlayer`，全局常驻、跨页继续播放）：收起时只有一张唱片，点击后唱片左移、控制条向右展开（进度条 / 上一首 / 播放暂停 / 下一首 / 小喇叭音量槽 / 10 格实时频谱）；右上角是「当前时间 / 歌曲长度」，拖动进度条即时定位、播完自动接下一首；音量收成一枚喇叭，悬停或点按才滑出 82px 细音量槽（移动端向上展开）；预加载结束后自动播放，浏览器拦截时唱片照转并在唱片上方提示 `Tap for sound`，首次点击 / 按键解锁音频；展开由 GSAP 时间轴负责（宽度 `expo.out` 0.62s、内容按 0.06s 依次进场、唱片同步左移），收起时内容先退、面板后收，点击页面其它地方自动合上；按住唱片可拖到整页任意位置（夹紧以唱片本体为准，展开态不再被控制条宽度限制），松手后自动回拉保证整块不出屏；配色用 `elementsFromPoint` 读取控件下方的页面，落到 `.theme-paper` 章节自动切成奶油纸面的墨色文字，换页与拖动后都会重新采样；播放器整块（`CustomCursor` 的 `PLAIN_REGION`）不叠加反色圆环，唱片 / 按钮 / 滑块都用系统指针（`cursor: auto`，按钮与 range 为 `pointer`）
 - 路由切换时以橙色幕布进行擦除式转场（含目标页面标签与路径）
 - 项目索引：分类筛选、计数过渡、整行 paper 色块从中心揭幕、项目数字变实色、光标跟随案例预览卡，键盘 focus 同样触发揭幕
 - 滚动后顶部渐隐遮罩，保证固定导航与大标题重叠时的可读性
@@ -111,6 +111,14 @@ public/art/     本地视觉素材（SVG / PNG；art/logo 为技术栈品牌图�
 ```
 
 ## 更新日志
+
+### 2026-11-01 — 黑胶播放器内去掉反色圆环：交互改回系统光标
+
+- `src/components/CustomCursor.tsx` 新增 `PLAIN_REGION = '.vinyl-player'` 与 `isPlainTarget()`：`pointermove / pointerover / pointerdown` 时判断指针是否落在播放器内，命中就加 `is-plain` 并清空 `is-active / is-labelled`（`Drag / Prev / Play / Pause / Next / Volume` 这些标签不再弹），移出后自动恢复。
+- `src/styles/components/CustomCursor.css`：新增 `.cursor.is-plain, .cursor-dot.is-plain { opacity: 0 }`，放在 `.is-visible` 之后，同特异性下后者生效——反色圆环与白点一起 0.2s 淡出，指针离开播放器再淡入。
+- `src/styles/main.css`：在 `@media (hover: hover) and (pointer: fine)` 里给 `html.has-custom-cursor .vinyl-player` 及其所有后代恢复 `cursor: auto`，按钮与 `input[type='range']` 用 `pointer`；这两条特异性 `(0,2,1)` 高于 `html.has-custom-cursor * { cursor: none }` 的 `(0,1,1)`，所以播放器里真的是系统指针。
+- `src/components/VinylPlayer.tsx`：删掉 5 处已失效的 `data-cursor`（唱片、上一首、播放暂停、下一首、音量），不再维护不会显示的标签。
+- 验证：`npm run build` 通过（`index-*.css 147.09 kB`、`index-*.js 609.55 kB`）；`npm run preview` + headless Chrome 1440×900 实测——指针在唱片 / 进度条 / 喇叭上时 `.cursor` 为 `cursor is-visible is-plain`、`opacity 0`，圆点为 `cursor-dot is-visible is-plain`、`opacity 0`，原生光标分别为 `pointer / pointer / pointer`，播放器根为 `auto`；移出播放器后类名回到 `cursor is-visible`、`opacity 1`，页面其它位置仍是 `cursor: none` + 自定义圆环；截图确认唱片与展开的控制条上没有任何白色反色环；控制台无 error。
 
 ### 2026-11-01 — 黑胶播放器升级：进度条 / 喇叭音量 / 自动播放 / 丝滑展开 / 点击外部收起
 

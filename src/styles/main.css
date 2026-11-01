@@ -164,6 +164,18 @@ textarea {
   html.has-custom-cursor textarea {
     cursor: text;
   }
+
+  /* 黑胶播放器内部恢复系统光标：组件自带唱片、按钮与滑块，
+     不需要反色圆环（圆环在这里会被组件隐掉，留原生指针更准确） */
+  html.has-custom-cursor .vinyl-player,
+  html.has-custom-cursor .vinyl-player * {
+    cursor: auto;
+  }
+
+  html.has-custom-cursor .vinyl-player button,
+  html.has-custom-cursor .vinyl-player input[type='range'] {
+    cursor: pointer;
+  }
 }
 
 /* Lenis ------------------------------------------------------------------ */
