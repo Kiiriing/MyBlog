@@ -12,13 +12,13 @@
 - **GlowCursor**（React Bits 流体光迹，`src/components/GlowCursor.tsx`）：纯 WebGL2 的鼠标拖尾（半浮点帧缓冲 + MacCormack 平流 + 20 步压力迭代 + 5 级 bloom），深色页以 `screen` 加光、奶油色页换成组件的 light 主题落墨
 - **LetterGlitch**（React Bits 字符故障背景，`src/components/LetterGlitch.tsx`）：首屏整屏铺满的 WebGL2 字符场（字形图集 + 状态贴图、流动噪声、游走撕裂与指针火花），默认参数与官方一致，`prefers-reduced-motion` 下退化为静止字符
 - **LogoLoop**（React Bits 技术栈长条，`src/components/LogoLoop.jsx` + 类型声明 `.d.ts`）：关于页底部的 25 个技术栈品牌图标（`public/art/logo`），按语言 → 前端框架 → 运行时 → 数据库 → 构建与工具 → 部署与系统 → 编辑器分层排列，连续滚动、可拖拽甩动、悬停停下并恢复品牌色，`prefers-reduced-motion` 下保持静止排列
-- **Web Audio**（`src/lib/vinylAudio.ts`）：左下角黑胶播放器的十首曲目全部程序化合成——循环琶音 + 低八度长音 + 低通滤波 + 黑胶针脚底噪，`AnalyserNode` 供电频谱柱；曲目按 A 面（夜行 / 纸面 / 印刷，01–05）与 B 面（暗房 / 批注 / 收尾，06–10）编排，每首带虚拟时长，支持进度拖动、播完自动切下一首，预加载结束后自动播放（被自动播放策略拦下时，首次点击 / 按键解锁音频）；仓库不依赖任何外部音频素材
+- **Web Audio**（`src/lib/vinylAudio.ts`）：左下角黑胶播放器的曲目改读真实音频——`public/art/music` 下的 mp3 经 `HTMLAudioElement` 解码，再走 `MediaElementSource → 母带增益 → AnalyserNode → 输出`，频谱柱读真实波形；换曲把母带压下去再拉起，保留黑胶针脚底噪。目前放了 `Cry For Me` / `☔️` 两首，其余曲位留空（补一个 `{ file, cover, duration }` 即可加歌），支持进度拖动、播完自动切下一首，预加载结束后自动播放（被自动播放策略拦下时，首次点击 / 按键解锁音频）
 - **ogl 1.0**：承载 React Bits `DitherVeil` 抖动之幕（WebGL2）
 - **Tailwind CSS v4**（`@tailwindcss/vite`）与 **shadcn**（`components.json`），仅用于接入 registry 组件；项目自有 CSS 不分层，优先级更高
 - **Lenis** 平滑滚动，与 GSAP ticker 同步
 - 组件样式集中在 `src/styles/components/*.css`，由入口按需引入
 - 首屏为「左侧排版 + 右侧 DitherVeil 抖动之幕」双列布局（≤900px 面板下移居中），背景由 LetterGlitch 字符故障场铺满整屏，动效集中在标题描边 + 自述打字、滚动视差、圆形滚动徽章与左下角黑胶播放器
-- 原生 SVG 程序化视觉素材（`public/art`），无外部图片依赖
+- 原生 SVG 程序化视觉素材（`public/art`）为主；音频与唱片封面素材放在 `public/art/music`（mp3 + `covers/`）
 
 运行时要求 **Node.js ≥ 22.12**（当前已验证 Node 26 / npm 11）。
 
@@ -103,14 +103,22 @@ src/
   composables/  平滑滚动（GSAP + Lenis）
   hooks/        时钟、进场 reveal
   data/         站点、作品、文章内容
-  lib/          GSAP 注册、黑胶音频引擎（程序化曲目）
+  lib/          GSAP 注册、黑胶音频引擎（真实音频曲目）
   store/        UI 状态（菜单 / 启动 / 触屏）
   styles/       主题变量、全局排版；components/ 下为各组件样式
   views/        首页、手记、文章、作品、404
-public/art/     本地视觉素材（SVG / PNG；art/logo 为技术栈品牌图标）
+public/art/     本地视觉素材（SVG / PNG；art/logo 为技术栈品牌图标，art/music 为音频与封面）
 ```
 
 ## 更新日志
+
+### 2026-11-01 — 播放器接入真实歌曲，唱片内圈改成当前歌曲的封面
+
+- `public/art/music/`：放入 `CryForMe.Feat.愛海.-Michita#2CbowT.mp3`（303.05s）与 `Radiax - ☔️.mp3`（117.13s）；`covers/radiax-umbrella.jpg` 是从 mp3 的 `APIC` 帧提取的原生封面，`covers/cry-for-me.svg` 为无内嵌封面的 `Cry For Me` 画的品牌化圆形封面（深色 chrome 渐变 + 奶油衬线斜体 + 橙色分隔线 + 颗粒）。
+- `src/lib/vinylAudio.ts` 重写为真实音频引擎：`HTMLAudioElement` 解码 → `MediaElementSource` → 母带 `GainNode`（音量）→ `AnalyserNode` → 输出；保留黑胶针脚底噪、手势解锁与频谱接口。`vinylTracks` 只留两首真实曲目（`file` / `cover` / `duration`），其余曲位留空，加歌只需补一个对象；`musicAsset()` 用 `encodeURIComponent` 处理文件名里的 `#`、中文与 emoji。换曲时母带 180ms 压下再拉起；换源后把播放头钉回 0，避免新曲沿用旧曲的 `currentTime` 被 clamp 成「已播完」。
+- `src/components/VinylPlayer.tsx`：`trackDuration` 状态承接 `engine.onDuration` 报回的真实长度，元数据未到时用曲目表兜底；进度条、时间显示、`aria-valuetext` 全部改用这个总长。内圈按 `track.cover` 渲染 `<img>`，没有封面时退回原来的编号标签。自动接歌判定同时加 `total > 0`，换曲淡出期间 `position()` 返回 0，防止连跳两首。
+- `src/styles/components/VinylPlayer.css`：新增 `.vinyl-player__label--art`（60% 直径、圆形裁切、内阴影收边）与 `img` 铺满 `object-fit: cover`，封面随盘面一起转。
+- 验证：`npm run build` 通过；`npm run preview` + headless Chrome 1440×900 实测——自动播放后 `0:00 / 5:03`、频谱柱真实跳动、`hint` 为 `Now playing`；点「下一首」封面换成 `radiax-umbrella.jpg`、时长 `1:57`；暂停后唱片停转、频谱归零，继续播放从暂停点接上；把进度拖到 `4:42` 再拖到结尾，200ms 内自动接到 `SIDE A · 02` 并继续走秒；mp3 请求 200 / 206、封面 200，控制台无 error；截图确认盘心为圆形照片、居中且带中心孔。
 
 ### 2026-11-01 — 播放器曲目扩充到十首：按站点气质排成一张 A/B 面唱片
 

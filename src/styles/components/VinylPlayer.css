@@ -156,6 +156,27 @@
   opacity: 0.75;
 }
 
+/* 内圈换成当前歌曲的封面：一张圆形照片贴在盘心，随唱片一起转 */
+.vinyl-player__label--art {
+  width: 60%;
+  padding: 0;
+  overflow: hidden;
+  background: #0b0b0e;
+  box-shadow:
+    inset 0 0 0 1px rgba(242, 237, 228, 0.16),
+    inset 0 6px 14px rgba(0, 0, 0, 0.55);
+}
+
+.vinyl-player__label--art img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+
 .vinyl-player__hole {
   position: absolute;
   top: 50%;

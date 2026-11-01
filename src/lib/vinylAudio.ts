@@ -1,188 +1,80 @@
 /* 黑胶播放器的音频引擎。
-   仓库里没有音频素材，所以曲目用 Web Audio 程序化合成：
-   每首是一段循环的琶音 + 一层黑胶底噪（针脚声 + 低通噪声），
-   换曲时新旧总线交叉淡入淡出，暂停只是把总线淡到 0，不销毁上下文，
-   这样再次播放不会重新走一遍授权与设备初始化。
+   曲目现在是真实音频：每首歌是 public/art/music 下的 mp3，
+   先用 HTMLAudioElement 解码，再经 MediaElementSource → 母带增益 → 频谱分析 → 输出。
+   这样播放 / 暂停 / 换曲 / 音量 / 进度都和真唱片一致，频谱柱状图读到的也是真实波形；
+   换曲时把母带增益压下去再拉起，听感上像把唱针抬起又落下。
 
-   曲目表按站点的气质排成一张十首的「唱片」：
-   A 面偏夜行、纸面与印刷，B 面偏暗房、批注与收尾；
-   side 里的编号就是总曲序（01–10），与面板左上角显示的编号一致。
+   曲目表按站点的气质排成一张「唱片」，side 里的编号就是曲序。
+   目前只放了两首真实文件，剩下的位置先空着：
+   有新歌时把 mp3 放进 public/art/music（封面可放 public/art/music/covers），
+   再往 vinylTracks 里补一个 { file, cover, duration } 即可。
 
-   进度：程序化音源本身没有「长度」，所以每首曲子自带一个虚拟 duration（秒），
-   进度只记录「从歌头开始播了多久」，拖动进度就是按目标秒数换算回琶音的第几步重新起步。
-   到结尾后由组件调用 setTrack 切下一首。
-
-   想换成真实歌曲：把 mp3 放进 public/audio，把曲目改成读取 src 的 HTMLAudioElement，
-   播放/暂停/换曲/音量/进度五件事的对外接口保持不变即可。 */
+   注意文件名里的 # 会被当成 URL fragment，中文与 emoji 也要转义，
+   所以统一交给 musicAsset() 做 encodeURIComponent。 */
 
 export type VinylTrack = {
   title: string
-  cn: string
+  cn?: string
   side: string
-  /** 这首歌的「长度」（秒）：驱动进度条、时间显示与自动切下一首 */
-  duration: number
-  /** 每个音符的间隔（秒） */
-  step: number
-  wave: OscillatorType
-  /** 根音频率（Hz） */
-  root: number
-  /** 相对根音的半音序列，循环播放 */
-  scale: number[]
-  /** 每个音符的滤波截止频率 */
-  cutoff: number
-  amp: number
+  /** public/art/music 下的文件名 */
+  file: string
+  /** 内圈标签上的封面（public 下的完整路径）；没有就退回原来的编号标签 */
+  cover?: string
+  /** 元数据加载前的兜底长度（秒）：让进度条一开始就有刻度 */
+  duration?: number
+}
+
+const MUSIC_DIR = '/art/music/'
+
+export function musicAsset(file: string) {
+  return MUSIC_DIR + encodeURIComponent(file)
 }
 
 export const vinylTracks: VinylTrack[] = [
   {
-    title: 'Night Transit',
-    cn: '夜间通勤',
+    title: 'Cry For Me',
+    cn: 'feat. 愛海 · Michita',
     side: 'SIDE A · 01',
-    duration: 96,
-    step: 0.62,
-    wave: 'triangle',
-    root: 220,
-    scale: [0, 3, 7, 10, 15, 10, 7, 3],
-    cutoff: 1900,
-    amp: 0.2
+    file: 'CryForMe.Feat.愛海.-Michita#2CbowT.mp3',
+    cover: '/art/music/covers/cry-for-me.svg',
+    duration: 303.05
   },
   {
-    title: 'Paper Static',
-    cn: '纸面杂音',
+    title: '☔️',
+    cn: 'Radiax',
     side: 'SIDE A · 02',
-    duration: 78,
-    step: 0.5,
-    wave: 'sine',
-    root: 261.63,
-    scale: [0, 2, 5, 9, 12, 9, 5, 2],
-    cutoff: 2400,
-    amp: 0.19
-  },
-  {
-    title: 'Late Reply',
-    cn: '迟到的回信',
-    side: 'SIDE A · 03',
-    duration: 112,
-    step: 0.72,
-    wave: 'triangle',
-    root: 174.61,
-    scale: [0, 4, 7, 11, 7, 4, 2, 0],
-    cutoff: 1100,
-    amp: 0.17
-  },
-  {
-    title: 'Accent Drift',
-    cn: '强调色漂移',
-    side: 'SIDE A · 04',
-    duration: 72,
-    step: 0.44,
-    wave: 'sine',
-    root: 196,
-    scale: [0, 5, 7, 12, 19, 12, 7, 5],
-    cutoff: 1500,
-    amp: 0.15
-  },
-  {
-    /* 印刷颗粒：半音里带一点沙，像放大后的网点 */
-    title: 'Grain Emulsion',
-    cn: '颗粒乳剂',
-    side: 'SIDE A · 05',
-    duration: 88,
-    step: 0.64,
-    wave: 'triangle',
-    root: 233.08,
-    scale: [0, 3, 7, 10, 14, 10, 7, 3],
-    cutoff: 1750,
-    amp: 0.17
-  },
-  {
-    /* 奶油纸面章节的间奏：明亮但不尖，留白多 */
-    title: 'Cream Interval',
-    cn: '奶油间奏',
-    side: 'SIDE B · 06',
-    duration: 84,
-    step: 0.7,
-    wave: 'sine',
-    root: 293.66,
-    scale: [0, 2, 6, 9, 14, 9, 6, 2],
-    cutoff: 2300,
-    amp: 0.16
-  },
-  {
-    /* 暗房：低音区慢慢走，像红灯下的显影盘 */
-    title: 'Contact Sheet',
-    cn: '接触印样',
-    side: 'SIDE B · 07',
-    duration: 104,
-    step: 0.82,
-    wave: 'triangle',
-    root: 130.81,
-    scale: [0, 5, 9, 14, 19, 14, 9, 5],
-    cutoff: 980,
-    amp: 0.15
-  },
-  {
-    /* 页边批注：短促、干净，像铅笔写下又擦掉 */
-    title: 'Margin Note',
-    cn: '页边批注',
-    side: 'SIDE B · 08',
-    duration: 92,
-    step: 0.56,
-    wave: 'sine',
-    root: 246.94,
-    scale: [0, 4, 9, 11, 16, 11, 9, 4],
-    cutoff: 2050,
-    amp: 0.17
-  },
-  {
-    /* 强调色：跳进得比前面几首都急，给橙色一点音量 */
-    title: 'Orange Noise',
-    cn: '橙色噪声',
-    side: 'SIDE B · 09',
-    duration: 76,
-    step: 0.46,
-    wave: 'triangle',
-    root: 207.65,
-    scale: [0, 3, 6, 10, 13, 10, 6, 3],
-    cutoff: 1250,
-    amp: 0.16
-  },
-  {
-    /* 收尾：最慢的一首，loop 回到 01 时像把唱片放回封套 */
-    title: 'Sign-off',
-    cn: '收声',
-    side: 'SIDE B · 10',
-    duration: 118,
-    step: 0.88,
-    wave: 'sine',
-    root: 164.81,
-    scale: [0, 2, 5, 9, 14, 7, 4, 2],
-    cutoff: 1000,
-    amp: 0.14
+    file: 'Radiax - ☔️.mp3',
+    cover: '/art/music/covers/radiax-umbrella.jpg',
+    duration: 117.13
   }
+  /* 剩下的曲位先空着：加歌时在这里补 { title, cn, side, file, cover, duration } */
 ]
-
-const LOOKAHEAD = 0.4
 
 export class VinylEngine {
   private ctx: AudioContext | null = null
   private master: GainNode | null = null
   private analyser: AnalyserNode | null = null
+  private source: MediaElementAudioSourceNode | null = null
   private noise: GainNode | null = null
-  private bus: GainNode | null = null
+  private audio: HTMLAudioElement | null = null
 
-  private timer = 0
-  private nextAt = 0
-  private step = 0
   private index = 0
   private volume = 0.7
   private playing = false
+  private loadedFile = ''
+  private switchTimer = 0
+  /* 换曲淡出期间旧曲还在响：进度与长度都先按「新曲刚开始」算，
+     否则轮询会把旧曲末尾误判成新曲播完，连着跳两首 */
+  private switching = false
   private bins: Uint8Array | null = null
-
-  /** 歌曲时间：posBase 是上一次暂停/换曲时的秒数，posAt 是那次之后开始走的时刻 */
-  private posBase = 0
-  private posAt = 0
   private unlock: (() => void) | null = null
+
+  /** 真实音频读到元数据后把长度报给组件，进度与时间显示据此换成实际的时长 */
+  onDuration: ((seconds: number) => void) | null = null
+
+  constructor() {
+    this.handleDuration = this.handleDuration.bind(this)
+  }
 
   get isPlaying() {
     return this.playing
@@ -192,33 +84,73 @@ export class VinylEngine {
     return this.index
   }
 
-  /** 当前曲子的虚拟长度（秒） */
+  /** 当前曲子的长度（秒）：元数据没到之前先用曲目表里的兜底值 */
   get duration() {
-    return vinylTracks[this.index].duration
+    if (this.switching) return vinylTracks[this.index]?.duration ?? 0
+    const audio = this.audio
+    if (audio && Number.isFinite(audio.duration) && audio.duration > 0) return audio.duration
+    return vinylTracks[this.index]?.duration ?? 0
   }
 
   /** 浏览器自动播放策略会让 AudioContext 停在 suspended；true 表示声音真的在出 */
   get audible() {
-    return Boolean(this.ctx && this.ctx.state === 'running')
+    const audio = this.audio
+    return Boolean(
+      this.ctx &&
+        this.ctx.state === 'running' &&
+        audio &&
+        !audio.paused &&
+        audio.readyState >= 2
+    )
   }
 
   /** 当前播放到的秒数（暂停时停在暂停点） */
   position() {
-    const raw = this.playing ? this.posBase + (performance.now() - this.posAt) / 1000 : this.posBase
-    return Math.max(0, Math.min(this.duration, raw))
+    if (this.switching) return 0
+    const audio = this.audio
+    if (!audio) return 0
+    const total = this.duration
+    const at = Number.isFinite(audio.currentTime) ? audio.currentTime : 0
+    return Math.max(0, total > 0 ? Math.min(total, at) : at)
   }
 
-  /** 换曲：在播放中会做一次 0.7s 的交叉淡入淡出，进度回到歌头 */
+  /** 换曲：播放中先把母带压下去，等 0.18s 再换源、起播、把音量拉回来 */
   setTrack(index: number) {
+    this.clearSwitch()
     const next = Math.max(0, Math.min(vinylTracks.length - 1, index))
-    if (next === this.index) return
     this.index = next
-    this.posBase = 0
-    this.posAt = performance.now()
-    if (!this.playing) return
-    this.closeBus(0.7)
-    this.openBus(0)
-    this.startLoop()
+
+    const audio = this.ensureAudio()
+    if (!audio) return
+
+    if (!this.playing) {
+      this.load()
+      return
+    }
+
+    const ctx = this.ctx
+    if (ctx && this.master) this.master.gain.setTargetAtTime(0, ctx.currentTime, 0.06)
+    this.switching = true
+    this.switchTimer = window.setTimeout(() => {
+      this.switchTimer = 0
+      this.switching = false
+      const audioEl = this.audio
+      const track = vinylTracks[this.index]
+      /* 又切回同一首时源没变，手动把旧曲的播放头归零，否则会接着上一轮的位置继续 */
+      if (audioEl && track && this.loadedFile === track.file) {
+        try {
+          audioEl.currentTime = 0
+        } catch {
+          /* 元数据还没就绪时交给后续的 load 处理 */
+        }
+      }
+      this.load()
+      this.startAudio()
+      const current = this.ctx
+      if (current && this.master) {
+        this.master.gain.setTargetAtTime(this.volume, current.currentTime, 0.14)
+      }
+    }, 180)
   }
 
   setVolume(value: number) {
@@ -227,19 +159,18 @@ export class VinylEngine {
     this.master.gain.setTargetAtTime(this.volume, this.ctx.currentTime, 0.12)
   }
 
-  /** 拖动进度条：按目标秒数换算成琶音的第几步重新起步 */
+  /** 拖动进度条：写 currentTime，元数据还没到时先忽略 */
   seek(value: number) {
-    const track = vinylTracks[this.index]
-    const target = Math.max(0, Math.min(track.duration, value))
-    this.posBase = target
-    this.posAt = performance.now()
-    if (!this.playing) return
-    const ctx = this.ctx
-    if (!ctx) return
-    const fromStep = Math.floor(target / track.step)
-    this.closeBus(0.26)
-    this.openBus(fromStep)
-    this.startLoop()
+    const audio = this.audio
+    if (!audio) return
+    const total = this.duration
+    const target = Math.max(0, total > 0 ? Math.min(value, Math.max(0, total - 0.08)) : value)
+    try {
+      audio.currentTime = target
+    } catch {
+      return
+    }
+    if (this.playing && audio.paused) this.startAudio()
   }
 
   play() {
@@ -248,8 +179,7 @@ export class VinylEngine {
     if (this.playing) return
 
     this.playing = true
-    if (this.posBase >= this.duration) this.posBase = 0
-    this.posAt = performance.now()
+    this.clearSwitch()
 
     /* 没有用户手势时浏览器只允许建上下文、不放声：录一次手势，之后自动接上 */
     if (ctx.state === 'suspended') {
@@ -258,20 +188,20 @@ export class VinylEngine {
     }
 
     this.master.gain.setTargetAtTime(this.volume, ctx.currentTime, 0.18)
-    const track = vinylTracks[this.index]
-    this.openBus(Math.floor(this.posBase / track.step))
     this.startNoise()
-    this.startLoop()
+    this.load()
+    this.startAudio()
   }
 
   pause() {
     if (!this.playing) return
-    this.posBase = this.position()
     this.playing = false
-    this.stopLoop()
-    this.closeBus(0.55)
+    this.clearSwitch()
+    this.audio?.pause()
+
     const ctx = this.ctx
-    if (ctx && this.noise) this.noise.gain.setTargetAtTime(0, ctx.currentTime, 0.18)
+    if (ctx && this.master) this.master.gain.setTargetAtTime(0, ctx.currentTime, 0.12)
+    if (ctx && this.noise) this.noise.gain.setTargetAtTime(0, ctx.currentTime, 0.16)
   }
 
   /* 频谱：供组件画柱状图。返回的数组是复用的，调用方只读不存。 */
@@ -286,17 +216,32 @@ export class VinylEngine {
   }
 
   dispose() {
-    this.stopLoop()
+    this.clearSwitch()
     this.dropUnlock()
-    this.bus?.disconnect()
+    this.playing = false
+
+    const audio = this.audio
+    if (audio) {
+      audio.pause()
+      audio.removeEventListener('loadedmetadata', this.handleDuration)
+      audio.removeEventListener('durationchange', this.handleDuration)
+      audio.removeAttribute('src')
+      audio.load()
+    }
+
+    this.source?.disconnect()
     this.noise?.disconnect()
-    this.bus = null
+    this.master?.disconnect()
+    this.source = null
     this.noise = null
+    this.audio = null
+    this.loadedFile = ''
+
     const ctx = this.ctx
     this.ctx = null
     this.master = null
     this.analyser = null
-    this.playing = false
+    this.bins = null
     void ctx?.close()
   }
 
@@ -320,10 +265,78 @@ export class VinylEngine {
     master.connect(analyser)
     analyser.connect(ctx.destination)
 
+    const audio = this.ensureAudio()
+    if (audio) {
+      const source = ctx.createMediaElementSource(audio)
+      source.connect(master)
+      this.source = source
+    }
+
     this.ctx = ctx
     this.master = master
     this.analyser = analyser
     return ctx
+  }
+
+  private ensureAudio() {
+    if (this.audio) return this.audio
+    const audio = new Audio()
+    audio.preload = 'auto'
+    audio.volume = 1
+    audio.addEventListener('loadedmetadata', this.handleDuration)
+    audio.addEventListener('durationchange', this.handleDuration)
+    this.audio = audio
+    this.load()
+    return audio
+  }
+
+  private handleDuration() {
+    const total = this.duration
+    if (total > 0) this.onDuration?.(total)
+  }
+
+  /** 换源：同一个文件不重复 load，避免白白重解码一遍 */
+  private load() {
+    const audio = this.audio
+    const track = vinylTracks[this.index]
+    if (!audio || !track) return
+    if (this.loadedFile === track.file) return
+    this.loadedFile = track.file
+    audio.src = musicAsset(track.file)
+    audio.load()
+    /* 换源后把播放头钉回开头：新源在元数据到达前可能沿用旧曲的 currentTime，
+       轮询就会把新曲当成「已经播完」，连着跳两首 */
+    try {
+      audio.currentTime = 0
+    } catch {
+      /* 元数据还没到，忽略即可 */
+    }
+    this.handleDuration()
+  }
+
+  private startAudio() {
+    const audio = this.audio
+    if (!audio) return
+
+    const ctx = this.ctx
+    if (ctx && ctx.state === 'suspended') {
+      void ctx.resume()
+      this.armUnlock(ctx)
+    }
+
+    const started = audio.play()
+    if (started && typeof started.catch === 'function') {
+      started.catch(() => {
+        /* 被自动播放策略拦下：等一次手势，再试一次 */
+        if (this.ctx) this.armUnlock(this.ctx)
+      })
+    }
+  }
+
+  private clearSwitch() {
+    if (this.switchTimer) window.clearTimeout(this.switchTimer)
+    this.switchTimer = 0
+    this.switching = false
   }
 
   /** 浏览器要求先有一次用户手势才允许出声，这里等第一次点击 / 按键 */
@@ -332,6 +345,8 @@ export class VinylEngine {
     const unlock = () => {
       this.dropUnlock()
       if (ctx.state === 'suspended') void ctx.resume()
+      const audio = this.audio
+      if (this.playing && audio && audio.paused) void audio.play().catch(() => {})
     }
     this.unlock = unlock
     window.addEventListener('pointerdown', unlock, { passive: true })
@@ -346,29 +361,6 @@ export class VinylEngine {
     window.removeEventListener('pointerdown', unlock)
     window.removeEventListener('keydown', unlock)
     window.removeEventListener('touchstart', unlock)
-  }
-
-  /** 交叉淡入：每首曲子一条总线，换曲时旧总线淡出后断开 */
-  private openBus(fromStep = 0) {
-    const ctx = this.ctx
-    const master = this.master
-    if (!ctx || !master) return
-
-    const bus = ctx.createGain()
-    bus.gain.value = 0
-    bus.connect(master)
-    bus.gain.setTargetAtTime(1, ctx.currentTime, 0.22)
-    this.bus = bus
-    this.step = fromStep
-  }
-
-  private closeBus(seconds: number) {
-    const ctx = this.ctx
-    const bus = this.bus
-    if (!ctx || !bus) return
-    bus.gain.setTargetAtTime(0, ctx.currentTime, seconds / 3)
-    this.bus = null
-    window.setTimeout(() => bus.disconnect(), Math.max(400, seconds * 1200))
   }
 
   private startNoise() {
@@ -397,7 +389,7 @@ export class VinylEngine {
       this.noise = gain
     }
 
-    this.noise.gain.setTargetAtTime(0.85, ctx.currentTime, 0.3)
+    this.noise.gain.setTargetAtTime(0.5, ctx.currentTime, 0.3)
   }
 
   /** 黑胶底噪：连续的低幅噪声 + 稀疏的针脚噼啪 */
@@ -421,91 +413,5 @@ export class VinylEngine {
     }
 
     return buffer
-  }
-
-  private startLoop() {
-    const ctx = this.ctx
-    if (!ctx) return
-    this.stopLoop()
-    this.nextAt = ctx.currentTime + 0.08
-    this.tick()
-    this.timer = window.setInterval(() => this.tick(), 160)
-  }
-
-  private stopLoop() {
-    if (this.timer) window.clearInterval(this.timer)
-    this.timer = 0
-  }
-
-  private tick() {
-    const ctx = this.ctx
-    const bus = this.bus
-    if (!ctx || !bus) return
-
-    const track = vinylTracks[this.index]
-    const horizon = ctx.currentTime + LOOKAHEAD
-    while (this.nextAt < horizon) {
-      this.note(this.nextAt, this.step, bus)
-      this.nextAt += track.step
-      this.step += 1
-    }
-  }
-
-  private note(at: number, step: number, bus: GainNode) {
-    const ctx = this.ctx
-    if (!ctx) return
-
-    const track = vinylTracks[this.index]
-    const semitones = track.scale[step % track.scale.length]
-    const frequency = track.root * Math.pow(2, semitones / 12)
-    const length = track.step * 1.7
-
-    this.voice(at, frequency, length, track.wave, track.cutoff, track.amp, bus)
-
-    /* 每八步垫一个低八度长音，让循环听起来有底 */
-    if (step % 8 === 0) {
-      this.voice(at, track.root / 2, track.step * 5.2, 'sine', 620, track.amp * 0.55, bus)
-    }
-  }
-
-  private voice(
-    at: number,
-    frequency: number,
-    length: number,
-    wave: OscillatorType,
-    cutoff: number,
-    amp: number,
-    bus: GainNode
-  ) {
-    const ctx = this.ctx
-    if (!ctx) return
-
-    const osc = ctx.createOscillator()
-    osc.type = wave
-    osc.frequency.value = frequency
-
-    const filter = ctx.createBiquadFilter()
-    filter.type = 'lowpass'
-    filter.frequency.value = cutoff
-    filter.Q.value = 0.7
-
-    const env = ctx.createGain()
-    env.gain.setValueAtTime(0.0001, at)
-    env.gain.exponentialRampToValueAtTime(amp, at + 0.09)
-    env.gain.exponentialRampToValueAtTime(0.0001, at + length)
-
-    osc.connect(filter)
-    filter.connect(env)
-    env.connect(bus)
-
-    /* 播完即断开，长时间循环也不会在音频图里堆着成千上万个废节点 */
-    osc.onended = () => {
-      osc.disconnect()
-      filter.disconnect()
-      env.disconnect()
-    }
-
-    osc.start(at)
-    osc.stop(at + length + 0.05)
   }
 }

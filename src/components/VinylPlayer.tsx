@@ -70,13 +70,28 @@ export default function VinylPlayer() {
   const [volHover, setVolHover] = useState(false)
   const [tone, setTone] = useState<'dark' | 'paper'>('dark')
   const [position, setPosition] = useState(0)
+  const [trackDuration, setTrackDuration] = useState(vinylTracks[0].duration ?? 0)
 
   const track = vinylTracks[trackIndex]
+  /* 真实音频的元数据可能还没到，先用曲目表里的兜底长度撑住进度条 */
+  const total = trackDuration || track.duration || 0
 
   const getEngine = useCallback(() => {
-    if (!engineRef.current) engineRef.current = new VinylEngine()
+    if (!engineRef.current) {
+      const engine = new VinylEngine()
+      /* 真实音频读到元数据后会把实际长度报回来 */
+      engine.onDuration = (seconds) => {
+        if (Number.isFinite(seconds) && seconds > 0) setTrackDuration(seconds)
+      }
+      engineRef.current = engine
+    }
     return engineRef.current
   }, [])
+
+  /* 换曲先回到曲目表里的兜底长度，真实元数据到了再被 onDuration 覆盖 */
+  useEffect(() => {
+    setTrackDuration(vinylTracks[trackIndex].duration ?? 0)
+  }, [trackIndex])
 
   /* 音量槽悬停：指针一进入（喇叭或左侧滑槽）就展开；
      离开后留 0.5s，让指针能穿过图标与滑槽之间那道缝，落到滑槽上继续停留 */
@@ -284,14 +299,14 @@ export default function VinylPlayer() {
       const engine = engineRef.current
       if (!engine || scrubbing.current) return
       const next = engine.position()
-      if (next >= track.duration - 0.12) {
+      if (total > 0 && next >= total - 0.12) {
         shiftTrack(1)
         return
       }
       setPosition(next)
     }, 200)
     return () => window.clearInterval(id)
-  }, [playing, trackIndex, track.duration])
+  }, [playing, trackIndex, total])
 
   /* 频谱 ---------------------------------------------------------------- */
 
@@ -483,7 +498,7 @@ export default function VinylPlayer() {
       : open
         ? 'Drag me'
         : 'Tap to open'
-  const progress = track.duration ? clamp(position / track.duration, 0, 1) * 100 : 0
+  const progress = total ? clamp(position / total, 0, 1) * 100 : 0
   const muted = volume <= 0.02
   const volShown = volOpen || volHover
 
@@ -522,13 +537,19 @@ export default function VinylPlayer() {
         >
           <span className="vinyl-player__platter" aria-hidden="true">
             <span className="vinyl-player__sheen" />
-            <span className="vinyl-player__label">
-              <span className="vinyl-player__label-no">
-                {String(trackIndex + 1).padStart(2, '0')}
+            {track.cover ? (
+              <span className="vinyl-player__label vinyl-player__label--art">
+                <img src={track.cover} alt="" draggable={false} />
               </span>
-              <span className="vinyl-player__label-rule" />
-              <span className="vinyl-player__label-side">LY</span>
-            </span>
+            ) : (
+              <span className="vinyl-player__label">
+                <span className="vinyl-player__label-no">
+                  {String(trackIndex + 1).padStart(2, '0')}
+                </span>
+                <span className="vinyl-player__label-rule" />
+                <span className="vinyl-player__label-side">LY</span>
+              </span>
+            )}
             <span className="vinyl-player__hole" />
           </span>
           <span className="vinyl-player__arm" aria-hidden="true">
@@ -545,7 +566,7 @@ export default function VinylPlayer() {
           <div className="vinyl-player__meta mono">
             <span>{track.side}</span>
             <span className="vinyl-player__time">
-              {clockOf(position)} / {clockOf(track.duration)}
+              {clockOf(position)} / {clockOf(total)}
             </span>
           </div>
 
@@ -559,11 +580,11 @@ export default function VinylPlayer() {
             <input
               type="range"
               min={0}
-              max={track.duration}
+              max={total || 1}
               step={0.1}
-              value={Math.min(position, track.duration)}
+              value={Math.min(position, total || 1)}
               style={{ '--vp-progress': `${progress}%` } as CSSProperties}
-              aria-valuetext={`${clockOf(position)} / ${clockOf(track.duration)}`}
+              aria-valuetext={`${clockOf(position)} / ${clockOf(total)}`}
               onChange={(event) => seekTo(Number(event.target.value))}
               onPointerDown={() => {
                 scrubbing.current = true
