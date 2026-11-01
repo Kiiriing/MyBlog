@@ -73,7 +73,7 @@ export const vinylTracks: VinylTrack[] = [
     duration: 128.94
   },
   {
-    title: 'Turning Around (余烬重燃)',
+    title: 'Turning Around',
     cn: '鸣潮先约电台 · Grabbitz',
     side: 'SIDE A · 06',
     file: 'Turning Around (余烬重燃)-Grabbitz.mp3',
@@ -90,7 +90,7 @@ export const vinylTracks: VinylTrack[] = [
   },
   {
     title: '小小奇迹',
-    cn: '鸣潮先约电台 · jixwang · 飞行雪绒',
+    cn: '鸣潮先约电台',
     side: 'SIDE A · 08',
     file: '小小奇迹-鸣潮先约电台.mp3',
     cover: '/art/music/covers/cover-8.png',
@@ -98,7 +98,7 @@ export const vinylTracks: VinylTrack[] = [
   },
   {
     title: '反乌托邦 × 拼接遗憾',
-    cn: 'Vince丷 · 见过夏天P · Ciyo',
+    cn: 'Vince丷',
     side: 'SIDE A · 09',
     file: '反乌托邦.拼接遗憾.mp3',
     cover: '/art/music/covers/cover-9.jpg',
@@ -134,6 +134,16 @@ export class VinylEngine {
   private switching = false
   private bins: Uint8Array | null = null
   private unlock: (() => void) | null = null
+  /* 被自动播放策略拦下后，改成静音起播：时间轴照常走，等手势再把声音接回来 */
+  private silent = false
+  /* 静音元素也被拦（Chrome 对 <audio> 更严格）时，界面改用本地时钟推进：
+     唱片、进度与自动切歌照常走，第一次手势再把声音接到当前位置 */
+  private virtual = false
+  private virtualBase = 0
+  private virtualSince = 0
+  private virtualTimer = 0
+  /* 本地时钟播放中被暂停时记下的位置，下次起播从这里接上 */
+  private resumeAt = 0
 
   /** 真实音频读到元数据后把长度报给组件，进度与时间显示据此换成实际的时长 */
   onDuration: ((seconds: number) => void) | null = null
@@ -173,9 +183,13 @@ export class VinylEngine {
   /** 当前播放到的秒数（暂停时停在暂停点） */
   position() {
     if (this.switching) return 0
+    const total = this.duration
+    if (this.virtual) {
+      const at = this.virtualAt()
+      return Math.max(0, total > 0 ? Math.min(total, at) : at)
+    }
     const audio = this.audio
     if (!audio) return 0
-    const total = this.duration
     const at = Number.isFinite(audio.currentTime) ? audio.currentTime : 0
     return Math.max(0, total > 0 ? Math.min(total, at) : at)
   }
@@ -185,6 +199,12 @@ export class VinylEngine {
     this.clearSwitch()
     const next = Math.max(0, Math.min(vinylTracks.length - 1, index))
     this.index = next
+    /* 换曲时暂停点与本地时钟都归零，新曲从 0:00 开始 */
+    this.resumeAt = 0
+    if (this.virtual) {
+      this.virtualBase = 0
+      this.virtualSince = performance.now()
+    }
 
     const audio = this.ensureAudio()
     if (!audio) return
@@ -254,6 +274,16 @@ export class VinylEngine {
     if (!audio) return
     const total = this.duration
     const target = Math.max(0, total > 0 ? Math.min(value, Math.max(0, total - 0.08)) : value)
+    /* 本地时钟期间音频没在播，把指针挪到本地时钟上即可 */
+    if (this.virtual) {
+      this.virtualBase = target
+      this.virtualSince = performance.now()
+      return
+    }
+    if (this.resumeAt > 0) {
+      this.resumeAt = target
+      return
+    }
     try {
       audio.currentTime = target
     } catch {
@@ -270,6 +300,14 @@ export class VinylEngine {
     this.playing = true
     this.clearSwitch()
 
+    /* 之前被策略逼成了静音起播：这次起播多半来自按钮点击，
+       在手势里把静音摘掉，声音就能直接接上 */
+    const audio = this.audio
+    if (audio && audio.muted) {
+      audio.muted = false
+      this.silent = false
+    }
+
     /* 没有用户手势时浏览器只允许建上下文、不放声：录一次手势，之后自动接上 */
     if (ctx.state === 'suspended') {
       void ctx.resume()
@@ -279,11 +317,30 @@ export class VinylEngine {
     this.master.gain.setTargetAtTime(this.volume, ctx.currentTime, 0.18)
     this.startNoise()
     this.load()
+
+    /* 上次在本地时钟上暂停过：把播放头挪到那个位置再起播 */
+    if (this.resumeAt > 0) {
+      const at = this.resumeAt
+      this.resumeAt = 0
+      if (audio) {
+        try {
+          audio.currentTime = at
+        } catch {
+          /* 元数据没到就从头放 */
+        }
+      }
+    }
+
     this.startAudio()
   }
 
   pause() {
     if (!this.playing) return
+    /* 本地时钟播放中暂停：记下当前位置，恢复时从这里接上 */
+    if (this.virtual) {
+      this.resumeAt = this.virtualAt()
+      this.stopVirtual()
+    }
     this.playing = false
     this.clearSwitch()
     this.audio?.pause()
@@ -307,7 +364,10 @@ export class VinylEngine {
   dispose() {
     this.clearSwitch()
     this.dropUnlock()
+    this.stopVirtual()
     this.playing = false
+    this.silent = false
+    this.resumeAt = 0
 
     const audio = this.audio
     if (audio) {
@@ -416,10 +476,61 @@ export class VinylEngine {
     const started = audio.play()
     if (started && typeof started.catch === 'function') {
       started.catch(() => {
-        /* 被自动播放策略拦下：等一次手势，再试一次 */
-        if (this.ctx) this.armUnlock(this.ctx)
+        /* 被自动播放策略拦下：退回静音起播，进度与唱片照常从这一刻走 */
+        this.startSilent()
       })
     }
+  }
+
+  /** 浏览器不允许有声自动播放时，先试静音起播：
+      静音元素能播的话，时间轴照样从加载结束那一刻走，第一次手势再摘掉静音。 */
+  private startSilent() {
+    const audio = this.audio
+    if (!audio || !this.playing || audio.muted) return
+
+    this.silent = true
+    audio.muted = true
+
+    const ctx = this.ctx
+    if (ctx) {
+      if (ctx.state === 'suspended') void ctx.resume().catch(() => {})
+      this.armUnlock(ctx)
+    }
+
+    const started = audio.play()
+    const fallback = () => {
+      /* Chrome 对 <audio> 很严格，静音也可能被拦：这时改走本地时钟 */
+      if (this.playing && this.audio === audio && audio.paused) this.beginVirtual()
+    }
+    if (started && typeof started.catch === 'function') started.catch(fallback)
+    else fallback()
+
+    if (this.virtualTimer) window.clearTimeout(this.virtualTimer)
+    this.virtualTimer = window.setTimeout(fallback, 500)
+  }
+
+  /** 本地时钟：音频真的放不出来时，用 performance.now() 推播放头。
+      唱片、进度与自动切歌和真播放一模一样，手势解锁后再把声音接到这个位置。 */
+  private virtualAt() {
+    return Math.max(0, this.virtualBase + (performance.now() - this.virtualSince) / 1000)
+  }
+
+  private beginVirtual() {
+    if (this.virtual) return
+    this.virtual = true
+    this.virtualBase = 0
+    this.virtualSince = performance.now()
+
+    const ctx = this.ctx
+    if (ctx) this.armUnlock(ctx)
+  }
+
+  private stopVirtual() {
+    this.virtual = false
+    this.virtualBase = 0
+    this.virtualSince = 0
+    if (this.virtualTimer) window.clearTimeout(this.virtualTimer)
+    this.virtualTimer = 0
   }
 
   private clearSwitch() {
@@ -433,8 +544,24 @@ export class VinylEngine {
     if (this.unlock) return
     const unlock = () => {
       this.dropUnlock()
-      if (ctx.state === 'suspended') void ctx.resume()
       const audio = this.audio
+      /* 手势里允许有声播放：先把静音摘掉，再恢复上下文，声音从当前位置接上 */
+      if (audio && this.silent) {
+        audio.muted = false
+        this.silent = false
+      }
+      /* 本地时钟期间音频其实没播过：先把界面上的位置写进播放头 */
+      if (audio && this.virtual) {
+        const total = this.duration
+        const at = this.virtualAt()
+        try {
+          audio.currentTime = total > 0 ? Math.min(Math.max(0, at), Math.max(0, total - 0.08)) : at
+        } catch {
+          /* 元数据没到就从头放 */
+        }
+        this.stopVirtual()
+      }
+      if (ctx.state === 'suspended') void ctx.resume()
       if (this.playing && audio && audio.paused) void audio.play().catch(() => {})
     }
     this.unlock = unlock

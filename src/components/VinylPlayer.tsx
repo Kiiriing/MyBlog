@@ -498,7 +498,9 @@ export default function VinylPlayer() {
     else if (moved) settle()
   }
 
-  const hint = !open && playing && !audible
+  /* 浏览器拦下有声自动播放时，音乐是静音在走的：把提示常亮，点一下就能出声 */
+  const silent = playing && !audible
+  const hint = silent
     ? 'Tap for sound'
     : playing
       ? 'Now playing'
@@ -514,7 +516,7 @@ export default function VinylPlayer() {
       ref={rootRef}
       className={`vinyl-player${open ? ' is-open' : ''}${dragging ? ' is-dragging' : ''}${
         volShown ? ' is-vol-open' : ''
-      }`}
+      }${silent ? ' is-silent' : ''}`}
       data-tone={tone}
       data-playing={playing ? 'true' : 'false'}
       style={{ transform: `translate3d(${offset.x}px, ${offset.y}px, 0)` }}
