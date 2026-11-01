@@ -4,6 +4,10 @@
    换曲时新旧总线交叉淡入淡出，暂停只是把总线淡到 0，不销毁上下文，
    这样再次播放不会重新走一遍授权与设备初始化。
 
+   曲目表按站点的气质排成一张十首的「唱片」：
+   A 面偏夜行、纸面与印刷，B 面偏暗房、批注与收尾；
+   side 里的编号就是总曲序（01–10），与面板左上角显示的编号一致。
+
    进度：程序化音源本身没有「长度」，所以每首曲子自带一个虚拟 duration（秒），
    进度只记录「从歌头开始播了多久」，拖动进度就是按目标秒数换算回琶音的第几步重新起步。
    到结尾后由组件调用 setTrack 切下一首。
@@ -57,7 +61,7 @@ export const vinylTracks: VinylTrack[] = [
   {
     title: 'Late Reply',
     cn: '迟到的回信',
-    side: 'SIDE B · 03',
+    side: 'SIDE A · 03',
     duration: 112,
     step: 0.72,
     wave: 'triangle',
@@ -69,7 +73,7 @@ export const vinylTracks: VinylTrack[] = [
   {
     title: 'Accent Drift',
     cn: '强调色漂移',
-    side: 'SIDE B · 04',
+    side: 'SIDE A · 04',
     duration: 72,
     step: 0.44,
     wave: 'sine',
@@ -77,6 +81,84 @@ export const vinylTracks: VinylTrack[] = [
     scale: [0, 5, 7, 12, 19, 12, 7, 5],
     cutoff: 1500,
     amp: 0.15
+  },
+  {
+    /* 印刷颗粒：半音里带一点沙，像放大后的网点 */
+    title: 'Grain Emulsion',
+    cn: '颗粒乳剂',
+    side: 'SIDE A · 05',
+    duration: 88,
+    step: 0.64,
+    wave: 'triangle',
+    root: 233.08,
+    scale: [0, 3, 7, 10, 14, 10, 7, 3],
+    cutoff: 1750,
+    amp: 0.17
+  },
+  {
+    /* 奶油纸面章节的间奏：明亮但不尖，留白多 */
+    title: 'Cream Interval',
+    cn: '奶油间奏',
+    side: 'SIDE B · 06',
+    duration: 84,
+    step: 0.7,
+    wave: 'sine',
+    root: 293.66,
+    scale: [0, 2, 6, 9, 14, 9, 6, 2],
+    cutoff: 2300,
+    amp: 0.16
+  },
+  {
+    /* 暗房：低音区慢慢走，像红灯下的显影盘 */
+    title: 'Contact Sheet',
+    cn: '接触印样',
+    side: 'SIDE B · 07',
+    duration: 104,
+    step: 0.82,
+    wave: 'triangle',
+    root: 130.81,
+    scale: [0, 5, 9, 14, 19, 14, 9, 5],
+    cutoff: 980,
+    amp: 0.15
+  },
+  {
+    /* 页边批注：短促、干净，像铅笔写下又擦掉 */
+    title: 'Margin Note',
+    cn: '页边批注',
+    side: 'SIDE B · 08',
+    duration: 92,
+    step: 0.56,
+    wave: 'sine',
+    root: 246.94,
+    scale: [0, 4, 9, 11, 16, 11, 9, 4],
+    cutoff: 2050,
+    amp: 0.17
+  },
+  {
+    /* 强调色：跳进得比前面几首都急，给橙色一点音量 */
+    title: 'Orange Noise',
+    cn: '橙色噪声',
+    side: 'SIDE B · 09',
+    duration: 76,
+    step: 0.46,
+    wave: 'triangle',
+    root: 207.65,
+    scale: [0, 3, 6, 10, 13, 10, 6, 3],
+    cutoff: 1250,
+    amp: 0.16
+  },
+  {
+    /* 收尾：最慢的一首，loop 回到 01 时像把唱片放回封套 */
+    title: 'Sign-off',
+    cn: '收声',
+    side: 'SIDE B · 10',
+    duration: 118,
+    step: 0.88,
+    wave: 'sine',
+    root: 164.81,
+    scale: [0, 2, 5, 9, 14, 7, 4, 2],
+    cutoff: 1000,
+    amp: 0.14
   }
 ]
 

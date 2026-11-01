@@ -12,7 +12,7 @@
 - **GlowCursor**（React Bits 流体光迹，`src/components/GlowCursor.tsx`）：纯 WebGL2 的鼠标拖尾（半浮点帧缓冲 + MacCormack 平流 + 20 步压力迭代 + 5 级 bloom），深色页以 `screen` 加光、奶油色页换成组件的 light 主题落墨
 - **LetterGlitch**（React Bits 字符故障背景，`src/components/LetterGlitch.tsx`）：首屏整屏铺满的 WebGL2 字符场（字形图集 + 状态贴图、流动噪声、游走撕裂与指针火花），默认参数与官方一致，`prefers-reduced-motion` 下退化为静止字符
 - **LogoLoop**（React Bits 技术栈长条，`src/components/LogoLoop.jsx` + 类型声明 `.d.ts`）：关于页底部的 25 个技术栈品牌图标（`public/art/logo`），按语言 → 前端框架 → 运行时 → 数据库 → 构建与工具 → 部署与系统 → 编辑器分层排列，连续滚动、可拖拽甩动、悬停停下并恢复品牌色，`prefers-reduced-motion` 下保持静止排列
-- **Web Audio**（`src/lib/vinylAudio.ts`）：左下角黑胶播放器的曲目全部程序化合成——循环琶音 + 低八度长音 + 低通滤波 + 黑胶针脚底噪，`AnalyserNode` 供电频谱柱；每首带虚拟时长，支持进度拖动、播完自动切下一首，预加载结束后自动播放（被自动播放策略拦下时，首次点击 / 按键解锁音频）；仓库不依赖任何外部音频素材
+- **Web Audio**（`src/lib/vinylAudio.ts`）：左下角黑胶播放器的十首曲目全部程序化合成——循环琶音 + 低八度长音 + 低通滤波 + 黑胶针脚底噪，`AnalyserNode` 供电频谱柱；曲目按 A 面（夜行 / 纸面 / 印刷，01–05）与 B 面（暗房 / 批注 / 收尾，06–10）编排，每首带虚拟时长，支持进度拖动、播完自动切下一首，预加载结束后自动播放（被自动播放策略拦下时，首次点击 / 按键解锁音频）；仓库不依赖任何外部音频素材
 - **ogl 1.0**：承载 React Bits `DitherVeil` 抖动之幕（WebGL2）
 - **Tailwind CSS v4**（`@tailwindcss/vite`）与 **shadcn**（`components.json`），仅用于接入 registry 组件；项目自有 CSS 不分层，优先级更高
 - **Lenis** 平滑滚动，与 GSAP ticker 同步
@@ -111,6 +111,13 @@ public/art/     本地视觉素材（SVG / PNG；art/logo 为技术栈品牌图�
 ```
 
 ## 更新日志
+
+### 2026-11-01 — 播放器曲目扩充到十首：按站点气质排成一张 A/B 面唱片
+
+- `src/lib/vinylAudio.ts`：`vinylTracks` 从 4 首扩到 10 首，新增 `Grain Emulsion / 颗粒乳剂`、`Cream Interval / 奶油间奏`、`Contact Sheet / 接触印样`、`Margin Note / 页边批注`、`Orange Noise / 橙色噪声`、`Sign-off / 收声`；每首按「夜行 / 纸面与印刷 / 暗房 / 批注 / 收尾」配了根音、半音序列、步长、低通截止与音量，A 面留夜行与印刷、B 面留暗房与收尾，loop 回 01 时像把唱片放回封套。
+- `side` 统一成总曲序 `SIDE A · 01–05` / `SIDE B · 06–10`，与唱片中心编号、面板左上角编号一致；`next / prev` 自动按 10 首循环，播完自动接下一首。
+- 文件头注释补充了这张「唱片」的编排思路，以及换成真实 `HTMLAudioElement` 时需要保留的五个对外接口。
+- 验证：`npm run build` 通过（`index-*.js 611.10 kB`）；`npm run preview` + headless Chrome 连点「下一首」11 次，面板依次显示 01–10 后回到 01，标题 / 中文 / 时长（1:36、1:18、1:52、1:12、1:28、1:24、1:44、1:32、1:16、1:58）与进度条 `max` 全部对应；把第 1 首进度条拖到最右端后 0.9s 内自动接到 `SIDE A · 02`，`data-playing` 保持 `true`，控制台无 error。
 
 ### 2026-11-01 — 音量槽悬停：指针移到滑槽持续展开，离开音量区域 0.5s 才收回
 
