@@ -1,33 +1,34 @@
 # LU YU — Full-stack Web Developer
 
-陆屿 — 个人博客 / 作品集。静态前端，React 19 单页应用，强调滚动叙事、视差与细节交互；内容按真实简历组织：企业管理系统、签到考勤、数据大屏、竞赛荣誉与项目手记。
+陆屿的个人博客 / 作品集。纯静态前端，React 19 单页应用，强调滚动叙事、视差与细节交互；内容按真实简历组织：企业管理系统、签到考勤、数据大屏、竞赛荣誉与项目手记。
+
+除文字与作品数据外，页面里的视觉素材全部来自仓库：`public/art` 下是程序化生成的 SVG / PNG，黑胶播放器的曲目与封面放在 `public/art/music`。
 
 ## 技术栈
 
-- **React 19** + **TypeScript**，路由使用 **react-router-dom 7**
-- **Vite 8**（`@vitejs/plugin-react`）
-- **GSAP 3.15**（ScrollTrigger / SplitText / quickTo / ticker）
+- **React 19.3** + **TypeScript 7**，路由使用 **react-router-dom 7.18**（History 路由 + 自定义转场）
+- **Vite 8.3**（`@vitejs/plugin-react`，`@` 指向 `src`），`build` 先跑 `tsc --noEmit`
+- **Tailwind CSS 4.3**（`@tailwindcss/vite`）与 **shadcn**（`components.json`），仅用于接入 registry 组件；项目自有 CSS 不分层，优先级更高
+- **GSAP 3.15**（`@gsap/react`；ScrollTrigger / SplitText / quickTo / ticker）负责滚动叙事、进场揭示与播放器展开
+- **Lenis 1.3** 平滑滚动，与 GSAP ticker 同步（`src/composables/useSmoothScroll.ts`）
 - **StrokeText**（React Bits 描边绘制文字，`src/components/StrokeText.tsx`）：首屏两行标题先描边勾出轮廓，再由左向右擦除出实心字形
 - **TextType**（React Bits 打字机文字，`src/components/TextType.tsx`）：首屏自述段落按字符逐字打出，光标跟随文字并持续闪烁
-- **GlowCursor**（React Bits 流体光迹，`src/components/GlowCursor.tsx`）：纯 WebGL2 的鼠标拖尾（半浮点帧缓冲 + MacCormack 平流 + 20 步压力迭代 + 5 级 bloom），深色页以 `screen` 加光、奶油色页换成组件的 light 主题落墨
+- **GlowCursor**（React Bits 流体光迹，`src/components/GlowCursor.tsx`）：纯 WebGL2 的鼠标拖尾（半浮点帧缓冲 + MacCormack 平流 + 20 步压力迭代 + 5 级 bloom），深色页以 `screen` 加光，奶油色页换成组件的 light 主题落墨
 - **LetterGlitch**（React Bits 字符故障背景，`src/components/LetterGlitch.tsx`）：首屏整屏铺满的 WebGL2 字符场（字形图集 + 状态贴图、流动噪声、游走撕裂与指针火花），默认参数与官方一致，`prefers-reduced-motion` 下退化为静止字符
-- **LogoLoop**（React Bits 技术栈长条，`src/components/LogoLoop.jsx` + 类型声明 `.d.ts`）：关于页底部的 25 个技术栈品牌图标（`public/art/logo`），按语言 → 前端框架 → 运行时 → 数据库 → 构建与工具 → 部署与系统 → 编辑器分层排列，连续滚动、可拖拽甩动、悬停停下并恢复品牌色，`prefers-reduced-motion` 下保持静止排列
-- **Web Audio**（`src/lib/vinylAudio.ts`）：左下角黑胶播放器的曲目改读真实音频——`public/art/music` 下的 mp3 经 `HTMLAudioElement` 解码，再走 `MediaElementSource → 母带增益 → AnalyserNode → 输出`，频谱柱读真实波形；换曲把母带压下去再拉起，保留黑胶针脚底噪。目前放了 `☔️` / `Cry For Me` / `溯` 三首，其余曲位留空（补一个 `{ file, cover, duration }` 即可加歌），支持进度拖动、播完自动切下一首，预加载结束后自动播放（被自动播放策略拦下时，首次点击 / 按键解锁音频）
-- **ogl 1.0**：承载 React Bits `DitherVeil` 抖动之幕（WebGL2）
-- **Tailwind CSS v4**（`@tailwindcss/vite`）与 **shadcn**（`components.json`），仅用于接入 registry 组件；项目自有 CSS 不分层，优先级更高
-- **Lenis** 平滑滚动，与 GSAP ticker 同步
-- 组件样式集中在 `src/styles/components/*.css`，由入口按需引入
-- 首屏为「左侧排版 + 右侧 DitherVeil 抖动之幕」双列布局（≤900px 面板下移居中），背景由 LetterGlitch 字符故障场铺满整屏，动效集中在标题描边 + 自述打字、滚动视差、圆形滚动徽章与左下角黑胶播放器
+- **LogoLoop**（React Bits 技术栈长条，`src/components/LogoLoop.jsx` + 类型声明 `.d.ts`）：关于页底部的 25 个技术栈品牌图标（`public/art/logo`），按语言 → 前端 / 后端框架 → 运行时 → 数据库 → 构建与工具 → 部署与系统 → 编辑器分层排列，连续滚动、可拖拽甩动、悬停停下并恢复品牌色，`prefers-reduced-motion` 下保持静止排列
+- **DitherVeil**（React Bits 抖动之幕，`src/components/DitherVeil.jsx`）+ **ogl 1.0**（WebGL2）：把镀铬头像压成 1-bit 点阵
+- **Web Audio**（`src/lib/vinylAudio.ts`）：左下角黑胶播放器的曲目读真实音频——`public/art/music` 下的 mp3 经 `HTMLAudioElement` 解码，再走 `MediaElementSource → 母带增益 → AnalyserNode → 输出`，频谱柱读真实波形；换曲把母带压下去再拉起，保留黑胶针脚底噪。目前三首：`☔️` / `Cry For Me` / `溯`，内圈封面依次是 `covers/#1.jpg` / `#2.jpg` / `#3.jpg`，其余曲位留空（补一个 `{ file, cover, duration }` 即可加歌），支持进度拖动、播完自动切下一首，预加载结束后自动播放（被自动播放策略拦下时，首次点击 / 按键解锁音频）
+- 组件样式集中在 `src/styles/components/*.css`（37 个组件样式文件），由各组件按需引入
 - 原生 SVG 程序化视觉素材（`public/art`）为主；音频与唱片封面素材放在 `public/art/music`（mp3 + `covers/`）
 
-运行时要求 **Node.js ≥ 22.12**（当前已验证 Node 26 / npm 11）。
+运行时要求 **Node.js ≥ 22.12**（`package.json` 的 `engines`；当前已验证 Node 26 / npm 11）。
 
-## 开发
+## 快速开始
 
 ```bash
 npm install
-npm run dev       # http://localhost:5173
-npm run build     # tsc --noEmit + 输出 dist/
+npm run dev       # http://localhost:5173（--host，局域网也可访问）
+npm run build     # tsc --noEmit + vite build，输出 dist/
 npm run preview   # 预览生产构建
 ```
 
@@ -43,7 +44,9 @@ npm.cmd run dev
 Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 ```
 
-## 路由
+`vite.config.ts` 忽略了 `.tmp-*` 临时目录，截图脚本与 headless Chrome profile 不会触发 Windows 下的 EBUSY 监听报错。
+
+## 路由与锚点
 
 | 路径 | 页面 |
 | --- | --- |
@@ -54,17 +57,21 @@ Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 | `/journal/:slug` | 文章详情（阅读进度、正文排版、上一篇 / 下一篇） |
 | `*` | 404 |
 
-站内锚点：`/#about`、`/#manifesto`、`/#work`、`/#experience`、`/#credentials`、`/#journal`、`/#contact`。直接访问时会等待预加载与滚动解锁后再定位。不带 hash 进入首页（含刷新）始终从顶部开始，不会恢复上一次的滚动位置。
+站内锚点：`/#index`、`/#manifesto`、`/#about`、`/#work`、`/#experience`、`/#credentials`、`/#journal`、`/#contact`。直接访问时会等待预加载与滚动解锁后再定位。不带 hash 进入首页（含刷新）始终从顶部开始，不会恢复上一次的滚动位置。
+
+路由表在 `src/router.tsx`；页面切换由 `src/App.tsx` 统一调度：橙色幕布盖住屏幕后再换页，新页面挂载、图片解码与 `ScrollTrigger.refresh` 都发生在被遮住的那段时间。
 
 ## 内容与替换
 
-- `src/data/site.ts`：姓名、职位、真实邮箱（`liukiiriing@gmail.com`）、GitHub（`@Kiiriing`）、技术栈与菜单文案。
-- `src/data/profile.ts`：简历内容的单一数据源——能力矩阵、数字概览、三段实践经历、8 项荣誉、4 张证书与志愿服务。
-- `src/data/works.ts`：四个已交付项目（QianVerse / Attendance / Data Walls / Campus Lab）。每个项目包含 `stack`、`status`、`links`（GitHub / 邮件预约）与工程向的 `intro`、`notes`、`gallery`。
-- `src/data/posts.ts`：四篇真实项目手记与分类。
+- `src/data/site.ts`：姓名、职位、真实邮箱（`liukiiriing@gmail.com`）、GitHub（`@Kiiriing`）、技术栈与全屏菜单文案。
+- `src/data/profile.ts`：简历内容的单一数据源——能力矩阵、数字概览（20+ 大屏 / 10+ 业务模块 / 8 项荣誉 / 4 张证书）、三段实践经历、8 项荣誉、4 张证书与志愿服务。
+- `src/data/works.ts`：四个已交付项目（QianVerse / Attendance / Data Walls / Campus Lab）。每个项目包含 `stack`、`status`、`links`（GitHub / 邮件预约）与工程向的 `intro`、`notes`、`gallery`，`next` 串成「下一项目」链路。
+- `src/data/posts.ts`：四篇真实项目手记（`idempotent-orders` / `attendance-anti-cheat` / `data-wall-rules` / `react-migration`）与分类（全部 / 工程 / 设计 / 随笔）。
+- `src/data/chapters.ts`：首页章节索引（编号、锚点、标题与页脚标签）。
 - `src/data/stack.ts`：关于页 LogoLoop 的技术栈图标清单（`techStack` 25 项，每项含 `name` / `icon` / `group`），按栈层次分组排列；新增技术只需把图标放进 `public/art/logo`（文件名小写、去空格），再在这里追加一行。
 
 > 站内 GitHub 与邮箱均为真实地址；分类筛选由 `works.ts` 的 `filters` 与 `WorkIndexView.tsx` 的 `filters` 共同决定，新增项目时两处需要同步。
+> 播放器加歌：把 mp3 放进 `public/art/music`（文件名可含中文 / emoji / `#`，`musicAsset()` 会做 `encodeURIComponent`），封面放进 `public/art/music/covers`，再到 `vinylAudio.ts` 的 `vinylTracks` 追加一项。
 
 ## 交互与可访问性
 
@@ -72,7 +79,8 @@ Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 - 首页 Hero：背景由 LetterGlitch 铺满整屏（字符在流动噪声里缓亮、随机成片故障，指针经过处点亮火花、点击沿行撕裂），并在文字一侧压一层暗场保证小字号可读；左侧标题逐字入场、`hero__lead` 与底部信息随滚动产生视差；右侧 DitherVeil 用 `floyd` 抖动把镀铬头像压成 1-bit 点阵，透明底会被 alpha 裁掉，点阵直接浮在页面网格上；鼠标划过的拖尾会烧穿成全彩、松开后逐格编织回点阵，点击产生冲击波
 - 进入首页（无 hash）时始终落在顶部：接管 `history.scrollRestoration` 并在预加载结束后回滚到 0，修复刷新后「自动跳到关于我」的问题
 - 左下角黑胶播放器（`VinylPlayer`，全局常驻、跨页继续播放）：收起时只有一张唱片，点击后唱片左移、控制条向右展开（进度条 / 上一首 / 播放暂停 / 下一首 / 小喇叭音量槽 / 10 格实时频谱）；右上角是「当前时间 / 歌曲长度」，拖动进度条即时定位、播完自动接下一首；音量收成一枚喇叭，悬停或点按才滑出 82px 细音量槽（移动端向上展开），指针可以顺势移到左侧滑槽上继续拖动，停在滑槽里一直保持展开、离开音量区域 0.5s 后才收回；预加载结束后自动播放，浏览器拦截时唱片照转并在唱片上方提示 `Tap for sound`，首次点击 / 按键解锁音频；展开由 GSAP 时间轴负责（宽度 `expo.out` 0.62s、内容按 0.06s 依次进场、唱片同步左移），收起时内容先退、面板后收，点击页面其它地方自动合上；按住唱片可拖到整页任意位置（夹紧以唱片本体为准，展开态不再被控制条宽度限制），松手后自动回拉保证整块不出屏；配色用 `elementsFromPoint` 读取控件下方的页面，落到 `.theme-paper` 章节自动切成奶油纸面的墨色文字，换页与拖动后都会重新采样；播放器整块（`CustomCursor` 的 `PLAIN_REGION`）不叠加反色圆环，唱片 / 按钮 / 滑块都用系统指针（`cursor: auto`，按钮与 range 为 `pointer`）
-- 路由切换时以橙色幕布进行擦除式转场（含目标页面标签与路径）
+- 唱片内圈：有封面时按 60% 直径渲染成圆形照片（内阴影收边、随盘面一起转），没有封面就退回原来的编号标签；真实音频的时长由 `loadedmetadata` / `durationchange` 报回，元数据未到时用曲目表兜底
+- 路由切换时以橙色幕布进行擦除式转场（含目标页面标签与路径），全程由 CSS 关键帧跑在合成线程上
 - 项目索引：分类筛选、计数过渡、整行 paper 色块从中心揭幕、项目数字变实色、光标跟随案例预览卡，键盘 focus 同样触发揭幕
 - 滚动后顶部渐隐遮罩，保证固定导航与大标题重叠时的可读性
 - 首页横向作品画廊：GSAP scrub 驱动，支持鼠标拖拽映射纵向滚动；桌面与移动端均提供 All projects 入口
@@ -86,7 +94,7 @@ Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 
 ## 部署
 
-构建产物为纯静态文件。由于使用 History 路由，托管平台需要把未知路径回退到 `index.html`：
+构建产物为纯静态文件（`dist/`）。由于使用 History 路由，托管平台需要把未知路径回退到 `index.html`：
 
 - Netlify：`/* /index.html 200`
 - Vercel / Nginx：`try_files $uri $uri/ /index.html;`
@@ -96,21 +104,34 @@ Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 
 ```text
 src/
-  App.tsx       应用外壳：预加载、菜单、页面过渡、滚动重置
+  App.tsx       应用外壳：预加载、菜单、页面过渡、滚动重置、全局挂件
   main.tsx      React 入口（createRoot + BrowserRouter）
   router.tsx    路由表与路由名映射
-  components/   页面区块与通用组件（.tsx，另有 shadcn / React Bits 生成的 .jsx）
+  components/   页面区块与通用组件（.tsx；另有 React Bits / shadcn 生成的 .jsx）
   composables/  平滑滚动（GSAP + Lenis）
   hooks/        时钟、进场 reveal
-  data/         站点、作品、文章内容
+  data/         站点、章节、简历、作品、文章与技术栈内容
   lib/          GSAP 注册、黑胶音频引擎（真实音频曲目）
   store/        UI 状态（菜单 / 启动 / 触屏）
   styles/       主题变量、全局排版；components/ 下为各组件样式
-  views/        首页、手记、文章、作品、404
-public/art/     本地视觉素材（SVG / PNG；art/logo 为技术栈品牌图标，art/music 为音频与封面）
+  views/        首页、手记、文章、作品索引 / 详情、404
+public/art/     本地视觉素材（SVG / PNG；art/logo 为 25 个技术栈品牌图标，art/music 为音频与封面）
 ```
 
 ## 更新日志
+
+### 2026-11-01 — 重写 README：按当前项目状态整理技术栈、路由与内容源
+
+- `README.md`：整份重写，补齐「概览 / 技术栈 / 快速开始 / 路由与锚点 / 内容与替换 / 交互与可访问性 / 部署 / 目录」结构。
+- 核对后的现状：React 19.3 / TypeScript 7 / react-router-dom 7.18 / Vite 8.3 / Tailwind 4.3 / GSAP 3.15 / Lenis 1.3 / ogl 1.0；Node ≥ 22.12；`src` 下 6 个视图、37 个组件样式文件、25 个技术栈图标与 `techStack` 25 项；四个作品、四篇手记与三档分类。
+- 播放器描述改为三首真实音频 `☔️` / `Cry For Me` / `溯`，封面统一为 `public/art/music/covers/#1.jpg` / `#2.jpg` / `#3.jpg`（与 `vinylAudio.ts` 的 `cover` 路径一致）；补充「加歌」与封面替换步骤。
+- 锚点表补上 `/#index`，部署说明明确构建产物的 History 回退规则，目录树同步 `data/chapters.ts`、`lib`、`store` 等实际文件。
+- 验证：`npm run build` 通过；本次仅文档改动，未触及运行时代码。
+
+### 2026-11-01 — 播放器封面统一改名为 `#1.jpg` / `#2.jpg` / `#3.jpg`
+
+- `public/art/music/covers/`：删除手绘的 `cry-for-me.svg` / `su.svg`，三张封面统一为 `#1.jpg`（由原 `radiax-umbrella.jpg` 改名）、`#2.jpg`、`#3.jpg`。
+- `src/lib/vinylAudio.ts`：三首曲目的 `cover` 路径同步改为 `/art/music/covers/#1.jpg`、`#2.jpg`、`#3.jpg`。
 
 ### 2026-11-01 — 曲序调整：☔️ 打头，新增第三首「溯」
 
