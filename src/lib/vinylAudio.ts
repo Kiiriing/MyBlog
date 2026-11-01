@@ -5,7 +5,7 @@
    换曲时把母带增益压下去再拉起，听感上像把唱针抬起又落下。
 
    曲目表按站点的气质排成一张「唱片」，side 里的编号就是曲序。
-   目前只放了两首真实文件，剩下的位置先空着：
+   现在放了三首真实文件，后面的位置先空着：
    有新歌时把 mp3 放进 public/art/music（封面可放 public/art/music/covers），
    再往 vinylTracks 里补一个 { file, cover, duration } 即可。
 
@@ -32,22 +32,31 @@ export function musicAsset(file: string) {
 
 export const vinylTracks: VinylTrack[] = [
   {
+    title: '☔️',
+    cn: 'Radiax',
+    side: 'SIDE A · 01',
+    file: 'Radiax - ☔️.mp3',
+    cover: '/art/music/covers/radiax-umbrella.jpg',
+    duration: 117.13
+  },
+  {
     title: 'Cry For Me',
     cn: 'feat. 愛海 · Michita',
-    side: 'SIDE A · 01',
+    side: 'SIDE A · 02',
     file: 'CryForMe.Feat.愛海.-Michita#2CbowT.mp3',
     cover: '/art/music/covers/cry-for-me.svg',
     duration: 303.05
   },
   {
-    title: '☔️',
-    cn: 'Radiax',
-    side: 'SIDE A · 02',
-    file: 'Radiax - ☔️.mp3',
-    cover: '/art/music/covers/radiax-umbrella.jpg',
-    duration: 117.13
+    /* 文件名是这首歌唯一能读到的信息（mp3 里没写 ID3 标签），封面也是照着同一个气质画的 */
+    title: '溯',
+    cn: 'Sù',
+    side: 'SIDE A · 03',
+    file: '溯.mp3',
+    cover: '/art/music/covers/su.svg',
+    duration: 192.03
   }
-  /* 剩下的曲位先空着：加歌时在这里补 { title, cn, side, file, cover, duration } */
+  /* 后面的曲位先空着：加歌时在这里补 { title, cn, side, file, cover, duration } */
 ]
 
 export class VinylEngine {

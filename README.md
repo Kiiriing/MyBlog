@@ -12,7 +12,7 @@
 - **GlowCursor**（React Bits 流体光迹，`src/components/GlowCursor.tsx`）：纯 WebGL2 的鼠标拖尾（半浮点帧缓冲 + MacCormack 平流 + 20 步压力迭代 + 5 级 bloom），深色页以 `screen` 加光、奶油色页换成组件的 light 主题落墨
 - **LetterGlitch**（React Bits 字符故障背景，`src/components/LetterGlitch.tsx`）：首屏整屏铺满的 WebGL2 字符场（字形图集 + 状态贴图、流动噪声、游走撕裂与指针火花），默认参数与官方一致，`prefers-reduced-motion` 下退化为静止字符
 - **LogoLoop**（React Bits 技术栈长条，`src/components/LogoLoop.jsx` + 类型声明 `.d.ts`）：关于页底部的 25 个技术栈品牌图标（`public/art/logo`），按语言 → 前端框架 → 运行时 → 数据库 → 构建与工具 → 部署与系统 → 编辑器分层排列，连续滚动、可拖拽甩动、悬停停下并恢复品牌色，`prefers-reduced-motion` 下保持静止排列
-- **Web Audio**（`src/lib/vinylAudio.ts`）：左下角黑胶播放器的曲目改读真实音频——`public/art/music` 下的 mp3 经 `HTMLAudioElement` 解码，再走 `MediaElementSource → 母带增益 → AnalyserNode → 输出`，频谱柱读真实波形；换曲把母带压下去再拉起，保留黑胶针脚底噪。目前放了 `Cry For Me` / `☔️` 两首，其余曲位留空（补一个 `{ file, cover, duration }` 即可加歌），支持进度拖动、播完自动切下一首，预加载结束后自动播放（被自动播放策略拦下时，首次点击 / 按键解锁音频）
+- **Web Audio**（`src/lib/vinylAudio.ts`）：左下角黑胶播放器的曲目改读真实音频——`public/art/music` 下的 mp3 经 `HTMLAudioElement` 解码，再走 `MediaElementSource → 母带增益 → AnalyserNode → 输出`，频谱柱读真实波形；换曲把母带压下去再拉起，保留黑胶针脚底噪。目前放了 `☔️` / `Cry For Me` / `溯` 三首，其余曲位留空（补一个 `{ file, cover, duration }` 即可加歌），支持进度拖动、播完自动切下一首，预加载结束后自动播放（被自动播放策略拦下时，首次点击 / 按键解锁音频）
 - **ogl 1.0**：承载 React Bits `DitherVeil` 抖动之幕（WebGL2）
 - **Tailwind CSS v4**（`@tailwindcss/vite`）与 **shadcn**（`components.json`），仅用于接入 registry 组件；项目自有 CSS 不分层，优先级更高
 - **Lenis** 平滑滚动，与 GSAP ticker 同步
@@ -111,6 +111,12 @@ public/art/     本地视觉素材（SVG / PNG；art/logo 为技术栈品牌图�
 ```
 
 ## 更新日志
+
+### 2026-11-01 — 曲序调整：☔️ 打头，新增第三首「溯」
+
+- `src/lib/vinylAudio.ts`：曲序改为 `SIDE A · 01 ☔️ / Radiax` → `SIDE A · 02 Cry For Me / feat. 愛海 · Michita` → `SIDE A · 03 溯 / Sù`；新增第三首 `溯.mp3`（mp3 里没有 ID3 标签，标题取文件名，实测 3:12，兜底时长 192.03s）。
+- `public/art/music/covers/su.svg`：给「溯」画了同款圆形封面（深色 chrome 渐变 + 宋体字 + 橙色分隔线 + 颗粒），沿用 `cry-for-me.svg` 的版式；`cry-for-me.svg` 底部编号由 `SIDE A 01` 改为 `SIDE A 02`。
+- 验证：`npm run build` 通过（`index-*.js 610.71 kB`）；`npm run preview` + headless Chrome 1440×900 依次点「下一首」：01 ☔️ 1:57 → 02 Cry For Me 5:03 → 03 溯 3:12 → 回到 01，「上一首」从 01 回到 03，三首封面 `radiax-umbrella.jpg` / `cry-for-me.svg` / `su.svg` 全部加载成功，控制台无 error。
 
 ### 2026-11-01 — 播放器接入真实歌曲，唱片内圈改成当前歌曲的封面
 
