@@ -36,7 +36,7 @@ export const vinylTracks: VinylTrack[] = [
     cn: 'Radiax',
     side: 'SIDE A · 01',
     file: 'Radiax - ☔️.mp3',
-    cover: '/art/music/covers/radiax-umbrella.jpg',
+    cover: '/art/music/covers/#1.jpg',
     duration: 117.13
   },
   {
@@ -44,7 +44,7 @@ export const vinylTracks: VinylTrack[] = [
     cn: 'feat. 愛海 · Michita',
     side: 'SIDE A · 02',
     file: 'CryForMe.Feat.愛海.-Michita#2CbowT.mp3',
-    cover: '/art/music/covers/cry-for-me.svg',
+    cover: '/art/music/covers/#2.jpg',
     duration: 303.05
   },
   {
@@ -53,7 +53,7 @@ export const vinylTracks: VinylTrack[] = [
     cn: 'Sù',
     side: 'SIDE A · 03',
     file: '溯.mp3',
-    cover: '/art/music/covers/su.svg',
+    cover: '/art/music/covers/#3.jpg',
     duration: 192.03
   }
   /* 后面的曲位先空着：加歌时在这里补 { title, cn, side, file, cover, duration } */
