@@ -3,6 +3,8 @@ import { Link, useParams } from 'react-router-dom'
 import { getWork, works } from '../data/works'
 import ArtworkFrame from '../components/ArtworkFrame'
 import SiteFooter from '../components/SiteFooter'
+import ChapterTag from '../components/ChapterTag'
+import ChapterNext from '../components/ChapterNext'
 import { useReveal } from '../hooks/useReveal'
 import '../styles/components/WorkView.css'
 
@@ -110,6 +112,8 @@ export default function WorkView() {
               {work.index} / {total} — {work.year}
             </span>
           </div>
+
+          <ChapterTag index="04" meta={`Project ${work.index}`} />
 
           <div className="work-hero__title-row">
             <h1 className="work-hero__title">
@@ -262,6 +266,8 @@ export default function WorkView() {
           </Link>
         </section>
       ) : null}
+
+      <ChapterNext index="05" />
 
       <SiteFooter />
     </div>

@@ -36,6 +36,11 @@
   z-index: 1;
 }
 
+/* 章节标签：手记是第三章，与首页脊柱同一套编号 */
+.journal-page__chapter {
+  margin-bottom: clamp(20px, 3vw, 36px);
+}
+
 .journal-page__meta {
   display: flex;
   align-items: center;

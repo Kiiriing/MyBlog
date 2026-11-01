@@ -4,8 +4,71 @@
   color: var(--fg);
 }
 
+/* 两团被大幅模糊的光在暗场里漂移：极慢、极低透明度，只提供呼吸感。
+   裁剪放在这层自身，不写回 .works —— overflow:hidden 会让内层 sticky 失效。 */
+.works__ambient {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.works__ambient::before,
+.works__ambient::after {
+  position: absolute;
+  display: block;
+  width: 46vw;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  content: '';
+  will-change: transform;
+}
+
+.works__ambient::before {
+  top: 6%;
+  left: 2%;
+  background: radial-gradient(circle, rgba(255, 90, 47, 0.18), transparent 66%);
+  filter: blur(70px);
+  animation: works-drift-a 26s ease-in-out infinite alternate;
+}
+
+.works__ambient::after {
+  right: 2%;
+  bottom: 4%;
+  background: radial-gradient(circle, rgba(122, 103, 255, 0.16), transparent 68%);
+  filter: blur(80px);
+  animation: works-drift-b 34s ease-in-out infinite alternate;
+}
+
+@keyframes works-drift-a {
+  from {
+    transform: translate3d(-4%, 2%, 0) scale(0.92);
+  }
+  to {
+    transform: translate3d(10%, -8%, 0) scale(1.08);
+  }
+}
+
+@keyframes works-drift-b {
+  from {
+    transform: translate3d(6%, -4%, 0) scale(1.06);
+  }
+  to {
+    transform: translate3d(-8%, 8%, 0) scale(0.9);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .works__ambient::before,
+  .works__ambient::after {
+    animation: none;
+  }
+}
+
 .works__sticky {
   position: sticky;
+  z-index: 2;
   top: 0;
   display: flex;
   flex-direction: column;
@@ -184,6 +247,24 @@
   aspect-ratio: 4 / 5;
   transform-style: preserve-3d;
   will-change: transform;
+}
+
+/* 悬停时一圈细线从画框边缘向内收进：像镜头合焦，也把「可点」说清楚 */
+.work-card__visual::after {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border: 1px solid transparent;
+  content: '';
+  pointer-events: none;
+  transition:
+    inset 0.55s var(--ease-out),
+    border-color 0.5s ease;
+}
+
+.work-card:hover .work-card__visual::after {
+  inset: 9px;
+  border-color: rgba(216, 255, 67, 0.5);
 }
 
 /* 画框绝对定位填满可视区：纵向空间不够时按 4/5 优先、超出部分等比裁切，

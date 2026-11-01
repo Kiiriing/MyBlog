@@ -1,0 +1,204 @@
+/* 「下一章」：页面结尾的一整块翻页入口。
+   静止时与普通页脚区无异，悬停/聚焦时整块反相，把「继续读」变成一次动作。 */
+
+.chapter-next {
+  position: relative;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+.chapter-next__link {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  padding-block: clamp(56px, 8vw, 118px);
+  border-top: 1px solid var(--line);
+  color: var(--fg);
+  transition:
+    background-color 0.55s var(--ease-out),
+    color 0.55s var(--ease-out);
+}
+
+.chapter-next__inner {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(16px, 2.4vw, 30px);
+}
+
+.chapter-next__ghost {
+  position: absolute;
+  right: -1%;
+  bottom: -0.16em;
+  z-index: 1;
+  color: transparent;
+  font-family: var(--font-serif);
+  font-size: clamp(5rem, 17vw, 15rem);
+  font-style: italic;
+  line-height: 0.72;
+  letter-spacing: -0.05em;
+  white-space: nowrap;
+  -webkit-text-stroke: 1px var(--line);
+  pointer-events: none;
+  transition:
+    transform 0.7s var(--ease-out),
+    -webkit-text-stroke-color 0.5s ease;
+}
+
+.chapter-next__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 20px;
+  color: var(--fg-faint);
+  font-size: 8px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.chapter-next__main {
+  display: flex;
+  align-items: baseline;
+  gap: clamp(14px, 2.6vw, 34px);
+}
+
+.chapter-next__no {
+  flex: 0 0 auto;
+  color: var(--accent);
+  font-family: var(--font-serif);
+  font-size: clamp(2.2rem, 4vw, 3.6rem);
+  font-style: italic;
+  line-height: 0.9;
+  letter-spacing: -0.03em;
+}
+
+.chapter-next__title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 18px;
+  font-family: var(--font-serif);
+  font-size: clamp(2.6rem, 6.4vw, 7rem);
+  font-weight: 400;
+  line-height: 0.86;
+  letter-spacing: -0.045em;
+}
+
+.chapter-next__title em {
+  padding-left: clamp(4px, 1vw, 16px);
+  font-size: 0.46em;
+  font-style: italic;
+  letter-spacing: 0.02em;
+}
+
+.chapter-next__foot {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: clamp(24px, 5vw, 70px);
+}
+
+.chapter-next__caption {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  max-width: 44ch;
+  font-family: var(--font-serif);
+  font-size: clamp(15px, 1.5vw, 20px);
+  font-style: italic;
+  line-height: 1.4;
+}
+
+.chapter-next__caption span {
+  color: var(--fg-faint);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-style: normal;
+  letter-spacing: 0.14em;
+}
+
+.chapter-next__arrow {
+  display: grid;
+  flex: 0 0 auto;
+  width: clamp(48px, 4.6vw, 64px);
+  height: clamp(48px, 4.6vw, 64px);
+  place-items: center;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  font-family: var(--font-sans);
+  font-size: 20px;
+  transition:
+    transform 0.6s var(--ease-out),
+    border-color 0.4s ease;
+}
+
+/* 反相：整块变成米色（暗场）/ 墨色（纸面），文字跟着翻过来 */
+.chapter-next__link:hover,
+.chapter-next__link:focus-visible {
+  background: var(--fg);
+  color: var(--bg);
+}
+
+.chapter-next__link:hover .chapter-next__head,
+.chapter-next__link:hover .chapter-next__caption span,
+.chapter-next__link:focus-visible .chapter-next__head,
+.chapter-next__link:focus-visible .chapter-next__caption span {
+  color: var(--bg);
+  opacity: 0.6;
+}
+
+.chapter-next__link:hover .chapter-next__ghost,
+.chapter-next__link:focus-visible .chapter-next__ghost {
+  transform: translate3d(-2%, -4%, 0);
+  -webkit-text-stroke-color: var(--accent);
+}
+
+.chapter-next__link:hover .chapter-next__no,
+.chapter-next__link:focus-visible .chapter-next__no {
+  color: var(--accent);
+}
+
+.chapter-next__link:hover .chapter-next__arrow,
+.chapter-next__link:focus-visible .chapter-next__arrow {
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: translate3d(5px, -5px, 0);
+}
+
+.chapter-next__link:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
+
+@media (max-width: 760px) {
+  .chapter-next__head span:last-child {
+    display: none;
+  }
+
+  .chapter-next__main {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .chapter-next__title {
+    font-size: clamp(2.4rem, 12vw, 4.2rem);
+  }
+
+  .chapter-next__foot {
+    align-items: flex-start;
+  }
+
+  .chapter-next__arrow {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chapter-next__link,
+  .chapter-next__ghost,
+  .chapter-next__arrow {
+    transition: none;
+  }
+}

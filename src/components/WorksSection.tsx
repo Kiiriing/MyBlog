@@ -230,6 +230,9 @@ export default function WorksSection() {
       data-label="Work"
       style={{ '--work-count': works.length } as React.CSSProperties}
     >
+      {/* 缓慢游走的暖光与冷光：暗场上唯一持续呼吸的东西，把整幕串在一起 */}
+      <div className="works__ambient" aria-hidden="true" />
+
       <div className="works__sticky">
         <header className="works__head shell">
           <div className="works__head-left">

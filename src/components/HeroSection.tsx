@@ -45,6 +45,10 @@ export default function HeroSection() {
         }
       })
       scrollTween.to(q('.hero__lead'), { yPercent: -5, ease: 'none' }, 0)
+      /* 离场时让字符场一起「沉下去」：背景先退，文字与展示图后走，形成一次镜头拉开 */
+      scrollTween.to(q('.hero__glitch'), { yPercent: -14, opacity: 0.18, ease: 'none' }, 0)
+      scrollTween.to(q('.hero__ambient'), { yPercent: -8, ease: 'none' }, 0)
+      scrollTween.to(q('.hero__veil'), { yPercent: -6, ease: 'none' }, 0)
 
       bottomTween = gsap.to(q('.hero__bottom'), {
         yPercent: -14,
@@ -104,6 +108,59 @@ export default function HeroSection() {
       '-=0.8'
     )
   }, [ui.introDone])
+
+  /* Pointer depth --------------------------------------------------------- */
+
+  useEffect(() => {
+    const el = hero.current
+    if (!el || prefersReducedMotion()) return
+    if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return
+
+    const lines = Array.from(el.querySelectorAll<HTMLElement>('.hero__line'))
+    const veil = el.querySelector<HTMLElement>('.hero__veil-inner')
+    if (!lines.length && !veil) return
+
+    const lineX = lines.map((line) =>
+      gsap.quickTo(line, 'x', { duration: 0.9, ease: 'power3.out' })
+    )
+    const lineY = lines.map((line) =>
+      gsap.quickTo(line, 'y', { duration: 0.9, ease: 'power3.out' })
+    )
+    const veilX = veil ? gsap.quickTo(veil, 'x', { duration: 1.1, ease: 'power3.out' }) : null
+    const veilY = veil ? gsap.quickTo(veil, 'y', { duration: 1.1, ease: 'power3.out' }) : null
+
+    /* 标题与展示图反向位移：指针一动，前后景各自错开，画面就有了厚度 */
+    const onMove = (event: PointerEvent) => {
+      const rect = el.getBoundingClientRect()
+      const nx = (event.clientX - rect.left) / rect.width - 0.5
+      const ny = (event.clientY - rect.top) / rect.height - 0.5
+
+      lines.forEach((_, index) => {
+        lineX[index](-nx * (10 + index * 5))
+        lineY[index](-ny * 6)
+      })
+      veilX?.(nx * 18)
+      veilY?.(ny * 12)
+    }
+
+    const reset = () => {
+      lines.forEach((_, index) => {
+        lineX[index](0)
+        lineY[index](0)
+      })
+      veilX?.(0)
+      veilY?.(0)
+    }
+
+    el.addEventListener('pointermove', onMove, { passive: true })
+    el.addEventListener('pointerleave', reset)
+
+    return () => {
+      el.removeEventListener('pointermove', onMove)
+      el.removeEventListener('pointerleave', reset)
+      gsap.killTweensOf([...lines, veil].filter(Boolean))
+    }
+  }, [])
 
   return (
     <section
@@ -198,9 +255,11 @@ export default function HeroSection() {
         </div>
 
         <div className="hero__veil hero-fade" aria-hidden="true">
-          <Suspense fallback={null}>
-            <DitherVeil src="/art/chrome-head.png" fit="contain" inkColor="#08080a" />
-          </Suspense>
+          <div className="hero__veil-inner">
+            <Suspense fallback={null}>
+              <DitherVeil src="/art/chrome-head.png" fit="contain" inkColor="#08080a" />
+            </Suspense>
+          </div>
         </div>
       </div>
 

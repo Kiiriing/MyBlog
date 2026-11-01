@@ -5,7 +5,8 @@ import {
   destroySmoothScroll,
   getLenis,
   initSmoothScroll,
-  lockScroll
+  lockScroll,
+  scrollTo
 } from './composables/useSmoothScroll'
 import { finishBoot, getUi, setMenuOpen, setUi, useUi } from './store/ui'
 import { AppRoutes, routeNameFor } from './router'
@@ -111,8 +112,23 @@ export default function App() {
     }, 320)
   }, [location.pathname])
 
-  /* Lifecycle ------------------------------------------------------------- */
+  /* 章节深链：子页面的「下一章」会跳回 /#experience 这类地址。
+     等路由落位、页面就绪后再定位，否则会被上一步的 resetScroll 覆盖。 */
+  useEffect(() => {
+    if (!ui.introDone || showPreloader || !pageReady || !location.hash) return
 
+    const id = location.hash.replace('#', '')
+    const timer = later(() => {
+      const el = document.getElementById(id)
+      if (!el) return
+      scrollTo(el, { immediate: true, force: true })
+      ScrollTrigger.refresh()
+    }, 520)
+
+    return () => window.clearTimeout(timer)
+  }, [location.pathname, location.hash, ui.introDone, pageReady, showPreloader])
+
+  /* Lifecycle ------------------------------------------------------------- */
   useEffect(() => {
     // Take over scroll restoration so a reload always starts at the top.
     if ('scrollRestoration' in window.history) window.history.scrollRestoration = 'manual'

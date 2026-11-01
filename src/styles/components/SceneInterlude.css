@@ -1,0 +1,241 @@
+.interlude {
+  position: relative;
+  overflow: clip;
+  min-height: clamp(420px, 62vh, 660px);
+  border-top: 1px solid rgba(17, 16, 14, 0.12);
+  border-bottom: 1px solid rgba(17, 16, 14, 0.12);
+  background: var(--bg);
+  color: var(--fg);
+  isolation: isolate;
+}
+
+/* 与首屏同构的竖向发丝线：让幕间页读起来仍是「同一页纸」上的章节 */
+.interlude__grid {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  padding: 0 var(--gutter);
+  pointer-events: none;
+}
+
+.interlude__grid span {
+  border-left: 1px solid rgba(17, 16, 14, 0.06);
+}
+
+.interlude__grid span:last-child {
+  border-right: 1px solid rgba(17, 16, 14, 0.06);
+}
+
+/* 巨型描边字：只留轮廓，随滚动横向掠过整页 */
+.interlude__word {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  left: 0;
+  z-index: 1;
+  overflow: hidden;
+  padding-inline: var(--gutter);
+  transform: translateY(-50%);
+  color: transparent;
+  font-size: clamp(7rem, 23vw, 19rem);
+  line-height: 0.78;
+  letter-spacing: -0.055em;
+  text-align: center;
+  white-space: nowrap;
+  -webkit-text-stroke: 1px rgba(17, 16, 14, 0.17);
+  pointer-events: none;
+}
+
+.interlude__word span {
+  display: inline-block;
+  will-change: transform;
+}
+
+/* 幕次罗马数字：反向慢视差，压在右上角 */
+.interlude__roman {
+  position: absolute;
+  top: clamp(48px, 9vh, 108px);
+  right: calc(var(--gutter) + 2px);
+  z-index: 1;
+  color: transparent;
+  font-size: clamp(2.6rem, 7vw, 6.4rem);
+  line-height: 0.8;
+  letter-spacing: -0.04em;
+  -webkit-text-stroke: 1px rgba(17, 16, 14, 0.2);
+  pointer-events: none;
+}
+
+.interlude__inner {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: clamp(36px, 8vh, 96px);
+  min-height: clamp(420px, 62vh, 660px);
+  padding-block: clamp(46px, 6vw, 86px);
+}
+
+.interlude__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.interlude__act {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  color: var(--ink-dim);
+  font-size: 8px;
+  letter-spacing: 0.18em;
+}
+
+.interlude__act i {
+  color: var(--accent);
+  font-family: var(--font-serif);
+  font-size: 10px;
+  font-style: italic;
+  letter-spacing: 0.08em;
+}
+
+.interlude__copy {
+  max-width: min(640px, 62vw);
+  margin-top: auto;
+}
+
+.interlude__cn {
+  font-size: clamp(1.5rem, 2.7vw, 2.6rem);
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+}
+
+.interlude__en {
+  max-width: 46ch;
+  margin-top: clamp(14px, 1.6vw, 22px);
+  color: var(--ink-dim);
+  font-size: clamp(0.95rem, 1.15vw, 1.15rem);
+  line-height: 1.55;
+}
+
+.interlude__foot {
+  display: grid;
+  grid-template-columns: auto minmax(60px, 1fr) auto;
+  gap: clamp(18px, 3vw, 44px);
+  align-items: center;
+  padding-top: clamp(16px, 2vw, 24px);
+  border-top: 1px solid rgba(17, 16, 14, 0.16);
+}
+
+.interlude__meta {
+  color: var(--ink-dim);
+  font-size: 8px;
+  letter-spacing: 0.12em;
+}
+
+.interlude__rule {
+  position: relative;
+  display: block;
+  height: 1px;
+  background: rgba(17, 16, 14, 0.14);
+}
+
+.interlude__rule span {
+  position: absolute;
+  inset: 0;
+  display: block;
+  background: var(--ink);
+  transform: scaleX(0.08);
+  transform-origin: left center;
+  will-change: transform;
+}
+
+.interlude__rule i {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  transform: translateY(-50%);
+}
+
+.interlude__next {
+  color: var(--ink-dim);
+  font-size: 8px;
+  letter-spacing: 0.14em;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .interlude {
+    min-height: 0;
+  }
+
+  .interlude__inner {
+    min-height: 0;
+    gap: clamp(28px, 6vh, 60px);
+    padding-block: clamp(40px, 9vw, 64px);
+  }
+
+  .interlude__word {
+    top: 46%;
+    font-size: 34vw;
+    -webkit-text-stroke-color: rgba(17, 16, 14, 0.13);
+  }
+
+  .interlude__roman {
+    top: auto;
+    bottom: 26%;
+    font-size: 13vw;
+  }
+
+  .interlude__copy {
+    max-width: none;
+  }
+
+  .interlude__foot {
+    grid-template-columns: 1fr auto;
+    row-gap: 14px;
+  }
+
+  .interlude__rule {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}
+
+@media (max-width: 760px) {
+  .interlude__head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .interlude__cn {
+    font-size: clamp(1.3rem, 6vw, 1.9rem);
+  }
+
+  .interlude__en {
+    font-size: 13px;
+  }
+
+  .interlude__meta {
+    font-size: 7px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .interlude__word span,
+  .interlude__roman {
+    transform: none;
+  }
+
+  .interlude__rule span {
+    transform: scaleX(1);
+  }
+}

@@ -1,12 +1,16 @@
+/* 章节脊柱：把首页的八章串成一条线。
+   白字 + difference 混合，深色与奶油纸面上都自动反相；
+   进度条由滚动直接写 DOM，只有章节切换时才触发一次 React 更新。 */
+
 .scroll-rail {
   position: fixed;
   top: 50%;
-  right: clamp(16px, 2.4vw, 36px);
+  right: clamp(12px, 1.6vw, 26px);
   z-index: 80;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px;
+  gap: 10px;
   color: #fff;
   mix-blend-mode: difference;
   transform: translateY(-50%);
@@ -23,23 +27,34 @@
 
 .scroll-rail__count {
   display: flex;
-  gap: 5px;
-  font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: 0.08em;
+  align-items: baseline;
+  gap: 4px;
   font-variant-numeric: tabular-nums;
 }
 
-.scroll-rail__slash {
-  opacity: 0.4;
+.scroll-rail__count > span:first-child {
+  font-family: var(--font-serif);
+  font-size: 21px;
+  font-style: italic;
+  line-height: 1;
+  letter-spacing: -0.02em;
 }
+
+.scroll-rail__slash {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.06em;
+  opacity: 0.45;
+}
+
+/* 轨道 ------------------------------------------------------------------ */
 
 .scroll-rail__track {
   position: relative;
   width: 1px;
-  height: clamp(70px, 10vh, 110px);
-  background: rgba(255, 255, 255, 0.22);
-  overflow: hidden;
+  height: clamp(96px, 15vh, 156px);
+  margin-block: 4px;
+  background: rgba(255, 255, 255, 0.18);
 }
 
 .scroll-rail__fill {
@@ -49,21 +64,161 @@
   width: 100%;
   height: 100%;
   background: currentColor;
+  transform: scaleY(0);
   transform-origin: top center;
   will-change: transform;
 }
 
+.scroll-rail__tick {
+  position: absolute;
+  left: 50%;
+  display: grid;
+  width: 22px;
+  height: 16px;
+  place-items: center;
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.scroll-rail__tick-line {
+  display: block;
+  width: 7px;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.45);
+  transition:
+    width 0.35s var(--ease-out),
+    background-color 0.35s ease,
+    opacity 0.35s ease;
+}
+
+.scroll-rail__tick:hover .scroll-rail__tick-line,
+.scroll-rail__tick.is-hovered .scroll-rail__tick-line {
+  width: 14px;
+  background: #fff;
+}
+
+.scroll-rail__tick.is-active .scroll-rail__tick-line {
+  width: 20px;
+  background: #fff;
+}
+
+.scroll-rail__tick:focus-visible {
+  outline-offset: 2px;
+}
+
+/* 当前章节 -------------------------------------------------------------- */
+
 .scroll-rail__label {
+  margin-top: 2px;
   font-family: var(--font-mono);
   font-size: 8px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   writing-mode: vertical-rl;
+  opacity: 0.7;
+}
+
+.scroll-rail__act {
+  margin-top: 4px;
+  color: #fff;
+  font-size: 7px;
+  letter-spacing: 0.2em;
+  writing-mode: vertical-rl;
+  opacity: 0.4;
+}
+
+.scroll-rail__caption {
+  max-height: 168px;
+  margin-top: 6px;
+  overflow: hidden;
+  color: #fff;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  writing-mode: vertical-rl;
   opacity: 0.55;
+}
+
+/* 悬停预览：浮在脊柱左侧的章节卡片，只在指针/键盘聚焦时出现 ------------ */
+
+.scroll-rail__preview {
+  position: absolute;
+  top: 50%;
+  right: calc(100% + 16px);
+  display: flex;
+  width: 218px;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  padding-right: 14px;
+  border-right: 1px solid rgba(255, 255, 255, 0.28);
+  text-align: right;
+  transform: translateY(-50%);
+  pointer-events: none;
+  animation: rail-preview-in 0.4s var(--ease-out) both;
+}
+
+.scroll-rail__preview-act {
+  font-size: 7px;
+  letter-spacing: 0.18em;
+  opacity: 0.55;
+}
+
+.scroll-rail__preview-label {
+  font-size: 26px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.scroll-rail__preview-en {
+  max-width: 210px;
+  font-size: 10px;
+  line-height: 1.6;
+  opacity: 0.72;
+}
+
+.scroll-rail__preview-cn {
+  font-family: var(--font-serif);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  opacity: 0.55;
+}
+
+@keyframes rail-preview-in {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) translateX(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+  }
+}
+
+@media (max-width: 1100px) {
+  .scroll-rail__caption {
+    display: none;
+  }
 }
 
 @media (max-width: 900px) {
   .scroll-rail {
     display: none;
+  }
+}
+
+@media (max-height: 780px) {
+  .scroll-rail__caption {
+    display: none;
+  }
+
+  .scroll-rail__track {
+    height: clamp(80px, 20vh, 120px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-rail__preview {
+    animation: none;
   }
 }

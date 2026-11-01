@@ -1,0 +1,140 @@
+/* 章节标签：一行编号 + 一行文案，用「发丝线」把页面接回全站主线。
+   颜色全部走主题变量，暗场与奶油纸面自动切换。 */
+
+.chapter-tag {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  width: 100%;
+  color: var(--fg);
+}
+
+.chapter-tag__row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.chapter-tag__no {
+  font-family: var(--font-serif);
+  font-size: 30px;
+  font-style: italic;
+  font-weight: 400;
+  line-height: 0.9;
+  letter-spacing: -0.03em;
+  color: var(--accent);
+  font-variant-numeric: lining-nums;
+}
+
+.chapter-tag__total {
+  color: var(--fg-faint);
+  font-size: 8px;
+  letter-spacing: 0.08em;
+}
+
+.chapter-tag__act {
+  margin-left: 4px;
+  color: var(--fg-dim);
+  font-size: 8px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.chapter-tag__act b {
+  margin-left: 6px;
+  color: var(--fg-faint);
+  font-weight: 400;
+  letter-spacing: 0.1em;
+}
+
+/* 发丝线默认收成 0 宽，进入视口后才横向铺开 */
+.chapter-tag__line {
+  flex: 1;
+  align-self: center;
+  height: 1px;
+  background: var(--line);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 1.3s var(--ease-out) 0.15s;
+}
+
+.chapter-tag.reveal.is-revealed .chapter-tag__line {
+  transform: scaleX(1);
+}
+
+.chapter-tag__label {
+  color: var(--fg-dim);
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+}
+
+.chapter-tag__meta {
+  color: var(--fg-faint);
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+
+.chapter-tag__caption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 14px;
+  color: var(--fg-faint);
+}
+
+.chapter-tag__en {
+  font-family: var(--font-serif);
+  font-size: 15px;
+  font-style: italic;
+  letter-spacing: -0.01em;
+  color: var(--fg-dim);
+  transition: color 0.4s ease;
+}
+
+.chapter-tag__cn {
+  color: var(--fg-faint);
+  font-size: 8px;
+  letter-spacing: 0.14em;
+  transition: color 0.4s ease;
+}
+
+/* 悬停时发丝线换成强调色、文案提亮：一处很小但明确的「被读到」的反馈 */
+.chapter-tag:hover .chapter-tag__line {
+  background: linear-gradient(to right, var(--accent), var(--line));
+}
+
+.chapter-tag:hover .chapter-tag__en {
+  color: var(--fg);
+}
+
+.chapter-tag:hover .chapter-tag__cn {
+  color: var(--fg-dim);
+}
+
+@media (max-width: 760px) {
+  .chapter-tag__no {
+    font-size: 24px;
+  }
+
+  .chapter-tag__label,
+  .chapter-tag__meta {
+    display: none;
+  }
+
+  .chapter-tag__caption {
+    gap: 2px 10px;
+  }
+
+  .chapter-tag__en {
+    font-size: 13px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chapter-tag__line {
+    transform: none;
+    transition: none;
+  }
+}

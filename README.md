@@ -110,6 +110,18 @@ public/art/     本地视觉素材（SVG / PNG；art/logo 为技术栈品牌图�
 
 ## 更新日志
 
+### 2026-11-01 — 全站叙事骨架：三幕章节、幕间页、章节脊柱与「下一章」翻页
+
+- 新增 `src/data/chapters.ts`：全站唯一叙事数据源。8 章（`01 index` → `08 contact`）各带编号、幕次（Act I Origin / Act II Craft / Act III Notes）、中英文标签、一句判断与 `path`；另有 2 条幕间文案（`craft` / `notes`）。章节脊柱、幕间页、子页面章节标签与「下一章」全部读这份数据，编号与文案不再重复。
+- 新增 `src/components/SceneInterlude.tsx` + `src/styles/components/SceneInterlude.css`：主题交界处的整页幕间（奶油纸面），巨型描边词（`clamp(7rem, 23vw, 19rem)`）、罗马数字、大中文标题与斜体英文、`04 → 06 / SELECTED WORK, ROLES & PROOF` 元信息、信号线与 `CONTINUE ↓`；三段 `scrub`（大字横向 -7% → 7%、罗马数字 12% → -18%、信号线 0.08 → 1）。`src/views/HomeView.tsx` 在 Works → Experience、Credentials → Journal 之间各插一页，把「界面 → 系统」「证据 → 判断」翻过去。
+- `src/components/ScrollProgress.tsx` 重写为可点击的**章节脊柱**：8 个刻度（悬停浮出预览卡：幕次 / 斜体章节名 / 中英一句判断），点击由 Lenis 跳到对应 `[data-section]`；进度条直接写 DOM（`scaleY`），只有章节变化才 `setState`，滚动时不再整条重渲染；大号斜体编号 + `/ 08`、幕次、竖排中文判断。`src/styles/components/ScrollProgress.css` 改为 `mix-blend-mode: difference` 反相配色，≤1100px 收掉中文、≤900px 整条隐藏。
+- `src/components/HeroSection.tsx` / `HeroSection.css`：离场时背景先沉（`.hero__glitch` `-14%` + 透明度 0.18、`.hero__ambient` `-8`、`.hero__veil` `-6`），形成一次镜头拉开；新增指针深度（`gsap.quickTo`）——逐行标题反向位移（`-(10 + index * 5)` / `-6`）、展示图 `±18 / ±12`，仅 `(hover:hover) and (pointer:fine)` 且非 reduced-motion 挂载；展示图内部拆出 `.hero__veil-inner`，让入场/离场的 `transform` 与视差不互相覆盖。
+- `src/components/WorksSection.tsx` / `WorksSection.css`：新增两团漂移氛围光（`filter: blur(70/80px)`，26s / 34s alternate，裁剪写在 `.works__ambient` 自身以免破坏内层 sticky）；卡片悬停时一圈细线从边缘向内收进（合焦框，`rgba(216,255,67,.5)`）。
+- 新增 `src/components/ChapterTag.tsx` + `ChapterTag.css`：子页面顶部的章节标签（大号斜体编号 + `/ 08` + 幕次 + 一节判断），发丝线在进入视口后横向铺开，悬停换成强调色渐变。接入 `WorkIndexView`（04）、`WorkView`（04）、`JournalView`（07）；颜色全部走主题变量，暗场与奶油纸面自动切换。
+- 新增 `src/components/ChapterNext.tsx` + `ChapterNext.css`：页面结尾的「下一章」整块翻页（05 Experience / 08 Contact），巨字描边、章节编号、中英判断与圆形箭头；悬停/聚焦时整块反相（暗场 → 米色、纸面 → 墨色），描边字变强调色、箭头位移。接入 `WorkIndexView`(04→05)、`WorkView`(04→05)、`JournalView`(07→08)、`PostView`(07→08)。
+- `src/App.tsx`：新增章节深链——`/#experience`、`/#contact` 这类地址在路由落位、页面就绪后由 Lenis 立即定位（顺带修好菜单从子页跳回首页章节的落点，以及 `Link to="/#…"` 一律停在顶部的问题）。
+- 验证：`npm run build` 通过（`index-*.js 592.94 kB`、`index-*.css 136.83 kB`）；`npm run preview` + headless Chrome 1440×900 实测：首页 `scrollHeight 13379`、8 个 `[data-section]`、脊柱 8 刻度、悬停第 4 刻度浮出 `About / 界面后面的那个人。`、点击刻度落到 `works.offsetTop 4467`（`scrollY 4467`、标签变 `Work`）、幕间高 560px；`ChapterNext` 悬停反相 `bg rgb(242,237,228)` / `color rgb(8,8,10)`、描边变 `rgb(255,90,47)`、箭头 `translate(5px,-5px)`，点击后 `/#experience` 落点 `scrollY 6538` 与 `experienceTop 6538` 一致、脊柱显示 `Experience`；`/`、`/work`、`/work/qianverse`、`/journal`、`/journal/idempotent-orders`、404 六条路由控制台无 error/warning、均无横向溢出；390×844 下无横向溢出、脊柱隐藏、章节标签单行收拢。
+
 ### 2026-11-01 — 消除首屏强制布局与逐帧布局读取
 
 - 来源：浏览器控制台持续报 `[Violation] Forced reflow while executing JavaScript took 144ms`、`'requestAnimationFrame' handler took 107ms`、`'touchstart' input event was delayed for 540ms`。用 CDP 注入探针（`PerformanceObserver` longtask、包装 `SVGTextElement.prototype.getBBox`、`Element.prototype.scrollWidth` getter、`HTMLCanvasElement.prototype.getContext` + CPU Profile）定位到三处主线程开销。

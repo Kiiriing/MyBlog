@@ -54,6 +54,11 @@
   letter-spacing: 0.14em;
 }
 
+/* 章节标签：把作品索引接回全站三幕叙事（编号 / 幕次 / 一句判断） */
+.work-index__chapter {
+  margin-top: clamp(22px, 3.2vh, 40px);
+}
+
 .work-index__hero-main {
   display: grid;
   grid-template-columns: minmax(0, 1.45fr) minmax(250px, 0.55fr);

@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { getAdjacentPost, getPost, posts } from '../data/posts'
 import ArtworkFrame from '../components/ArtworkFrame'
 import SiteFooter from '../components/SiteFooter'
+import ChapterNext from '../components/ChapterNext'
 import '../styles/components/PostView.css'
 
 export default function PostView() {
@@ -255,6 +256,8 @@ export default function PostView() {
           <span aria-hidden="true">↖</span>
         </Link>
       </div>
+
+      <ChapterNext index="08" />
 
       <SiteFooter />
     </div>

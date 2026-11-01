@@ -5,6 +5,8 @@ import { gsap } from '../lib/gsap'
 import { works } from '../data/works'
 import { site } from '../data/site'
 import SiteFooter from '../components/SiteFooter'
+import ChapterTag from '../components/ChapterTag'
+import ChapterNext from '../components/ChapterNext'
 import '../styles/components/WorkIndexView.css'
 
 const filters = [
@@ -143,6 +145,8 @@ export default function WorkIndexView() {
             <span>{total} projects — 2024 / 2026</span>
           </div>
 
+          <ChapterTag index="04" meta={`${total} projects`} className="work-index__chapter" />
+
           <div className="work-index__hero-main">
             <div className="work-index__intro">
               <h1 className="work-index__title">
@@ -260,6 +264,8 @@ export default function WorkIndexView() {
           </a>
         </div>
       </div>
+
+      <ChapterNext index="05" />
 
       <SiteFooter />
 

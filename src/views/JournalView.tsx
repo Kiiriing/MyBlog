@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import { categories, posts } from '../data/posts'
 import JournalList from '../components/JournalList'
 import SiteFooter from '../components/SiteFooter'
+import ChapterTag from '../components/ChapterTag'
+import ChapterNext from '../components/ChapterNext'
 import '../styles/components/JournalView.css'
 
 export default function JournalView() {
@@ -21,6 +23,8 @@ export default function JournalView() {
 
       <header className="journal-page__head">
         <div className="shell">
+          <ChapterTag index="07" meta={`${total} entries`} className="journal-page__chapter" />
+
           <div className="journal-page__meta">
             <span className="eyebrow">Journal / 手记</span>
             <span className="mono journal-page__meta-note">
@@ -87,6 +91,8 @@ export default function JournalView() {
           </div>
         </div>
       </main>
+
+      <ChapterNext index="08" />
 
       <SiteFooter />
     </div>
