@@ -5,7 +5,7 @@
    换曲时把母带增益压下去再拉起，听感上像把唱针抬起又落下。
 
    曲目表按站点的气质排成一张「唱片」，side 里的编号就是曲序。
-   现在放了五首真实文件，后面的位置先空着：
+   现在放了七首真实文件，后面的位置先空着：
    有新歌时把 mp3 放进 public/art/music（封面可放 public/art/music/covers），
    再往 vinylTracks 里补一个 { file, cover, duration } 即可。
 
@@ -71,6 +71,22 @@ export const vinylTracks: VinylTrack[] = [
     file: 'MaiGet - You Got Me (Mashup).mp3',
     cover: '/art/music/covers/cover-5.jpg',
     duration: 128.94
+  },
+  {
+    title: 'Turning Around (余烬重燃)',
+    cn: '鸣潮先约电台 · Grabbitz',
+    side: 'SIDE A · 06',
+    file: 'Turning Around (余烬重燃)-Grabbitz.mp3',
+    cover: '/art/music/covers/cover-6.jpg',
+    duration: 247.88
+  },
+  {
+    title: '远航星的告别',
+    cn: '鸣潮先约电台',
+    side: 'SIDE A · 07',
+    file: '远航星的告别-鸣潮先约电台.mp3',
+    cover: '/art/music/covers/cover-7.jpg',
+    duration: 225.07
   }
   /* 后面的曲位先空着：加歌时在这里补 { title, cn, side, file, cover, duration } */
 ]
@@ -84,7 +100,7 @@ export class VinylEngine {
   private audio: HTMLAudioElement | null = null
 
   private index = 0
-  private volume = 0.3
+  private volume = 0.15
   private playing = false
   private loadedFile = ''
   private switchTimer = 0
@@ -176,6 +192,15 @@ export class VinylEngine {
         this.master.gain.setTargetAtTime(this.volume, current.currentTime, 0.14)
       }
     }, 180)
+  }
+
+  /** 预加载首曲：挂载时就把音频元素与下载 / 解码排进队列，
+      预加载结束再 play() 时不用等文件，开声不会先卡一下 */
+  preload(index = 0) {
+    this.clearSwitch()
+    this.index = Math.max(0, Math.min(vinylTracks.length - 1, index))
+    this.ensureAudio()
+    this.load()
   }
 
   setVolume(value: number) {

@@ -53,7 +53,7 @@ export default function VinylPlayer() {
     head: null as Edge | null
   })
 
-  const volumeRef = useRef(0.3)
+  const volumeRef = useRef(0.15)
   const autoStarted = useRef(false)
   const userPaused = useRef(false)
   const scrubbing = useRef(false)
@@ -65,7 +65,7 @@ export default function VinylPlayer() {
   const [playing, setPlaying] = useState(false)
   const [audible, setAudible] = useState(false)
   const [trackIndex, setTrackIndex] = useState(0)
-  const [volume, setVolume] = useState(0.3)
+  const [volume, setVolume] = useState(0.15)
   const [volOpen, setVolOpen] = useState(false)
   const [volHover, setVolHover] = useState(false)
   const [tone, setTone] = useState<'dark' | 'paper'>('dark')
@@ -92,6 +92,12 @@ export default function VinylPlayer() {
   useEffect(() => {
     setTrackDuration(vinylTracks[trackIndex].duration ?? 0)
   }, [trackIndex])
+
+  /* 挂载时就把首曲排进下载 / 解码队列：预加载动画结束时音频已经准备好，
+     自动播放不用再等文件，也不会先卡一下才出声 */
+  useEffect(() => {
+    getEngine().preload()
+  }, [getEngine])
 
   /* 音量槽悬停：指针一进入（喇叭或左侧滑槽）就展开；
      离开后留 0.5s，让指针能穿过图标与滑槽之间那道缝，落到滑槽上继续停留 */
@@ -271,6 +277,7 @@ export default function VinylPlayer() {
 
   useEffect(() => {
     if (!ui.introDone || autoStarted.current) return
+    /* 首曲已在预加载阶段就绪，预加载一结束就开声，不再额外等 0.9s */
     const timer = window.setTimeout(() => {
       autoStarted.current = true
       if (userPaused.current) return
@@ -279,7 +286,7 @@ export default function VinylPlayer() {
       engine.setTrack(0)
       engine.play()
       setPlaying(true)
-    }, 900)
+    }, 60)
     return () => window.clearTimeout(timer)
   }, [ui.introDone, getEngine])
 
