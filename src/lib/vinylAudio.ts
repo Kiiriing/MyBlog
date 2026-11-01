@@ -5,7 +5,7 @@
    换曲时把母带增益压下去再拉起，听感上像把唱针抬起又落下。
 
    曲目表按站点的气质排成一张「唱片」，side 里的编号就是曲序。
-   现在放了七首真实文件，后面的位置先空着：
+   现在放了十首真实文件，后面的位置先空着：
    有新歌时把 mp3 放进 public/art/music（封面可放 public/art/music/covers），
    再往 vinylTracks 里补一个 { file, cover, duration } 即可。
 
@@ -87,6 +87,31 @@ export const vinylTracks: VinylTrack[] = [
     file: '远航星的告别-鸣潮先约电台.mp3',
     cover: '/art/music/covers/cover-7.jpg',
     duration: 225.07
+  },
+  {
+    title: '小小奇迹',
+    cn: '鸣潮先约电台 · jixwang · 飞行雪绒',
+    side: 'SIDE A · 08',
+    file: '小小奇迹-鸣潮先约电台.mp3',
+    cover: '/art/music/covers/cover-8.png',
+    duration: 262.74
+  },
+  {
+    title: '反乌托邦 × 拼接遗憾',
+    cn: 'Vince丷 · 见过夏天P · Ciyo',
+    side: 'SIDE A · 09',
+    file: '反乌托邦.拼接遗憾.mp3',
+    cover: '/art/music/covers/cover-9.jpg',
+    duration: 113.74
+  },
+  {
+    /* 这首的 mp3 里没写 ID3 标签，歌名只能从文件名与封面读出来 */
+    title: '人间白首',
+    cn: '狐妖小红娘 · 竹业篇插曲',
+    side: 'SIDE A · 10',
+    file: '人间白首..狐妖小红娘.竹业篇插曲10.mp3',
+    cover: '/art/music/covers/cover-10.jpg',
+    duration: 252.79
   }
   /* 后面的曲位先空着：加歌时在这里补 { title, cn, side, file, cover, duration } */
 ]
