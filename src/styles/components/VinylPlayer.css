@@ -1,0 +1,474 @@
+/* 左下角黑胶播放器。收起时只有一张唱片；展开时唱片左移、控制条向右展开。
+   颜色不写死：data-tone 由组件按控件正下方的页面判定（见 VinylPlayer.tsx），
+   暗场用奶白文字 + 深色玻璃，落在奶油纸面（.theme-paper）上自动换成墨色文字 + 奶油玻璃。 */
+
+.vinyl-player {
+  --vp-disc: clamp(74px, 6.6vw, 92px);
+  --vp-panel: 268px;
+
+  --vp-fg: #f2ede4;
+  --vp-dim: rgba(242, 237, 228, 0.58);
+  --vp-line: rgba(242, 237, 228, 0.22);
+  --vp-panel-bg: rgba(10, 10, 13, 0.78);
+  --vp-panel-border: rgba(242, 237, 228, 0.16);
+
+  position: fixed;
+  left: clamp(16px, 2.6vw, 34px);
+  bottom: clamp(16px, 2.6vh, 32px);
+  z-index: 780;
+  display: flex;
+  align-items: flex-end;
+  color: var(--vp-fg);
+  transition: transform 0.5s var(--ease-out);
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.vinyl-player.is-dragging {
+  transition: none;
+}
+
+.vinyl-player[data-tone='paper'] {
+  --vp-fg: #11100e;
+  --vp-dim: rgba(17, 16, 14, 0.62);
+  --vp-line: rgba(17, 16, 14, 0.26);
+  --vp-panel-bg: rgba(239, 232, 219, 0.84);
+  --vp-panel-border: rgba(17, 16, 14, 0.18);
+}
+
+/* 唱片 ------------------------------------------------------------------ */
+
+.vinyl-player__head {
+  position: relative;
+  width: var(--vp-disc);
+  flex-shrink: 0;
+  transition: transform 0.58s var(--ease-out);
+}
+
+/* 展开时整张唱片向左让出控制条的位置 */
+.vinyl-player.is-open .vinyl-player__head {
+  transform: translate3d(-14px, 0, 0);
+}
+
+.vinyl-player__disc {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.vinyl-player__platter {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    repeating-radial-gradient(
+      circle at 50% 50%,
+      rgba(242, 237, 228, 0.07) 0 0.5px,
+      transparent 0.5px 3.5px
+    ),
+    conic-gradient(from 200deg, #1a1a1e, #0a0a0d 30%, #202026 48%, #09090b 68%, #17171b);
+  box-shadow:
+    0 16px 32px rgba(0, 0, 0, 0.5),
+    0 0 0 1px var(--vp-line),
+    inset 0 0 0 1px rgba(242, 237, 228, 0.12);
+  animation: vinyl-spin 9.5s linear infinite;
+  animation-play-state: paused;
+  transition: box-shadow 0.6s ease;
+  backface-visibility: hidden;
+}
+
+/* 播放时唱片转起来，外圈亮一圈强调色 */
+.vinyl-player[data-playing='true'] .vinyl-player__platter {
+  animation-play-state: running;
+  box-shadow:
+    0 18px 38px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(255, 90, 47, 0.42),
+    0 0 30px rgba(255, 90, 47, 0.2),
+    inset 0 0 0 1px rgba(242, 237, 228, 0.16);
+}
+
+@keyframes vinyl-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.vinyl-player__sheen {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: linear-gradient(
+    115deg,
+    transparent 34%,
+    rgba(255, 255, 255, 0.17) 48%,
+    rgba(255, 255, 255, 0.03) 54%,
+    transparent 66%
+  );
+}
+
+.vinyl-player__label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  width: 38%;
+  aspect-ratio: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #11100e;
+  box-shadow: inset 0 0 0 1px rgba(17, 16, 14, 0.22);
+  transform: translate(-50%, -50%);
+}
+
+.vinyl-player__label-no {
+  font-family: var(--font-serif);
+  font-size: calc(var(--vp-disc) * 0.15);
+  font-style: italic;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.vinyl-player__label-rule {
+  width: 34%;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.45;
+}
+
+.vinyl-player__label-side {
+  font-family: var(--font-mono);
+  font-size: calc(var(--vp-disc) * 0.062);
+  line-height: 1.4;
+  letter-spacing: 0.14em;
+  opacity: 0.75;
+}
+
+.vinyl-player__hole {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 7%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #08080a;
+  box-shadow: 0 0 0 1px rgba(242, 237, 228, 0.26);
+  transform: translate(-50%, -50%);
+}
+
+/* 唱臂：播放时落到唱片上，暂停时抬起 */
+.vinyl-player__arm {
+  position: absolute;
+  top: -4%;
+  right: -1%;
+  width: 1px;
+  height: 56%;
+  background: linear-gradient(to bottom, var(--vp-dim) 0%, var(--vp-dim) 62%, transparent 100%);
+  transform: rotate(34deg);
+  transform-origin: top center;
+  transition: transform 0.7s var(--ease-out), background 0.4s ease;
+  pointer-events: none;
+}
+
+.vinyl-player[data-playing='true'] .vinyl-player__arm {
+  transform: rotate(12deg);
+}
+
+.vinyl-player__arm-head {
+  position: absolute;
+  bottom: -3px;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--vp-dim);
+  transform: translateX(-50%);
+}
+
+.vinyl-player__hint {
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  color: var(--vp-dim);
+  font-size: 7px;
+  letter-spacing: 0.18em;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translate(-50%, 4px);
+  transition:
+    opacity 0.35s ease,
+    transform 0.35s var(--ease-out),
+    color 0.4s ease;
+  pointer-events: none;
+}
+
+.vinyl-player__head:hover .vinyl-player__hint,
+.vinyl-player:focus-within .vinyl-player__hint {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* 控制条 ---------------------------------------------------------------- */
+
+.vinyl-player__panel {
+  width: 0;
+  margin-left: 12px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    width 0.58s var(--ease-out),
+    opacity 0.3s ease;
+}
+
+.vinyl-player.is-open .vinyl-player__panel {
+  width: var(--vp-panel);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.vinyl-player__panel-inner {
+  display: flex;
+  width: var(--vp-panel);
+  flex-direction: column;
+  gap: 7px;
+  padding: 11px 13px 12px;
+  border: 1px solid var(--vp-panel-border);
+  border-left: 2px solid var(--accent);
+  border-radius: 2px;
+  background: var(--vp-panel-bg);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  backdrop-filter: blur(16px) saturate(150%);
+  transition:
+    background 0.45s ease,
+    border-color 0.45s ease,
+    color 0.45s ease;
+}
+
+.vinyl-player__meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--vp-dim);
+  font-size: 7px;
+  letter-spacing: 0.18em;
+  transition: color 0.45s ease;
+}
+
+.vinyl-player__time {
+  font-variant-numeric: tabular-nums;
+}
+
+.vinyl-player__title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.vinyl-player__title-en {
+  font-family: var(--font-serif);
+  font-size: 19px;
+  font-style: italic;
+  line-height: 1.05;
+  letter-spacing: -0.015em;
+}
+
+.vinyl-player__title-cn {
+  color: var(--vp-dim);
+  font-family: var(--font-serif);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  transition: color 0.45s ease;
+}
+
+.vinyl-player__controls {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.vinyl-player__btn {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  place-items: center;
+  border: 1px solid var(--vp-line);
+  border-radius: 50%;
+  color: var(--vp-fg);
+  transition:
+    border-color 0.3s ease,
+    background-color 0.3s ease,
+    color 0.3s ease,
+    transform 0.3s var(--ease-out);
+}
+
+.vinyl-player__btn svg {
+  width: 13px;
+  height: 13px;
+}
+
+.vinyl-player__btn:hover {
+  border-color: var(--vp-fg);
+  transform: translateY(-1px);
+}
+
+.vinyl-player__btn--play {
+  border-color: var(--vp-fg);
+}
+
+.vinyl-player__btn--play:hover {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #11100e;
+}
+
+/* 音量：轨道用渐变直接表达当前音量，滑块遇到强调色 */
+.vinyl-player__vol {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  min-width: 52px;
+  height: 24px;
+}
+
+.vinyl-player__vol input {
+  width: 100%;
+  height: 16px;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.vinyl-player__vol input::-webkit-slider-runnable-track {
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    var(--vp-fg) 0 var(--vp-vol, 70%),
+    var(--vp-line) var(--vp-vol, 70%) 100%
+  );
+}
+
+.vinyl-player__vol input::-webkit-slider-thumb {
+  width: 7px;
+  height: 7px;
+  margin-top: -3px;
+  border-radius: 50%;
+  background: var(--vp-fg);
+  box-shadow: 0 0 0 2px var(--vp-panel-bg);
+  transition: transform 0.25s ease;
+  -webkit-appearance: none;
+}
+
+.vinyl-player__vol input:hover::-webkit-slider-thumb {
+  transform: scale(1.3);
+}
+
+.vinyl-player__vol input::-moz-range-track {
+  height: 1px;
+  background: var(--vp-line);
+}
+
+.vinyl-player__vol input::-moz-range-progress {
+  height: 1px;
+  background: var(--vp-fg);
+}
+
+.vinyl-player__vol input::-moz-range-thumb {
+  width: 7px;
+  height: 7px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--vp-fg);
+}
+
+/* 频谱柱：播放时由 AnalyserNode 的数据直接写 transform，暂停时落回一条线 */
+.vinyl-player__meter {
+  display: flex;
+  height: 14px;
+  flex-shrink: 0;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.vinyl-player__meter span {
+  display: block;
+  width: 2px;
+  height: 100%;
+  background: var(--accent);
+  opacity: 0.28;
+  transform: scaleY(0.08);
+  transform-origin: bottom center;
+  will-change: transform;
+}
+
+.vinyl-player[data-playing='true'] .vinyl-player__meter span {
+  opacity: 0.62;
+}
+
+/* 尺寸 ---------------------------------------------------------------- */
+
+@media (max-width: 760px) {
+  .vinyl-player {
+    --vp-disc: 66px;
+    --vp-panel: 232px;
+    left: 14px;
+    bottom: 14px;
+  }
+
+  .vinyl-player__panel-inner {
+    gap: 6px;
+    padding: 9px 11px 10px;
+  }
+
+  .vinyl-player__title-en {
+    font-size: 17px;
+  }
+
+  .vinyl-player__controls {
+    gap: 7px;
+  }
+
+  .vinyl-player__btn {
+    width: 23px;
+    height: 23px;
+  }
+}
+
+@media (max-width: 380px) {
+  .vinyl-player {
+    --vp-panel: 214px;
+  }
+
+  .vinyl-player__meter {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vinyl-player {
+    transition: none;
+  }
+
+  .vinyl-player__panel,
+  .vinyl-player__head,
+  .vinyl-player__arm,
+  .vinyl-player__hint {
+    transition-duration: 0.01ms;
+  }
+
+  .vinyl-player__platter {
+    animation: none;
+  }
+}

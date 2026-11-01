@@ -271,53 +271,10 @@
   color: var(--fg-dim);
 }
 
-.hero__scroll-hint {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  font-size: 8px;
-}
-
-.hero__scroll-line {
-  position: relative;
-  display: block;
-  width: 48px;
-  height: 1px;
-  overflow: hidden;
-  background: rgba(242, 237, 228, 0.24);
-}
-
-.hero__scroll-line::after {
-  position: absolute;
-  inset: 0;
-  background: var(--paper);
-  content: '';
-  animation: scroll-line 2.4s var(--ease-in-out) infinite;
-  transform-origin: left center;
-}
-
-@keyframes scroll-line {
-  0% {
-    transform: scaleX(0);
-    transform-origin: left center;
-  }
-  45% {
-    transform: scaleX(1);
-    transform-origin: left center;
-  }
-  55% {
-    transform: scaleX(1);
-    transform-origin: right center;
-  }
-  100% {
-    transform: scaleX(0);
-    transform-origin: right center;
-  }
-}
-
 .hero__bottom-meta {
   display: flex;
   flex-direction: column;
+  grid-column: 2;
   gap: 3px;
   justify-self: center;
   font-size: 8px;
@@ -327,6 +284,7 @@
 .scroll-badge {
   position: relative;
   display: grid;
+  grid-column: 3;
   width: clamp(88px, 8vw, 118px);
   height: clamp(88px, 8vw, 118px);
   place-items: center;
@@ -501,8 +459,9 @@
     max-height: clamp(150px, 28svh, 300px);
   }
 
+  /* 提示位让给固定在左下角的黑胶播放器，窄屏只留右侧的圆形滚动徽章 */
   .hero__bottom {
-    grid-template-columns: 1fr auto;
+    grid-template-columns: 1fr;
     align-items: end;
     gap: 14px;
   }
@@ -511,11 +470,8 @@
     display: none;
   }
 
-  .hero__scroll-hint {
-    align-self: center;
-  }
-
   .scroll-badge {
+    grid-column: 1;
     width: 84px;
     height: 84px;
   }
@@ -528,15 +484,5 @@
 
   .hero__body {
     padding-block: 10px 12px;
-  }
-}
-
-@media (max-width: 420px) {
-  .hero__scroll-line {
-    width: 28px;
-  }
-
-  .hero__scroll-hint .mono {
-    font-size: 7px;
   }
 }

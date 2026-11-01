@@ -18,6 +18,7 @@ import GrainOverlay from './components/GrainOverlay'
 import SiteHeader from './components/SiteHeader'
 import MenuOverlay from './components/MenuOverlay'
 import ScrollProgress from './components/ScrollProgress'
+import VinylPlayer from './components/VinylPlayer'
 import RouteWipe, { type RouteWipeHandle } from './components/RouteWipe'
 import './styles/components/App.css'
 
@@ -181,6 +182,8 @@ export default function App() {
       ) : null}
       <CustomCursor />
       <GrainOverlay />
+      {/* 黑胶播放器常驻左下角：跨页继续播放，颜色随控件下方的页面自动切换 */}
+      <VinylPlayer />
       <RouteWipe ref={wipe} />
       <div className={`top-shade${scrolled ? ' is-on' : ''}`} aria-hidden="true" />
       <SiteHeader />

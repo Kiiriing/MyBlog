@@ -264,11 +264,7 @@ export default function HeroSection() {
       </div>
 
       <div className="hero__bottom shell">
-        <div className="hero__scroll-hint hero-fade">
-          <span className="hero__scroll-line" />
-          <span className="mono">Scroll to explore</span>
-        </div>
-
+        {/* 左下角原本的 Scroll to explore 提示位，改由常驻的黑胶播放器占据 */}
         <div className="hero__bottom-meta hero-fade">
           <span className="mono">Beijing, CN</span>
           <span className="mono">{site.coords}</span>

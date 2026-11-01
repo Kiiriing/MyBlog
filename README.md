@@ -12,11 +12,12 @@
 - **GlowCursor**（React Bits 流体光迹，`src/components/GlowCursor.tsx`）：纯 WebGL2 的鼠标拖尾（半浮点帧缓冲 + MacCormack 平流 + 20 步压力迭代 + 5 级 bloom），深色页以 `screen` 加光、奶油色页换成组件的 light 主题落墨
 - **LetterGlitch**（React Bits 字符故障背景，`src/components/LetterGlitch.tsx`）：首屏整屏铺满的 WebGL2 字符场（字形图集 + 状态贴图、流动噪声、游走撕裂与指针火花），默认参数与官方一致，`prefers-reduced-motion` 下退化为静止字符
 - **LogoLoop**（React Bits 技术栈长条，`src/components/LogoLoop.jsx` + 类型声明 `.d.ts`）：关于页底部的 25 个技术栈品牌图标（`public/art/logo`），按语言 → 前端框架 → 运行时 → 数据库 → 构建与工具 → 部署与系统 → 编辑器分层排列，连续滚动、可拖拽甩动、悬停停下并恢复品牌色，`prefers-reduced-motion` 下保持静止排列
+- **Web Audio**（`src/lib/vinylAudio.ts`）：左下角黑胶播放器的曲目全部程序化合成——循环琶音 + 低八度长音 + 低通滤波 + 黑胶针脚底噪，`AnalyserNode` 供电频谱柱；仓库不依赖任何外部音频素材
 - **ogl 1.0**：承载 React Bits `DitherVeil` 抖动之幕（WebGL2）
 - **Tailwind CSS v4**（`@tailwindcss/vite`）与 **shadcn**（`components.json`），仅用于接入 registry 组件；项目自有 CSS 不分层，优先级更高
 - **Lenis** 平滑滚动，与 GSAP ticker 同步
 - 组件样式集中在 `src/styles/components/*.css`，由入口按需引入
-- 首屏为「左侧排版 + 右侧 DitherVeil 抖动之幕」双列布局（≤900px 面板下移居中），背景由 LetterGlitch 字符故障场铺满整屏，动效集中在标题描边 + 自述打字、滚动视差与底部提示
+- 首屏为「左侧排版 + 右侧 DitherVeil 抖动之幕」双列布局（≤900px 面板下移居中），背景由 LetterGlitch 字符故障场铺满整屏，动效集中在标题描边 + 自述打字、滚动视差、圆形滚动徽章与左下角黑胶播放器
 - 原生 SVG 程序化视觉素材（`public/art`），无外部图片依赖
 
 运行时要求 **Node.js ≥ 22.12**（当前已验证 Node 26 / npm 11）。
@@ -68,8 +69,9 @@ Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 ## 交互与可访问性
 
 - 自定义光标（仅在光标实际可见时隐藏系统光标，离开窗口 / 失焦自动恢复）、预加载揭幕、全屏菜单、颗粒质感、页面过渡
-- 首页 Hero：背景由 LetterGlitch 铺满整屏（字符在流动噪声里缓亮、随机成片故障，指针经过处点亮火花、点击沿行撕裂），并在文字一侧压一层暗场保证小字号可读；左侧标题逐字入场、`hero__lead` 与底部提示随滚动产生视差；右侧 DitherVeil 用 `floyd` 抖动把镀铬头像压成 1-bit 点阵，透明底会被 alpha 裁掉，点阵直接浮在页面网格上；鼠标划过的拖尾会烧穿成全彩、松开后逐格编织回点阵，点击产生冲击波
+- 首页 Hero：背景由 LetterGlitch 铺满整屏（字符在流动噪声里缓亮、随机成片故障，指针经过处点亮火花、点击沿行撕裂），并在文字一侧压一层暗场保证小字号可读；左侧标题逐字入场、`hero__lead` 与底部信息随滚动产生视差；右侧 DitherVeil 用 `floyd` 抖动把镀铬头像压成 1-bit 点阵，透明底会被 alpha 裁掉，点阵直接浮在页面网格上；鼠标划过的拖尾会烧穿成全彩、松开后逐格编织回点阵，点击产生冲击波
 - 进入首页（无 hash）时始终落在顶部：接管 `history.scrollRestoration` 并在预加载结束后回滚到 0，修复刷新后「自动跳到关于我」的问题
+- 左下角黑胶播放器（`VinylPlayer`，全局常驻、跨页继续播放）：收起时只有一张唱片，点击后唱片左移、控制条向右展开（播放 / 暂停、上一首 / 下一首、音量、10 格实时频谱），播放时唱片匀速转动、暂停停在原角度；按住唱片可拖到任意位置并自动限制在视口内，右边缘展开时会向左回拉；配色用 `elementsFromPoint` 读取控件下方的页面，落到 `.theme-paper` 章节自动切成奶油纸面的墨色文字，换页与拖动后都会重新采样
 - 路由切换时以橙色幕布进行擦除式转场（含目标页面标签与路径）
 - 项目索引：分类筛选、计数过渡、整行 paper 色块从中心揭幕、项目数字变实色、光标跟随案例预览卡，键盘 focus 同样触发揭幕
 - 滚动后顶部渐隐遮罩，保证固定导航与大标题重叠时的可读性
@@ -101,7 +103,7 @@ src/
   composables/  平滑滚动（GSAP + Lenis）
   hooks/        时钟、进场 reveal
   data/         站点、作品、文章内容
-  lib/          GSAP 注册
+  lib/          GSAP 注册、黑胶音频引擎（程序化曲目）
   store/        UI 状态（菜单 / 启动 / 触屏）
   styles/       主题变量、全局排版；components/ 下为各组件样式
   views/        首页、手记、文章、作品、404
@@ -109,6 +111,15 @@ public/art/     本地视觉素材（SVG / PNG；art/logo 为技术栈品牌图�
 ```
 
 ## 更新日志
+
+### 2026-11-01 — 首屏左下角新增黑胶播放器：唱片左移展开控制条、可拖拽、配色随页面自适应
+
+- 新增 `src/components/VinylPlayer.tsx` + `src/styles/components/VinylPlayer.css`：首屏左下角原来的「Scroll to explore」提示位换成常驻唱片。收起时只有一张黑胶（纹路、强调色标签、播放时才落针的唱臂、悬停浮出的 `Tap to open`）；点击唱片后唱片左移 14px、控制条向右展开 268px（上一首 / 播放暂停 / 下一首 / 音量 / 10 格实时频谱 / 曲目与计时），面板左侧留一道强调色竖线。按下唱片超过 5px 即判定为拖拽，整块可拖到任意位置并限制在视口内；在右边缘展开时会在 0.62s 后把整块向左回拉，不会溢出。
+- 唱片转动交给 CSS：`animation: vinyl-spin 9.5s linear infinite` + `animation-play-state` 随播放状态切换，暂停时停在当前角度；播放时外圈多一道强调色辉光。所有按钮与滑块可键盘操作，唱片本身聚焦后回车 / 空格即可展开收起，菜单打开时整块设为 `inert`。
+- 配色不写死：组件在每帧用 `elementsFromPoint` 读取唱片正下方的页面栈，命中 `.theme-paper` 就切换到奶油纸面的墨色文字 + 浅色玻璃，离开时换回暗场；滚动、拖动、换页都会重新采样，所以幕间 / 自述 / 手记这类纸面章节上不会出现一块突兀的黑色控件。自定义光标另有 `Drag / Play / Pause / Prev / Next` 文案。
+- 新增 `src/lib/vinylAudio.ts`：仓库没有音频素材，四首曲目用 Web Audio 程序化合成（循环琶音 + 低八度长音 + 低通滤波 + 黑胶针脚底噪），换曲交叉淡入淡出，暂停只淡出总线、不销毁上下文，播完的音符节点即时断开；频谱柱直接读 `AnalyserNode` 的频域数据。想换成真实歌曲时按文件顶部注释替换曲目数据即可。
+- `src/App.tsx` 全局挂载（`z-index: 780`，位于菜单 / 转场幕布 / 颗粒层之下），跨页继续播放；`src/components/HeroSection.tsx` 删除底部提示块，`HeroSection.css` 清理对应样式，底部信息与圆形徽章改为显式 `grid-column` 保持居中 / 右对齐，窄屏只留右侧徽章。
+- 验证：`npm run build` 通过（`index-*.css 144.16 kB`、`index-*.js 604.04 kB`）；`npm run preview` + headless Chrome 1440×900 与 390×844 实测：点击唱片后 root 宽 104 → 372、唱片 `translateX(-14px)`、面板 268px；播放后唱片 `animation-play-state: running`、频谱柱由 AnalyserNode 实时抬升、计时递增，暂停后全部归位；音量点到 30% 处为 `0.28 / 28%`，上一首 / 下一首切到 `Paper Static / SIDE A · 02`；拖拽从 `(34,775)` 移到 `(64,555)`，拖到右边缘后展开自动回拉（right `1432 → 1426`）；滚到 `.manifesto` 时 `data-tone` 变 `paper`、面板底色 `rgba(232,226,213,.84)`，回到顶部恢复暗场；从菜单切到 `/journal` 时仍 `playing: true`、`data-tone` 自动变 `paper`、面板底色 `rgba(239,232,219,.84)`，切回首页恢复暗场；菜单打开时播放器 `inert` 且 `z-index 780` 被菜单的 `800` 压住，Escape 关闭后恢复；Enter 可展开 / 收起；控制台无 error。
 
 ### 2026-11-01 — 修复转场大字初始位置外露（能看到约 1/10 字形）
 
