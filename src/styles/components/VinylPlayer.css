@@ -489,6 +489,17 @@
     transform 0.34s var(--ease-out);
 }
 
+/* 喇叭与滑槽之间留了 2px 的视觉缝：盖一条看不见的搭桥，
+   指针从喇叭移到滑槽时不会「离开」音量区域，展开得以保持 */
+.vinyl-player__vol-flyout::after {
+  position: absolute;
+  top: -8px;
+  right: -4px;
+  bottom: -8px;
+  width: 8px;
+  content: '';
+}
+
 .vinyl-player__vol:hover .vinyl-player__vol-flyout,
 .vinyl-player__vol:focus-within .vinyl-player__vol-flyout,
 .vinyl-player.is-vol-open .vinyl-player__vol-flyout {
@@ -586,6 +597,16 @@
     top: auto;
     transform: translate(-50%, 6px) scale(0.9);
     transform-origin: bottom center;
+  }
+
+  /* 向上展开时搭桥改到下方，接住 8px 的间距 */
+  .vinyl-player__vol-flyout::after {
+    top: auto;
+    right: -4px;
+    bottom: -10px;
+    left: -4px;
+    width: auto;
+    height: 12px;
   }
 
   .vinyl-player__vol:hover .vinyl-player__vol-flyout,

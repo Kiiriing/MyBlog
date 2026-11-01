@@ -57,6 +57,7 @@ export default function VinylPlayer() {
   const autoStarted = useRef(false)
   const userPaused = useRef(false)
   const scrubbing = useRef(false)
+  const volTimer = useRef(0)
 
   const [offset, setOffset] = useState<Offset>({ x: 0, y: 0 })
   const [dragging, setDragging] = useState(false)
@@ -66,6 +67,7 @@ export default function VinylPlayer() {
   const [trackIndex, setTrackIndex] = useState(0)
   const [volume, setVolume] = useState(0.7)
   const [volOpen, setVolOpen] = useState(false)
+  const [volHover, setVolHover] = useState(false)
   const [tone, setTone] = useState<'dark' | 'paper'>('dark')
   const [position, setPosition] = useState(0)
 
@@ -74,6 +76,35 @@ export default function VinylPlayer() {
   const getEngine = useCallback(() => {
     if (!engineRef.current) engineRef.current = new VinylEngine()
     return engineRef.current
+  }, [])
+
+  /* 音量槽悬停：指针一进入（喇叭或左侧滑槽）就展开；
+     离开后留 0.5s，让指针能穿过图标与滑槽之间那道缝，落到滑槽上继续停留 */
+  const showVolume = useCallback(() => {
+    if (volTimer.current) {
+      window.clearTimeout(volTimer.current)
+      volTimer.current = 0
+    }
+    setVolHover(true)
+  }, [])
+
+  const hideVolumeSoon = useCallback(() => {
+    if (volTimer.current) window.clearTimeout(volTimer.current)
+    volTimer.current = window.setTimeout(() => {
+      volTimer.current = 0
+      setVolHover(false)
+      /* 指针已经不在音量区域，点按锁定的展开也一并收回 */
+      setVolOpen(false)
+    }, 500)
+  }, [])
+
+  const closeVolume = useCallback(() => {
+    if (volTimer.current) {
+      window.clearTimeout(volTimer.current)
+      volTimer.current = 0
+    }
+    setVolHover(false)
+    setVolOpen(false)
   }, [])
 
   /* 主题嗅探 ------------------------------------------------------------- */
@@ -305,17 +336,18 @@ export default function VinylPlayer() {
       if (!root) return
       if (root.contains(event.target as Node)) return
       setOpen(false)
-      setVolOpen(false)
+      closeVolume()
     }
     document.addEventListener('pointerdown', onPointerDown, true)
     return () => document.removeEventListener('pointerdown', onPointerDown, true)
-  }, [open])
+  }, [open, closeVolume])
 
   useEffect(
     () => () => {
       engineRef.current?.dispose()
       engineRef.current = null
       if (toneFrame.current) window.cancelAnimationFrame(toneFrame.current)
+      if (volTimer.current) window.clearTimeout(volTimer.current)
     },
     []
   )
@@ -453,12 +485,13 @@ export default function VinylPlayer() {
         : 'Tap to open'
   const progress = track.duration ? clamp(position / track.duration, 0, 1) * 100 : 0
   const muted = volume <= 0.02
+  const volShown = volOpen || volHover
 
   return (
     <div
       ref={rootRef}
       className={`vinyl-player${open ? ' is-open' : ''}${dragging ? ' is-dragging' : ''}${
-        volOpen ? ' is-vol-open' : ''
+        volShown ? ' is-vol-open' : ''
       }`}
       data-tone={tone}
       data-playing={playing ? 'true' : 'false'}
@@ -467,7 +500,7 @@ export default function VinylPlayer() {
       aria-label="黑胶音乐播放器"
       onPointerDown={(event) => {
         const target = event.target as HTMLElement
-        if (volOpen && !target.closest('.vinyl-player__vol')) setVolOpen(false)
+        if (volShown && !target.closest('.vinyl-player__vol')) closeVolume()
       }}
       /* 菜单打开时整块让出焦点与点击，和 #main 一样退到后面 */
       inert={ui.menuOpen || undefined}
@@ -593,13 +626,28 @@ export default function VinylPlayer() {
               ))}
             </span>
 
-            <div className="vinyl-player__vol">
+            <div
+              className="vinyl-player__vol"
+              /* 悬停即展开；移到左侧滑槽也算「在音量区域」，离开 0.5s 后才收回 */
+              onPointerEnter={(event) => {
+                if (event.pointerType === 'touch') return
+                showVolume()
+              }}
+              onPointerLeave={(event) => {
+                if (event.pointerType === 'touch') return
+                hideVolumeSoon()
+              }}
+            >
               <button
                 className="vinyl-player__vol-btn"
                 type="button"
                 aria-label={muted ? '取消静音并展开音量' : '音量'}
-                aria-expanded={volOpen}
-                onClick={() => setVolOpen((value) => !value)}
+                aria-expanded={volShown}
+                onClick={(event) => {
+                  /* 鼠标点喇叭不要留下焦点：否则 :focus-within 会把滑槽一直钉住 */
+                  if (event.detail > 0) event.currentTarget.blur()
+                  setVolOpen((value) => !value)
+                }}
               >
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M4 9h3.2L12 5v14l-4.8-4H4z" fill="currentColor" />
@@ -641,6 +689,10 @@ export default function VinylPlayer() {
                   style={{ '--vp-vol': `${Math.round(volume * 100)}%` } as CSSProperties}
                   aria-label="音量"
                   onChange={(event) => changeVolume(Number(event.target.value))}
+                  /* 鼠标拖完音量放开焦点，滑槽收起后不会因为 :focus-within 留一条假影 */
+                  onPointerUp={(event) => {
+                    if (event.pointerType !== 'touch') event.currentTarget.blur()
+                  }}
                 />
               </span>
             </div>
