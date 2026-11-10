@@ -1,0 +1,121 @@
+.code-slots {
+  position: relative;
+  display: inline-block;
+}
+
+.code-slots__row {
+  position: relative;
+  display: inline-flex;
+  gap: 6px;
+  cursor: text;
+  touch-action: manipulation;
+}
+
+.code-slots[data-disabled] .code-slots__row {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.code-slots__input {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: transparent;
+  caret-color: transparent;
+  font-size: 16px;
+  opacity: 0;
+  cursor: inherit;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.code-slots__slot {
+  position: relative;
+  display: grid;
+  width: 36px;
+  height: 44px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  border-radius: 9px;
+  background: rgba(242, 237, 228, 0.03);
+  transition:
+    border-color 0.24s ease,
+    background-color 0.24s ease;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.code-slots__slot[data-filled] {
+  background: rgba(242, 237, 228, 0.07);
+}
+
+.code-slots__slot[data-active] {
+  border-color: var(--accent);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .code-slots__row:hover .code-slots__slot:not([data-filled]) {
+    border-color: var(--line-strong);
+  }
+}
+
+.code-slots[data-invalid] .code-slots__slot {
+  border-color: rgba(220, 84, 60, 0.75);
+  background: rgba(220, 84, 60, 0.1);
+}
+
+.code-slots__digit {
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  animation: code-slots-land 0.22s cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+@keyframes code-slots-land {
+  from {
+    opacity: 0;
+    transform: translateY(9px) scale(0.86);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.code-slots__caret {
+  width: 1.5px;
+  height: 48%;
+  background: var(--accent);
+  animation: code-slots-blink 1s steps(1) infinite;
+}
+
+@keyframes code-slots-blink {
+  0%,
+  49.9% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .code-slots__digit {
+    animation: none;
+  }
+
+  .code-slots__caret {
+    animation: none;
+  }
+}

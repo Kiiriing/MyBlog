@@ -1,12 +1,20 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { api, ApiError, type CodeScene } from '../lib/api'
 import { signIn, signOut, useAuth } from '../store/auth'
 import { refreshNotifications } from '../store/notifications'
+import CodeSlots from '../components/CodeSlots'
+import RubberSegment, { type SegmentItem } from '../components/RubberSegment'
 import '../styles/components/LoginView.css'
 
 type Mode = 'login' | 'register' | 'reset'
+
+const MODES: SegmentItem[] = [
+  { value: 'login', label: '登录' },
+  { value: 'register', label: '注册' },
+  { value: 'reset', label: '找回密码' }
+]
 
 const COPY: Record<Mode, { kicker: string; title: string; emph: string; lead: string }> = {
   login: {
@@ -19,15 +27,17 @@ const COPY: Record<Mode, { kicker: string; title: string; emph: string; lead: st
     kicker: 'Register / 注册',
     title: 'Join',
     emph: 'us.',
-    lead: '用邮箱注册账号。点击获取验证码会先做一次人机验证，验证码由邮件发送，10 分钟内有效。'
+    lead: '用邮箱注册账号。获取验证码前需要先完成人机验证，验证码由邮件发送，10 分钟内有效。'
   },
   reset: {
     kicker: 'Recovery / 找回密码',
     title: 'Reset',
     emph: 'key.',
-    lead: '填写注册邮箱并完成人机验证，我们会把验证码发到邮箱，验证后即可设置新密码。'
+    lead: '填写注册邮箱并完成人机验证，验证码会发送到邮箱，验证后即可设置新密码。'
   }
 }
+
+const STRENGTH_LABEL = ['未设置', '弱', '较弱', '较强', '强']
 
 function messageOf(error: unknown) {
   if (error instanceof ApiError) return error.message
@@ -38,6 +48,16 @@ function sceneOf(mode: Mode): CodeScene {
   return mode === 'register' ? 'REGISTER' : 'RESET_PASSWORD'
 }
 
+/** 大写 / 小写 / 数字 / 特殊符号，命中几类就是几分 */
+function strengthOf(password: string) {
+  let score = 0
+  if (/[A-Z]/.test(password)) score += 1
+  if (/[a-z]/.test(password)) score += 1
+  if (/\d/.test(password)) score += 1
+  if (/[^A-Za-z0-9]/.test(password)) score += 1
+  return score
+}
+
 export default function LoginView() {
   const navigate = useNavigate()
   const auth = useAuth()
@@ -45,9 +65,9 @@ export default function LoginView() {
   const [mode, setMode] = useState<Mode>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirm, setConfirm] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [code, setCode] = useState('')
-  const [newPassword, setNewPassword] = useState('')
 
   const [captchaImage, setCaptchaImage] = useState('')
   const [captchaId, setCaptchaId] = useState('')
@@ -60,6 +80,7 @@ export default function LoginView() {
   const [notice, setNotice] = useState('')
 
   const copy = COPY[mode]
+  const strength = strengthOf(password)
 
   const loadCaptcha = useCallback(async () => {
     try {
@@ -79,7 +100,7 @@ export default function LoginView() {
   }, [mode, loadCaptcha])
 
   useEffect(() => {
-    document.title = `${copy.kicker.split(' / ')[1] ?? 'Sign in'} — 陆屿 LU YU`
+    document.title = `${copy.kicker.split(' / ')[1]} — 陆屿 LU YU`
   }, [copy.kicker])
 
   useEffect(() => {
@@ -88,17 +109,23 @@ export default function LoginView() {
     return () => window.clearTimeout(timer)
   }, [cooldown])
 
-  function switchMode(next: Mode) {
-    if (mode === next) return
-    setMode(next)
+  function switchMode(next: string) {
+    if (next === mode) return
+    setMode(next as Mode)
     setError('')
     setNotice('')
     setCode('')
+    setPassword('')
+    setConfirm('')
     setCaptchaId('')
     setCaptchaImage('')
     setCaptchaCode('')
-    setPassword('')
-    setNewPassword('')
+  }
+
+  function goBack() {
+    const state = window.history.state as { idx?: number } | null
+    if (state && typeof state.idx === 'number' && state.idx > 0) navigate(-1)
+    else navigate('/')
   }
 
   async function onSendCode() {
@@ -139,10 +166,26 @@ export default function LoginView() {
   async function onSubmit(event: FormEvent) {
     event.preventDefault()
     if (submitting) return
+
     setError('')
     setNotice('')
-    setSubmitting(true)
 
+    if (mode === 'register') {
+      if (!displayName.trim()) return setError('请填写昵称')
+      if (password.length < 8) return setError('密码至少需要 8 位')
+      if (strength < 3) {
+        return setError('密码强度需要达到「较强」：大写字母、小写字母、数字、特殊符号至少包含三种')
+      }
+      if (confirm !== password) return setError('两次输入的密码不一致')
+      if (code.length !== 6) return setError('请填写 6 位邮箱验证码')
+    }
+
+    if (mode === 'reset') {
+      if (password.length < 8) return setError('新密码至少需要 8 位')
+      if (code.length !== 6) return setError('请填写 6 位邮箱验证码')
+    }
+
+    setSubmitting(true)
     try {
       if (mode === 'login') {
         const result = await api.login(email.trim(), password)
@@ -157,7 +200,7 @@ export default function LoginView() {
           email: email.trim(),
           password,
           displayName: displayName.trim(),
-          code: code.trim()
+          code
         })
         signIn(result)
         await refreshNotifications()
@@ -165,11 +208,7 @@ export default function LoginView() {
         return
       }
 
-      await api.resetPassword({
-        email: email.trim(),
-        code: code.trim(),
-        newPassword
-      })
+      await api.resetPassword({ email: email.trim(), code, newPassword: password })
       switchMode('login')
       setNotice('密码已重置，请用新密码登录。')
     } catch (failure) {
@@ -180,17 +219,25 @@ export default function LoginView() {
   }
 
   const signedIn = mode === 'login' && auth.user
+  const needsCaptcha = mode !== 'login'
 
   return (
     <div className="login">
       <div className="login__ambient" aria-hidden="true" />
 
-      <div className="shell login__inner">
-        <header className="login__top">
-          <span className="eyebrow">{copy.kicker}</span>
-          <span className="mono login__top-meta">LU YU — Member access</span>
-        </header>
+      <button type="button" className="login__back" aria-label="返回上一页" onClick={goBack}>
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path
+            d="M14.5 5.5 8 12l6.5 6.5"
+            stroke="currentColor"
+            strokeWidth="1.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
 
+      <div className="shell login__inner">
         <div className="login__stage">
           <aside className="login__intro">
             <h1 className="login__title">
@@ -209,16 +256,12 @@ export default function LoginView() {
                 <span>03</span>邮件验证码 + 人机校验
               </li>
             </ul>
-
-            <Link to="/" className="login__back mono" data-cursor="Index">
-              返回首页 <span aria-hidden="true">↖</span>
-            </Link>
           </aside>
 
           <section className="login__panel">
             {signedIn ? (
               <div className="login__signed">
-                <span className="mono login__panel-kicker">Signed in</span>
+                <span className="login__label">Signed in / 已登录</span>
                 <h2 className="login__signed-name">{auth.user?.displayName}</h2>
                 <p className="login__signed-mail mono">{auth.user?.email}</p>
                 <div className="login__signed-actions">
@@ -240,83 +283,47 @@ export default function LoginView() {
               </div>
             ) : (
               <>
-                <div className="login__tabs" role="tablist" aria-label="账号操作">
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={mode === 'login'}
-                    className={`login__tab${mode === 'login' ? ' is-active' : ''}`}
-                    onClick={() => switchMode('login')}
-                  >
-                    登录
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={mode === 'register'}
-                    className={`login__tab${mode === 'register' ? ' is-active' : ''}`}
-                    onClick={() => switchMode('register')}
-                  >
-                    注册
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={mode === 'reset'}
-                    className={`login__tab${mode === 'reset' ? ' is-active' : ''}`}
-                    onClick={() => switchMode('reset')}
-                  >
-                    找回密码
-                  </button>
-                </div>
+                <RubberSegment
+                  items={MODES}
+                  value={mode}
+                  onChange={switchMode}
+                  ariaLabel="账号操作"
+                />
 
-                <form className="login__form" onSubmit={onSubmit} noValidate>
-                  <label className="login__field">
-                    <span className="login__label">邮箱</span>
-                    <input
-                      type="email"
-                      name="email"
-                      value={email}
-                      autoComplete="email"
-                      placeholder="you@example.com"
-                      onChange={(event) => setEmail(event.target.value)}
-                      required
-                    />
-                  </label>
+                <div key={mode} className="login__body">
+                  <form className="login__form" onSubmit={onSubmit} noValidate>
+                    <div className={`login__row${mode === 'register' ? '' : ' login__row--single'}`}>
+                      <label className="login__field">
+                        <span className="login__label">邮箱</span>
+                        <input
+                          type="email"
+                          name="email"
+                          value={email}
+                          autoComplete="email"
+                          placeholder="you@example.com"
+                          onChange={(event) => setEmail(event.target.value)}
+                          required
+                        />
+                      </label>
 
-                  {mode === 'register' ? (
-                    <label className="login__field">
-                      <span className="login__label">昵称</span>
-                      <input
-                        type="text"
-                        name="displayName"
-                        value={displayName}
-                        autoComplete="nickname"
-                        placeholder="怎么称呼你"
-                        maxLength={40}
-                        onChange={(event) => setDisplayName(event.target.value)}
-                        required
-                      />
-                    </label>
-                  ) : null}
+                      {mode === 'register' ? (
+                        <label className="login__field">
+                          <span className="login__label">昵称</span>
+                          <input
+                            type="text"
+                            name="displayName"
+                            value={displayName}
+                            autoComplete="nickname"
+                            placeholder="怎么称呼你"
+                            maxLength={40}
+                            onChange={(event) => setDisplayName(event.target.value)}
+                            required
+                          />
+                        </label>
+                      ) : null}
+                    </div>
 
-                  {mode === 'login' ? (
-                    <label className="login__field">
-                      <span className="login__label">密码</span>
-                      <input
-                        type="password"
-                        name="password"
-                        value={password}
-                        autoComplete="current-password"
-                        placeholder="••••••••"
-                        onChange={(event) => setPassword(event.target.value)}
-                        required
-                      />
-                    </label>
-                  ) : null}
-
-                  {mode !== 'login' ? (
-                    <>
+                    {needsCaptcha ? (
                       <div className="login__field">
                         <span className="login__label">人机验证</span>
                         <div className="login__captcha">
@@ -326,7 +333,7 @@ export default function LoginView() {
                             value={captchaCode}
                             autoComplete="off"
                             spellCheck={false}
-                            placeholder="图片中的字符"
+                            placeholder="输入图片中的字符"
                             maxLength={4}
                             onChange={(event) => setCaptchaCode(event.target.value)}
                           />
@@ -345,20 +352,17 @@ export default function LoginView() {
                           </button>
                         </div>
                       </div>
+                    ) : null}
 
-                      <label className="login__field">
+                    {needsCaptcha ? (
+                      <div className="login__field">
                         <span className="login__label">邮箱验证码</span>
-                        <div className="login__code">
-                          <input
-                            type="text"
-                            name="code"
+                        <div className="login__codeline">
+                          <CodeSlots
                             value={code}
-                            inputMode="numeric"
-                            autoComplete="one-time-code"
-                            placeholder="6 位数字"
-                            maxLength={6}
-                            onChange={(event) => setCode(event.target.value.replace(/\D/g, ''))}
-                            required
+                            onChange={setCode}
+                            disabled={submitting}
+                            invalid={Boolean(error) && code.length > 0 && code.length < 6}
                           />
                           <button
                             type="button"
@@ -369,44 +373,72 @@ export default function LoginView() {
                             {cooldown > 0 ? `${cooldown}s 后重发` : sending ? '发送中…' : '获取验证码'}
                           </button>
                         </div>
+                      </div>
+                    ) : null}
+
+                    <div className={`login__row${mode === 'register' ? '' : ' login__row--single'}`}>
+                      <label className="login__field">
+                        <span className="login__label">
+                          {mode === 'login' ? '密码' : mode === 'reset' ? '新密码' : '密码'}
+                        </span>
+                        <input
+                          type="password"
+                          name="password"
+                          value={password}
+                          autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                          placeholder={mode === 'login' ? '••••••••' : '至少 8 位'}
+                          onChange={(event) => setPassword(event.target.value)}
+                          required
+                        />
                       </label>
-                    </>
-                  ) : null}
 
-                  {mode !== 'login' ? (
-                    <label className="login__field">
-                      <span className="login__label">{mode === 'reset' ? '新密码' : '密码'}</span>
-                      <input
-                        type="password"
-                        name={mode === 'reset' ? 'newPassword' : 'password'}
-                        value={mode === 'reset' ? newPassword : password}
-                        autoComplete="new-password"
-                        placeholder="至少 8 位"
-                        onChange={(event) =>
-                          mode === 'reset'
-                            ? setNewPassword(event.target.value)
-                            : setPassword(event.target.value)
-                        }
-                        required
-                      />
-                    </label>
-                  ) : null}
+                      {mode === 'register' ? (
+                        <label className="login__field">
+                          <span className="login__label">确认密码</span>
+                          <input
+                            type="password"
+                            name="confirm"
+                            value={confirm}
+                            autoComplete="new-password"
+                            placeholder="再输入一次"
+                            onChange={(event) => setConfirm(event.target.value)}
+                            required
+                          />
+                        </label>
+                      ) : null}
+                    </div>
 
-                  <button type="submit" className="login__submit" disabled={submitting}>
-                    <span>
-                      {mode === 'login' ? '登录' : mode === 'register' ? '注册并登录' : '重置密码'}
-                    </span>
-                    <span aria-hidden="true">{submitting ? '…' : '↗'}</span>
-                  </button>
+                    {mode !== 'login' ? (
+                      <div className="login__strength" data-score={strength} role="status">
+                        <span className="login__strength-bars" aria-hidden="true">
+                          {[1, 2, 3, 4].map((step) => (
+                            <i key={step} data-on={strength >= step ? '' : undefined} />
+                          ))}
+                        </span>
+                        <span className="login__strength-label">
+                          {STRENGTH_LABEL[strength]}
+                          {mode === 'register' && password && strength < 3
+                            ? ` · 还差 ${3 - strength} 类字符`
+                            : ''}
+                        </span>
+                      </div>
+                    ) : null}
 
-                  <p
-                    className={`login__msg mono${error ? ' is-error' : ''}`}
-                    role="status"
-                    aria-live="polite"
-                  >
-                    {error || notice || '\u00a0'}
-                  </p>
-                </form>
+                    <button type="submit" className="login__submit" disabled={submitting}>
+                      <span>
+                        {mode === 'login' ? '登录' : mode === 'register' ? '注册并登录' : '重置密码'}
+                      </span>
+                      <span aria-hidden="true">{submitting ? '…' : '↗'}</span>
+                    </button>
+
+                    <p
+                      className={`login__msg${error ? ' is-error' : ''}`}
+                      aria-live="polite"
+                    >
+                      {error || notice || '\u00a0'}
+                    </p>
+                  </form>
+                </div>
 
                 <footer className="login__helper">
                   {mode === 'login' ? (
