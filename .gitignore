@@ -28,6 +28,7 @@ pnpm-debug.log*
 .agents/
 .tmp-*
 
-# backend local credentials / build output
+# backend local credentials / build output / runtime logs
 server/application-local.yml
 server/target/
+server/logs/

@@ -18,6 +18,19 @@ spring:
 server:
   port: ${SERVER_PORT:8080}
 
+logging:
+  file:
+    # 从 server/ 目录启动时写入 server/logs/
+    name: ${LOG_FILE:logs/luyu-blog.log}
+  logback:
+    rollingpolicy:
+      max-file-size: 20MB
+      max-history: 30
+      total-size-cap: 1GB
+  level:
+    com.luyu.blog: INFO
+    org.hibernate.SQL: WARN
+
 app:
   jwt:
     secret: ${JWT_SECRET:luyu-dev-only-secret-key-please-replace-0123456789}
