@@ -209,6 +209,9 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  /* 卡片与下方坐标文字共用同一宽度：卡片按视口高度收缩时，两者仍左右对齐 */
+  width: clamp(180px, calc(52dvh - 70px), 100%);
+  justify-self: center;
   opacity: 0;
   transform: translateY(40px) rotate(1.5deg);
   transition:
@@ -221,13 +224,10 @@
   transform: none;
 }
 
-/* 个人卡片填满右栏，图片按 cover 铺满整张卡面 */
+/* 个人卡片填满预览栏，图片按 cover 铺满整张卡面 */
 .menu__profile {
-  /* 卡片高度由宽度决定（4/5 卡面 + 页脚），所以用可用高度反推最大宽度：
-     矮屏（1366×768 一类，可视高度约 600px）时卡片不再把整屏菜单顶出视口 */
-  width: clamp(180px, calc(52dvh - 70px), 100%);
+  width: 100%;
   max-width: none;
-  margin-inline: auto;
 }
 
 .menu__profile .profile-card__photo,
@@ -240,6 +240,7 @@
   justify-content: space-between;
   color: var(--fg-faint);
   font-size: 8px;
+  white-space: nowrap;
 }
 
 .menu__footer {
@@ -443,6 +444,10 @@
 
   .menu__footer {
     padding-top: 8px;
+  }
+
+  .menu__preview-foot {
+    font-size: 7px;
   }
 
   .menu__email {
