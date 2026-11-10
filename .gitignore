@@ -23,6 +23,7 @@ pnpm-debug.log*
 .history/
 
 # local tooling artifacts
+.trae/
 .trae-html-share-packages/
 .agents/
 .tmp-*
