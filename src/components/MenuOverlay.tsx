@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { menuItems, site } from '../data/site'
-import { useUi, setMenuOpen } from '../store/ui'
+import { isMenuAnimating, useUi, setMenuOpen } from '../store/ui'
 import { useClock } from '../hooks/useClock'
 import { scrollTo, scrollToSection } from '../composables/useSmoothScroll'
 import ProfileCard from './ProfileCard'
@@ -9,10 +9,11 @@ import '../styles/components/MenuOverlay.css'
 
 type MenuItem = (typeof menuItems)[number]
 
+/** 打开菜单时高亮当前页面所在的那一项 */
 function chooseInitialPreview(path: string) {
-  if (path.startsWith('/journal')) return 2
   if (path.startsWith('/work')) return 1
-  return 3
+  if (path.startsWith('/journal')) return 2
+  return 0
 }
 
 export default function MenuOverlay() {
@@ -21,7 +22,7 @@ export default function MenuOverlay() {
   const navigate = useNavigate()
   const time = useClock()
 
-  const [hovered, setHovered] = useState(3)
+  const [hovered, setHovered] = useState(0)
   const contactItem = menuItems[menuItems.length - 1]
 
   useEffect(() => {
@@ -32,16 +33,21 @@ export default function MenuOverlay() {
     return () => window.removeEventListener('keydown', onKey)
   }, [ui.menuOpen])
 
-  useEffect(() => {
+  // 在首帧绘制前就定位到当前页面，避免先亮起「关于」再跳到正确的位置
+  useLayoutEffect(() => {
     if (!ui.menuOpen) return
-    setHovered(chooseInitialPreview(location.pathname))
+    const initial = chooseInitialPreview(location.pathname)
+    setHovered(initial)
     const timer = window.setTimeout(() => {
-      document.querySelector<HTMLElement>('.menu__item')?.focus({ preventScroll: true })
+      document
+        .querySelectorAll<HTMLElement>('.menu__item')
+        [initial]?.focus({ preventScroll: true })
     }, 650)
     return () => window.clearTimeout(timer)
   }, [ui.menuOpen])
 
   function go(item: MenuItem) {
+    if (isMenuAnimating()) return
     setMenuOpen(false)
 
     if (item.type === 'route') {

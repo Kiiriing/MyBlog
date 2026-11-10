@@ -17,6 +17,9 @@ let state: UiState = {
 
 const listeners = new Set<() => void>()
 
+const MENU_ANIMATION_MS = 1000
+let menuLockedUntil = 0
+
 function commit(patch: Partial<UiState>) {
   state = { ...state, ...patch }
   listeners.forEach((listener) => listener())
@@ -40,6 +43,9 @@ export function setUi(patch: Partial<UiState>) {
 }
 
 export function setMenuOpen(open: boolean) {
+  if (state.menuOpen === open) return
+  // 菜单展开 / 收起动画约 1s，期间锁住，避免重复点击把状态来回切换
+  menuLockedUntil = performance.now() + MENU_ANIMATION_MS
   commit({ menuOpen: open })
   if (state.booting) return
   if (open) lockScroll()
@@ -47,7 +53,13 @@ export function setMenuOpen(open: boolean) {
 }
 
 export function toggleMenu() {
+  if (isMenuAnimating()) return
   setMenuOpen(!state.menuOpen)
+}
+
+/** 菜单动画是否还在进行中 */
+export function isMenuAnimating() {
+  return performance.now() < menuLockedUntil
 }
 
 export function finishBoot() {
