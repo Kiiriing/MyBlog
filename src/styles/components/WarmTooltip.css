@@ -1,0 +1,156 @@
+/* React Bits WarmTooltip 的样式：奶油色浮层、4px 圆角箭头、160ms 弹出。 */
+
+.warm-tooltip__trigger {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+  vertical-align: middle;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.warm-tooltip {
+  --wt-surface: #f2ede4;
+  --wt-ink: #16150f;
+  --wt-radius: 8px;
+  --wt-font: 12.5px;
+  --wt-arrow: 16px;
+  --wt-ease: cubic-bezier(0.23, 1, 0.32, 1);
+  --wt-shift-x: 0px;
+  --wt-shift-y: 0px;
+
+  position: fixed;
+  z-index: 1000;
+  display: block;
+  pointer-events: none;
+  font-family: var(--font-sans);
+}
+
+.warm-tooltip__box {
+  position: relative;
+  display: block;
+  padding: 6px 10px;
+  border-radius: var(--wt-radius);
+  background: var(--wt-surface);
+  color: var(--wt-ink);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.18),
+    0 8px 24px -8px rgba(0, 0, 0, 0.55);
+  opacity: 0;
+  filter: blur(4px);
+  transform: translate3d(var(--wt-shift-x), var(--wt-shift-y), 0) scale(0.94);
+  transition:
+    opacity 0.16s var(--wt-ease),
+    filter 0.16s var(--wt-ease),
+    transform 0.16s var(--wt-ease);
+}
+
+.warm-tooltip.is-shown .warm-tooltip__box {
+  opacity: 1;
+  filter: blur(0);
+  transform: translate3d(0, 0, 0) scale(1);
+}
+
+/* 弹出方向：浮层从靠近触发元素的一侧「长」出来 */
+.warm-tooltip[data-side='top'] {
+  --wt-shift-y: 4px;
+}
+
+.warm-tooltip[data-side='top'] .warm-tooltip__box {
+  transform-origin: center bottom;
+}
+
+.warm-tooltip[data-side='bottom'] {
+  --wt-shift-y: -4px;
+}
+
+.warm-tooltip[data-side='bottom'] .warm-tooltip__box {
+  transform-origin: center top;
+}
+
+.warm-tooltip[data-side='left'] {
+  --wt-shift-x: -4px;
+}
+
+.warm-tooltip[data-side='left'] .warm-tooltip__box {
+  transform-origin: right center;
+}
+
+.warm-tooltip[data-side='right'] {
+  --wt-shift-x: 4px;
+}
+
+.warm-tooltip[data-side='right'] .warm-tooltip__box {
+  transform-origin: left center;
+}
+
+.warm-tooltip__text {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: var(--wt-font);
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.warm-tooltip__kbd {
+  display: inline-flex;
+  align-items: center;
+  height: 1.55em;
+  padding: 0 0.45em;
+  border-radius: 0.4em;
+  background: color-mix(in srgb, var(--wt-ink) 9%, transparent);
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--wt-ink) 12%, transparent);
+  color: color-mix(in srgb, var(--wt-ink) 72%, transparent);
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.warm-tooltip__arrow {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--wt-surface);
+  transform: rotate(45deg);
+}
+
+.warm-tooltip[data-side='top'] .warm-tooltip__arrow {
+  bottom: -3px;
+  left: var(--wt-arrow);
+  margin-left: -4px;
+}
+
+.warm-tooltip[data-side='bottom'] .warm-tooltip__arrow {
+  top: -3px;
+  left: var(--wt-arrow);
+  margin-left: -4px;
+}
+
+.warm-tooltip[data-side='left'] .warm-tooltip__arrow {
+  right: -3px;
+  top: var(--wt-arrow);
+  margin-top: -4px;
+}
+
+.warm-tooltip[data-side='right'] .warm-tooltip__arrow {
+  left: -3px;
+  top: var(--wt-arrow);
+  margin-top: -4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .warm-tooltip__box {
+    filter: none;
+    transform: none;
+    transition: opacity 0.12s linear;
+  }
+
+  .warm-tooltip.is-shown .warm-tooltip__box {
+    transform: none;
+  }
+}

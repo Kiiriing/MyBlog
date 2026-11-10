@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import type { NotificationCategory, NotificationItem } from '../lib/api'
 import { useAuth } from '../store/auth'
+import WarmTooltip from './WarmTooltip'
 import {
   closePanel,
   markAllRead,
@@ -85,9 +86,11 @@ export default function NotificationPanel() {
               {auth.user ? (inbox.unread > 0 ? `${inbox.unread} 条未读` : '全部已读') : '未登录'}
             </p>
           </div>
-          <button className="inbox__close" type="button" aria-label="关闭" onClick={closePanel}>
-            <span aria-hidden="true">×</span>
-          </button>
+          <WarmTooltip content="关闭站内信" shortcut="Esc" side="bottom" disabled={!inbox.open}>
+            <button className="inbox__close" type="button" aria-label="关闭" onClick={closePanel}>
+              <span aria-hidden="true">×</span>
+            </button>
+          </WarmTooltip>
         </header>
 
         {auth.user ? (
@@ -145,20 +148,28 @@ export default function NotificationPanel() {
                     </button>
 
                     <div className="inbox__item-actions">
-                      <button
-                        type="button"
-                        onClick={() => togglePin(item.id)}
-                        aria-label={item.pinned ? '取消置顶' : '置顶'}
+                      <WarmTooltip
+                        content={item.pinned ? '取消置顶' : '置顶后排在最前'}
+                        side="top"
+                        disabled={!inbox.open}
                       >
-                        {item.pinned ? '取消置顶' : '置顶'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => removeNotification(item.id)}
-                        aria-label="删除"
-                      >
-                        删除
-                      </button>
+                        <button
+                          type="button"
+                          onClick={() => togglePin(item.id)}
+                          aria-label={item.pinned ? '取消置顶' : '置顶'}
+                        >
+                          {item.pinned ? '取消置顶' : '置顶'}
+                        </button>
+                      </WarmTooltip>
+                      <WarmTooltip content="仅从我的列表移除" side="top" disabled={!inbox.open}>
+                        <button
+                          type="button"
+                          onClick={() => removeNotification(item.id)}
+                          aria-label="删除"
+                        >
+                          删除
+                        </button>
+                      </WarmTooltip>
                     </div>
                   </article>
                 ))
@@ -173,14 +184,16 @@ export default function NotificationPanel() {
 
             <footer className="inbox__foot">
               <span className="mono">{auth.user.email}</span>
-              <button
-                className="inbox__read-all"
-                type="button"
-                onClick={() => markAllRead()}
-                disabled={inbox.unread === 0}
-              >
-                全部已读
-              </button>
+              <WarmTooltip content="一键全部标为已读" side="top" disabled={!inbox.open}>
+                <button
+                  className="inbox__read-all"
+                  type="button"
+                  onClick={() => markAllRead()}
+                  disabled={inbox.unread === 0}
+                >
+                  全部已读
+                </button>
+              </WarmTooltip>
             </footer>
           </>
         ) : (
