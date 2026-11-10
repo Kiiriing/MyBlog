@@ -1,8 +1,10 @@
 import { useEffect } from 'react'
+import type { CSSProperties } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import type { NotificationCategory, NotificationItem } from '../lib/api'
 import { useAuth } from '../store/auth'
 import WarmTooltip from './WarmTooltip'
+import SwipeRow from './SwipeRow'
 import {
   closePanel,
   markAllRead,
@@ -116,62 +118,78 @@ export default function NotificationPanel() {
               ) : inbox.items.length === 0 ? (
                 <p className="inbox__hint">这里还没有消息。</p>
               ) : (
-                inbox.items.map((item) => (
-                  <article
-                    key={item.id}
-                    className={[
-                      'inbox__item',
-                      item.read ? 'is-read' : '',
-                      item.pinned ? 'is-pinned' : ''
-                    ]
-                      .filter(Boolean)
-                      .join(' ')}
+                inbox.items.map((item, index) => (
+                  <SwipeRow
+                    key={`${inbox.filter}-${item.id}`}
+                    className="inbox__row"
+                    style={{ '--i': Math.min(index, 9) } as CSSProperties}
+                    label={`${CATEGORY_LABEL[item.category]}：${item.title}`}
+                    actions={[
+                      {
+                        id: 'delete',
+                        label: '删除',
+                        tone: 'danger',
+                        onSelect: () => removeNotification(item.id)
+                      }
+                    ]}
                   >
-                    <button
-                      className="inbox__item-main"
-                      type="button"
-                      onClick={() => openItem(item)}
+                    <article
+                      className={[
+                        'inbox__item',
+                        item.read ? 'is-read' : '',
+                        item.pinned ? 'is-pinned' : ''
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
                     >
-                      <span className="inbox__item-meta">
-                        <span className={`inbox__tag inbox__tag--${item.category.toLowerCase()}`}>
-                          {CATEGORY_LABEL[item.category]}
-                        </span>
-                        <span className="inbox__time mono">{formatTime(item.createdAt)}</span>
-                        {item.pinned ? <span className="inbox__pin-mark mono">Pinned</span> : null}
-                        {!item.read ? <span className="inbox__dot" aria-label="未读" /> : null}
-                      </span>
-                      <span className="inbox__item-title">{item.title}</span>
-                      <span className="inbox__item-body">
-                        {item.senderName ? `${item.senderName} · ` : ''}
-                        {item.body}
-                      </span>
-                    </button>
-
-                    <div className="inbox__item-actions">
-                      <WarmTooltip
-                        content={item.pinned ? '取消置顶' : '置顶后排在最前'}
-                        side="top"
-                        disabled={!inbox.open}
+                      <button
+                        className="inbox__item-main"
+                        type="button"
+                        onClick={() => openItem(item)}
                       >
-                        <button
-                          type="button"
-                          onClick={() => togglePin(item.id)}
-                          aria-label={item.pinned ? '取消置顶' : '置顶'}
+                        <span className="inbox__item-meta">
+                          <span className={`inbox__tag inbox__tag--${item.category.toLowerCase()}`}>
+                            {CATEGORY_LABEL[item.category]}
+                          </span>
+                          <span className="inbox__time mono">{formatTime(item.createdAt)}</span>
+                          {item.pinned ? (
+                            <span className="inbox__pin-mark mono">Pinned</span>
+                          ) : null}
+                          {!item.read ? <span className="inbox__dot" aria-label="未读" /> : null}
+                        </span>
+                        <span className="inbox__item-title">{item.title}</span>
+                        <span className="inbox__item-body">
+                          {item.senderName ? `${item.senderName} · ` : ''}
+                          {item.body}
+                        </span>
+                      </button>
+
+                      <div className="inbox__item-actions">
+                        <WarmTooltip
+                          content={item.pinned ? '取消置顶' : '置顶后排在最前'}
+                          side="top"
+                          disabled={!inbox.open}
                         >
-                          {item.pinned ? '取消置顶' : '置顶'}
-                        </button>
-                      </WarmTooltip>
-                      <WarmTooltip content="仅从我的列表移除" side="top" disabled={!inbox.open}>
-                        <button
-                          type="button"
-                          onClick={() => removeNotification(item.id)}
-                          aria-label="删除"
-                        >
-                          删除
-                        </button>
-                      </WarmTooltip>
-                    </div>
-                  </article>
+                          <button
+                            type="button"
+                            onClick={() => togglePin(item.id)}
+                            aria-label={item.pinned ? '取消置顶' : '置顶'}
+                          >
+                            {item.pinned ? '取消置顶' : '置顶'}
+                          </button>
+                        </WarmTooltip>
+                        <WarmTooltip content="仅从我的列表移除" side="top" disabled={!inbox.open}>
+                          <button
+                            type="button"
+                            onClick={() => removeNotification(item.id)}
+                            aria-label="删除"
+                          >
+                            删除
+                          </button>
+                        </WarmTooltip>
+                      </div>
+                    </article>
+                  </SwipeRow>
                 ))
               )}
 

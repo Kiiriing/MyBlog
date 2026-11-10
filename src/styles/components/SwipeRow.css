@@ -1,0 +1,82 @@
+/* React Bits SwipeRow 的站内实现：左滑露出操作按钮，行内内容保持原样。 */
+
+.swipe-row {
+  --sr-a: 88px;
+
+  display: grid;
+  grid-template-rows: 1fr;
+  transition:
+    grid-template-rows 0.26s var(--ease-out),
+    opacity 0.26s ease;
+}
+
+.swipe-row[data-removing] {
+  grid-template-rows: 0fr;
+  opacity: 0;
+}
+
+.swipe-row__inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.swipe-row__clip {
+  position: relative;
+  overflow: hidden;
+}
+
+.swipe-row__drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+}
+
+.swipe-row__action {
+  display: grid;
+  width: var(--sr-a);
+  height: 100%;
+  place-items: center;
+  padding: 0 6px;
+  border: 0;
+  background: rgba(242, 237, 228, 0.1);
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  transition: filter 0.2s ease;
+}
+
+.swipe-row__action:hover {
+  filter: brightness(1.25);
+}
+
+.swipe-row__action.is-danger {
+  background: #d8482f;
+  color: #fff6ec;
+}
+
+.swipe-row__surface {
+  position: relative;
+  z-index: 1;
+  background: var(--bg-soft);
+  touch-action: pan-y;
+  transition: transform 0.34s var(--ease-out);
+}
+
+.swipe-row[data-dragging] .swipe-row__surface {
+  transition: none;
+}
+
+.swipe-row[data-dragging] {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .swipe-row,
+  .swipe-row__surface {
+    transition: none;
+  }
+}
