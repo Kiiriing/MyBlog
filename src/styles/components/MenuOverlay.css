@@ -223,8 +223,11 @@
 
 /* 个人卡片填满右栏，图片按 cover 铺满整张卡面 */
 .menu__profile {
-  width: 100%;
+  /* 卡片高度由宽度决定（4/5 卡面 + 页脚），所以用可用高度反推最大宽度：
+     矮屏（1366×768 一类，可视高度约 600px）时卡片不再把整屏菜单顶出视口 */
+  width: clamp(180px, calc(52dvh - 70px), 100%);
   max-width: none;
+  margin-inline: auto;
 }
 
 .menu__profile .profile-card__photo,
@@ -415,5 +418,34 @@
     margin-top: 12px;
     padding-top: 10px;
     gap: 10px;
+  }
+}
+
+/* 桌面极矮窗口（浏览器窗口被压到 ~500px 高）：再收一档，
+   保证菜单仍是一屏高、不出现滚动条 */
+@media (min-width: 761px) and (max-height: 580px) {
+  .menu__body {
+    padding-top: calc(var(--nav-h) + 4px);
+    padding-bottom: 10px;
+  }
+
+  .menu__eyebrow {
+    margin-bottom: 8px;
+  }
+
+  .menu__item {
+    padding: 4px 0;
+  }
+
+  .menu__en {
+    font-size: clamp(1.6rem, min(9vw, 5.4vh), 2.6rem);
+  }
+
+  .menu__footer {
+    padding-top: 8px;
+  }
+
+  .menu__email {
+    font-size: clamp(1rem, 1.6vw, 1.3rem);
   }
 }
