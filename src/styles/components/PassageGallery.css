@@ -1,0 +1,128 @@
+/* 通道画廊：一块可以「走进去」的窗口，里面是照片砌成的隧道 */
+.passage-gallery {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 420px;
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: inherit;
+  background: #0a0a0a;
+}
+
+.passage-gallery__canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  /* 手机上横向拖动归画廊，纵向仍然滚页面 */
+  touch-action: pan-y;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* 四周压暗，让照片墙收进画面里 */
+.passage-gallery::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(5, 5, 6, 0.5),
+      transparent 16%,
+      transparent 84%,
+      rgba(5, 5, 6, 0.55)
+    ),
+    radial-gradient(125% 95% at 50% 50%, transparent 55%, rgba(5, 5, 6, 0.45) 100%);
+}
+
+.passage-gallery__lead {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  pointer-events: none;
+  text-align: center;
+}
+
+.passage-gallery__backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border: 0;
+  padding: 0;
+  background: rgba(5, 5, 6, 0.68);
+  backdrop-filter: blur(5px);
+  cursor: zoom-out;
+  animation: passage-fade 0.32s ease both;
+}
+
+.passage-gallery__card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 3;
+  overflow: hidden;
+  border-radius: 3px;
+  background: #0b0b0c;
+  box-shadow:
+    0 40px 120px rgba(0, 0, 0, 0.72),
+    0 0 0 1px rgba(242, 237, 228, 0.08);
+  will-change: transform, width, height;
+}
+
+.passage-gallery__card img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.passage-gallery__caption {
+  position: absolute;
+  left: 50%;
+  bottom: 22px;
+  z-index: 4;
+  display: flex;
+  gap: 18px;
+  align-items: baseline;
+  transform: translateX(-50%);
+  max-width: min(90%, 560px);
+  color: var(--fg, #f2ede4);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.passage-gallery__caption span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.passage-gallery__caption span:last-child {
+  color: var(--accent, #ff5a2f);
+}
+
+@keyframes passage-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .passage-gallery__backdrop {
+    animation: none;
+  }
+}

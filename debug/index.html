@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="dark" />
+  <title>PERF LAB · 页面性能测试</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="ambient" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span class="brand-name">PERF LAB</span>
+      <span class="brand-divider" aria-hidden="true"></span>
+      <span class="brand-sub">页面性能 / 软硬件负载测试</span>
+    </div>
+    <div class="actions">
+      <button class="btn primary" id="btnStart" type="button">开始采集</button>
+      <button class="btn" id="btnStop" type="button">停止</button>
+      <button class="btn ghost" id="btnReset" type="button">重置</button>
+      <button class="btn ghost" id="btnExport" type="button">导出报告</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-copy">
+        <div class="eyebrow">RUNTIME DIAGNOSTICS / 01</div>
+        <h1>页面性能<br /><span>实时诊断台</span></h1>
+        <p class="hero-desc">
+          采集帧率、帧耗时、长任务、内存、资源与导航时序；对 CPU、渲染、内存、网络主动施加负载，
+          观察响应衰减。支持把同源博客页面载入预览区，直接读取它的运行数据，所有数据只在本地浏览器内计算。
+        </p>
+        <div class="hero-meta">
+          <span class="chip" id="modeBadge">检测环境…</span>
+          <span class="chip" id="hzChip">刷新率 —</span>
+          <span class="chip" id="timeChip">未开始采集</span>
+        </div>
+      </div>
+      <div class="hero-gauge">
+        <div id="chartGauge" class="chart gauge-chart"></div>
+      </div>
+    </section>
+
+    <section class="panel target-panel">
+      <div class="panel-head">
+        <h2>诊断目标</h2>
+        <span class="hint" id="targetHint">默认诊断当前页面 · 载入同源页面可读取其资源与 DOM 数据</span>
+      </div>
+      <div class="target-controls">
+        <input class="input" id="targetUrl" type="text" spellcheck="false" placeholder="http://localhost:5173/" />
+        <button class="btn primary" id="btnLoadTarget" type="button">载入目标页</button>
+        <button class="btn ghost" id="btnSelf" type="button">诊断本页</button>
+        <button class="btn ghost" id="btnFullscreen" type="button">全屏预览</button>
+      </div>
+      <div class="target-stage" id="targetStage" hidden>
+        <button class="btn sm stage-exit" id="btnExitFull" type="button">退出全屏</button>
+        <iframe id="targetFrame" title="诊断目标页面"></iframe>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>硬件与环境</h2>
+        <span class="hint">自动检测 · navigator / WEBGL</span>
+      </div>
+      <div class="env-grid" id="envGrid"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>实时响应</h2>
+        <span class="badge" id="statusBadge">待启动</span>
+      </div>
+      <div class="tiles">
+        <div class="tile">
+          <div class="tile-k">当前 FPS</div>
+          <div class="tile-v" data-tile="fps">—</div>
+          <div class="tile-s" data-note="fps">等待采样</div>
+        </div>
+        <div class="tile">
+          <div class="tile-k">帧耗时</div>
+          <div class="tile-v" data-tile="frame">—</div>
+          <div class="tile-s" data-note="frame">每帧耗时</div>
+        </div>
+        <div class="tile">
+          <div class="tile-k">掉帧率</div>
+          <div class="tile-v" data-tile="jank">—</div>
+          <div class="tile-s" data-note="jank">—</div>
+        </div>
+        <div class="tile">
+          <div class="tile-k">长任务</div>
+          <div class="tile-v" data-tile="long">—</div>
+          <div class="tile-s" data-note="long">TBT —</div>
+        </div>
+        <div class="tile">
+          <div class="tile-k">CLS</div>
+          <div class="tile-v" data-tile="cls">—</div>
+          <div class="tile-s" data-note="cls">布局偏移</div>
+        </div>
+        <div class="tile">
+          <div class="tile-k">事件循环延迟</div>
+          <div class="tile-v" data-tile="lag">—</div>
+          <div class="tile-s" data-note="lag">主线程阻塞</div>
+        </div>
+        <div class="tile">
+          <div class="tile-k">JS 堆内存</div>
+          <div class="tile-v" data-tile="heap">—</div>
+          <div class="tile-s" data-note="heap">performance.memory</div>
+        </div>
+        <div class="tile">
+          <div class="tile-k">DOM 节点</div>
+          <div class="tile-v" data-tile="dom">—</div>
+          <div class="tile-s" data-note="dom">文档规模</div>
+        </div>
+      </div>
+
+      <div class="chart-row">
+        <div class="chart-card">
+          <div class="chart-title">FPS / 帧耗时（60 秒窗口）</div>
+          <div id="chartLive" class="chart"></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">帧耗时分布</div>
+          <div id="chartHist" class="chart"></div>
+        </div>
+      </div>
+
+      <div class="chart-row single">
+        <div class="chart-card">
+          <div class="chart-title">JS 堆内存 / 事件循环延迟</div>
+          <div id="chartMem" class="chart"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>负载压力测试</h2>
+        <span class="hint">主动加压，观察主线程与内存响应</span>
+      </div>
+      <div class="stress-grid">
+        <article class="stress-card">
+          <div class="stress-head"><h3>CPU 单核运算</h3><span class="tag">1.5 s</span></div>
+          <p>固定浮点循环，测量单核吞吐，评估主线程计算能力。</p>
+          <button class="btn sm primary" type="button" data-run="cpu">运行</button>
+          <div class="stress-result" id="res-cpu">未运行</div>
+        </article>
+        <article class="stress-card">
+          <div class="stress-head"><h3>渲染 / 主线程</h3><span class="tag">400 节点 · 3 s</span></div>
+          <p>每帧对 400 个元素写入 transform，测量动画帧率衰减。</p>
+          <button class="btn sm primary" type="button" data-run="render">运行</button>
+          <div class="stress-result" id="res-render">未运行</div>
+        </article>
+        <article class="stress-card">
+          <div class="stress-head"><h3>内存分配</h3><span class="tag">256 MB</span></div>
+          <p>连续分配并填充 Float64Array，测量写入与读取吞吐。</p>
+          <button class="btn sm primary" type="button" data-run="memory">运行</button>
+          <div class="stress-result" id="res-memory">未运行</div>
+        </article>
+        <article class="stress-card">
+          <div class="stress-head"><h3>网络请求</h3><span class="tag">10 次</span></div>
+          <p>顺序请求本地 1 MB 资源，测量延迟与下载吞吐。</p>
+          <button class="btn sm primary" type="button" data-run="network">运行</button>
+          <div class="stress-result" id="res-network">未运行</div>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>资源加载分析</h2>
+        <div class="head-right">
+          <span class="hint" id="resMeta">正在采集…</span>
+          <button class="btn ghost sm" id="btnRefreshRes" type="button">重新采集</button>
+        </div>
+      </div>
+      <div class="chart-row">
+        <div class="chart-card">
+          <div class="chart-title">加载耗时 Top 12</div>
+          <div id="chartRes" class="chart"></div>
+          <div class="empty-note" id="resEmpty" hidden>暂无资源计时数据，file:// 模式下部分指标受限，请用 http 访问。</div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">体积 / 数量构成</div>
+          <div id="chartPie" class="chart"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>导航时序</h2>
+        <span class="hint" id="navSummary">—</span>
+      </div>
+      <div id="chartNav" class="chart nav-chart"></div>
+    </section>
+
+    <footer>
+      PERF LAB · 浏览器原生 Performance API + ECharts · 数据仅保存在当前会话
+    </footer>
+  </main>
+
+  <div class="toast" id="toast" role="status"></div>
+
+  <script src="./vendor/echarts.min.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>

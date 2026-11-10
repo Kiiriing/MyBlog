@@ -4,6 +4,7 @@ import { menuItems, site } from '../data/site'
 import { useUi, setMenuOpen } from '../store/ui'
 import { useClock } from '../hooks/useClock'
 import { scrollTo, scrollToSection } from '../composables/useSmoothScroll'
+import ProfileCard from './ProfileCard'
 import '../styles/components/MenuOverlay.css'
 
 type MenuItem = (typeof menuItems)[number]
@@ -21,7 +22,7 @@ export default function MenuOverlay() {
   const time = useClock()
 
   const [hovered, setHovered] = useState(3)
-  const preview = menuItems[hovered] || menuItems[3]
+  const contactItem = menuItems[menuItems.length - 1]
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
@@ -106,18 +107,20 @@ export default function MenuOverlay() {
             </nav>
           </div>
 
-          <aside className="menu__preview" aria-hidden="true">
-            <div className="menu__preview-frame">
-              <img key={preview.index} src={preview.art} alt={preview.en} draggable="false" />
-              <div className="menu__preview-overlay">
-                <span className="mono">
-                  {preview.index} / {preview.en}
-                </span>
-                <span className="menu__preview-note">{preview.note}</span>
-              </div>
-            </div>
+          <aside className="menu__preview">
+            <ProfileCard
+              avatarUrl="/art/avatar-kiiriing.png"
+              miniAvatarUrl="/art/avatar-kiiriing-sm.png"
+              name="Kiiriing"
+              title="Full-stack Web Developer"
+              handle="Kiiriing"
+              status="Open for 2026"
+              contactText="Contact"
+              onContactClick={() => go(contactItem)}
+              className="menu__profile"
+            />
             <div className="menu__preview-foot">
-              <span className="mono">Preview</span>
+              <span className="mono">Profile</span>
               <span className="mono">{site.coords}</span>
             </div>
           </aside>

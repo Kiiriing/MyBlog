@@ -342,8 +342,10 @@ void main() {
   vec2 sampleUv = imageUv(cellUv);
   float framed = within(sampleUv);
   vec4 tex = textureLod(tImage, sampleUv, uLod);
-  /* 有 alpha 通道时按图片透明度裁掉背景，只保留主体 */
-  float subject = mix(1.0, smoothstep(0.02, 0.18, tex.a), uCutout);
+  /* 有 alpha 通道时按图片透明度裁掉背景，只保留主体。
+     contain 模式下的留白区会采样到被 CLAMP_TO_EDGE 钳制的图片边缘像素（叠 mipmap 后
+     alpha 可能超过阈值），必须乘 framed 才能保持留白完全透明，否则会画出不透明的墨色方块 */
+  float subject = mix(1.0, smoothstep(0.02, 0.18, tex.a) * framed, uCutout);
   vec3 level;
   if (uPattern == 3) {
     level = texelFetch(tDiffused, ivec2(cell), 0).rgb;

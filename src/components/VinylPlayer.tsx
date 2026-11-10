@@ -391,7 +391,10 @@ export default function VinylPlayer() {
     const engine = getEngine()
     if (playing) {
       /* 自动播放被浏览器拦下时第一次点击只负责唤醒声音，不当作暂停 */
-      if (!engine.audible) return
+      if (!engine.audible) {
+        engine.kick()
+        return
+      }
       userPaused.current = true
       engine.pause()
       setPlaying(false)
@@ -494,8 +497,11 @@ export default function VinylPlayer() {
     const tapped = !drag.moved
     const moved = drag.moved
     endDrag(event)
-    if (tapped) setOpen((value) => !value)
-    else if (moved) settle()
+    if (tapped) {
+      /* 手指抬起本身就是一次手势：顺手把被拦下的声音唤醒 */
+      getEngine().kick()
+      setOpen((value) => !value)
+    } else if (moved) settle()
   }
 
   const hint = !open && playing && !audible

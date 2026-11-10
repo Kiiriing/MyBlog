@@ -27,7 +27,9 @@ export type VinylTrack = {
 const MUSIC_DIR = '/art/music/'
 
 export function musicAsset(file: string) {
-  return MUSIC_DIR + encodeURIComponent(file)
+  /* + 在路径里本身合法，编码成 %2B 后静态服务器会找不到文件（回退成 index.html），
+     播放时只剩一个解码错误。这里把 + 还原回去，其余字符仍按 URL 规则转义 */
+  return MUSIC_DIR + encodeURIComponent(file).replace(/%2B/g, '+')
 }
 
 export const vinylTracks: VinylTrack[] = [
@@ -73,7 +75,7 @@ export const vinylTracks: VinylTrack[] = [
     duration: 128.94
   },
   {
-    title: 'Turning Around (余烬重燃)',
+    title: 'Turning Around(余烬重燃)',
     cn: '鸣潮先约电台 · Grabbitz',
     side: 'SIDE A · 06',
     file: 'Turning Around (余烬重燃)-Grabbitz.mp3',
@@ -428,19 +430,78 @@ export class VinylEngine {
     this.switching = false
   }
 
-  /** 浏览器要求先有一次用户手势才允许出声，这里等第一次点击 / 按键 */
+  /** iOS 的静音开关默认会把 WebAudio 一起静音。把音频会话切成 playback，
+      播放器才能像原生音乐 App 一样在静音状态的手机上出声（Safari 16.4+ 才有这个对象） */
+  private setSession() {
+    try {
+      const session = (navigator as unknown as { audioSession?: { type: string } }).audioSession
+      if (session) session.type = 'playback'
+    } catch {
+      /* 不支持或被拦下时忽略：其余平台本来就照常出声 */
+    }
+  }
+
+  /** 用户手势里主动唤醒：恢复上下文并起播。
+      移动端（尤其 iOS Safari）对 pointerdown / touchstart 的判定并不稳定，
+      唱片与播放按钮在 tap 时直接调用它，比只靠 window 监听更可靠 */
+  kick() {
+    this.setSession()
+    const ctx = this.ensure()
+    if (ctx && ctx.state === 'suspended') void ctx.resume().catch(() => {})
+    if (!this.playing) return
+
+    const audio = this.audio
+    if (!audio) return
+    if (!audio.paused) {
+      /* 元素在走但上下文还挂着：继续等一次有效手势 */
+      if (ctx && ctx.state !== 'running') this.armUnlock(ctx)
+      return
+    }
+
+    const started = audio.play()
+    if (started && typeof started.catch === 'function') {
+      started.catch(() => {
+        if (ctx) this.armUnlock(ctx)
+      })
+    }
+  }
+
+  /** 浏览器要求先有一次用户手势才允许出声。
+      iOS 对 pointerdown / touchstart / click 的判定不一致，几种事件一起挂；
+      play() 真正成功后才摘掉监听，失败（手势没被认）就继续等下一次 */
   private armUnlock(ctx: AudioContext) {
     if (this.unlock) return
     const unlock = () => {
-      this.dropUnlock()
-      if (ctx.state === 'suspended') void ctx.resume()
       const audio = this.audio
-      if (this.playing && audio && audio.paused) void audio.play().catch(() => {})
+      if (!this.playing || !audio) {
+        this.dropUnlock()
+        return
+      }
+      this.setSession()
+      if (ctx.state === 'suspended') void ctx.resume().catch(() => {})
+      if (!audio.paused) {
+        if (ctx.state === 'running') this.dropUnlock()
+        return
+      }
+      const started = audio.play()
+      if (started && typeof started.then === 'function') {
+        started
+          .then(() => {
+            if (ctx.state === 'running') this.dropUnlock()
+          })
+          .catch(() => {
+            /* 这次手势没被认，保持监听等下一次 */
+          })
+      } else {
+        this.dropUnlock()
+      }
     }
     this.unlock = unlock
     window.addEventListener('pointerdown', unlock, { passive: true })
-    window.addEventListener('keydown', unlock)
     window.addEventListener('touchstart', unlock, { passive: true })
+    window.addEventListener('touchend', unlock, { passive: true })
+    window.addEventListener('click', unlock, { passive: true })
+    window.addEventListener('keydown', unlock)
   }
 
   private dropUnlock() {
@@ -448,8 +509,10 @@ export class VinylEngine {
     if (!unlock) return
     this.unlock = null
     window.removeEventListener('pointerdown', unlock)
-    window.removeEventListener('keydown', unlock)
     window.removeEventListener('touchstart', unlock)
+    window.removeEventListener('touchend', unlock)
+    window.removeEventListener('click', unlock)
+    window.removeEventListener('keydown', unlock)
   }
 
   private startNoise() {

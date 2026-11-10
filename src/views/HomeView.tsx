@@ -8,12 +8,10 @@ import MarqueeBand from '../components/MarqueeBand'
 import ManifestoSection from '../components/ManifestoSection'
 import AboutSection from '../components/AboutSection'
 import WorksSection from '../components/WorksSection'
-import SceneInterlude from '../components/SceneInterlude'
 import ExperienceSection from '../components/ExperienceSection'
 import CredentialsSection from '../components/CredentialsSection'
 import JournalSection from '../components/JournalSection'
 import SiteFooter from '../components/SiteFooter'
-import { interludes } from '../data/chapters'
 import '../styles/components/HomeView.css'
 
 export default function HomeView() {
@@ -44,12 +42,8 @@ export default function HomeView() {
       <ManifestoSection />
       <AboutSection />
       <WorksSection />
-      {/* 幕间 I：作品与经历之间，一整页章节卡，把「界面 → 系统」翻过去 */}
-      <SceneInterlude {...interludes[0]} />
       <ExperienceSection />
       <CredentialsSection />
-      {/* 幕间 II：荣誉与手记之间，从证据翻到判断 */}
-      <SceneInterlude {...interludes[1]} />
       <JournalSection />
       <SiteFooter />
     </div>

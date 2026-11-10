@@ -5,7 +5,7 @@ import '../styles/components/CustomCursor.css'
 const SELECTORS =
   'a, button, [data-cursor], input, textarea, select, [role="button"]'
 
-/** 黑胶播放器自带唱片 / 按钮 / 滑块，整块交给系统光标，不叠加反色圆环 */
+/** 黑胶播放器自带交互，整块交还系统光标，不叠加反色圆环 */
 const PLAIN_REGION = '.vinyl-player'
 
 function isFinePointer() {
@@ -92,13 +92,9 @@ export default function CustomCursor() {
       setDown(false)
     }
 
-    function onPointerMove(event: PointerEvent) {
-      if (event.pointerType === 'touch') return
-      showAt(event.clientX, event.clientY)
-      applyPlain(isPlainTarget(event))
-    }
-
-    function onPointerOver(event: PointerEvent) {
+    /* 每次移动都重读指针下的元素：像荣誉通道这种在画布内部动态切换
+       「照片 / 非照片」的区域，只在 pointerover 时判断会漏掉状态变化 */
+    function syncActive(event: PointerEvent) {
       const inPlain = isPlainTarget(event)
       applyPlain(inPlain)
       const target = inPlain
@@ -106,10 +102,21 @@ export default function CustomCursor() {
         : ((event.target as Element | null)?.closest?.(SELECTORS) as HTMLElement | null)
       const nextActive = Boolean(target)
       const nextLabel = target?.dataset?.cursor || ''
+      if (nextActive === activeRef.current && nextLabel === labelRef.current) return
       activeRef.current = nextActive
       labelRef.current = nextLabel
       setActive(nextActive)
       setLabel(nextLabel)
+    }
+
+    function onPointerMove(event: PointerEvent) {
+      if (event.pointerType === 'touch') return
+      showAt(event.clientX, event.clientY)
+      syncActive(event)
+    }
+
+    function onPointerOver(event: PointerEvent) {
+      syncActive(event)
     }
 
     function onPointerDown(event: PointerEvent) {

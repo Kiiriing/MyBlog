@@ -1,25 +1,17 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { gsap, ScrollTrigger } from '../lib/gsap'
-import { prefersReducedMotion, scrollToSection } from '../composables/useSmoothScroll'
+import { prefersReducedMotion } from '../composables/useSmoothScroll'
 import { site } from '../data/site'
 import { capabilities, stats } from '../data/profile'
 import { techStack } from '../data/stack'
-import ArtworkFrame from './ArtworkFrame'
 import LogoLoop from './LogoLoop'
 import { useReveal } from '../hooks/useReveal'
 import '../styles/components/AboutSection.css'
 
-export default function AboutSection() {
-  const visual = useRef<HTMLDivElement>(null)
-  const glow = useRef<HTMLDivElement>(null)
-  const statsEl = useRef<HTMLDivElement>(null)
+const Lanyard = lazy(() => import('./Lanyard'))
 
-  const quick = useRef<{
-    rotateX: (v: number) => void
-    rotateY: (v: number) => void
-    glowX: (v: number) => void
-    glowY: (v: number) => void
-  } | null>(null)
+export default function AboutSection() {
+  const statsEl = useRef<HTMLDivElement>(null)
 
   const titleLine1 = useReveal<HTMLSpanElement>()
   const titleLine2 = useReveal<HTMLSpanElement>({ delay: 90 })
@@ -29,6 +21,53 @@ export default function AboutSection() {
   const capRef = useReveal<HTMLDivElement>()
   const statsReveal = useReveal<HTMLDivElement>()
   const availability = useReveal<HTMLDivElement>()
+  const colRef = useRef<HTMLDivElement>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
+
+  /* 宽屏双栏时画布被拉高到与右栏同底，卡片按画布高度取比例会过大，
+     因此宽屏单独收一档卡片尺寸；挂绳长度保持原值不动 */
+  const [compactLanyard, setCompactLanyard] = useState(false)
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 1100px)')
+    const sync = () => setCompactLanyard(mq.matches)
+    sync()
+    mq.addEventListener('change', sync)
+    return () => mq.removeEventListener('change', sync)
+  }, [])
+
+  /* 右侧 Capabilities 悬停会展开条目、把整行撑高，左列跟着拉伸会让吊牌上下跳。
+     宽屏双栏时把左列高度锁在右侧内容的常态高度上，悬停只在右侧内部展开 */
+  useEffect(() => {
+    const col = colRef.current
+    const content = contentRef.current
+    if (!col || !content) return
+
+    if (compactLanyard) {
+      col.style.height = ''
+      return
+    }
+
+    const sync = () => {
+      /* 悬停期间内容已展开，此刻量到的高度不能作为基准 */
+      if (content.matches(':hover')) return
+      col.style.height = `${content.getBoundingClientRect().height}px`
+    }
+
+    sync()
+    window.addEventListener('resize', sync)
+    /* 只跟随窗口尺寸变化重新测量：ResizeObserver 会把悬停展开的过渡高度也当成基准，
+       鼠标离开条目时左列反而跟着收缩，造成吊牌再次上下抽动 */
+    let active = true
+    document.fonts?.ready.then(() => {
+      if (active) sync()
+    })
+    return () => {
+      active = false
+      window.removeEventListener('resize', sync)
+      col.style.height = ''
+    }
+  }, [compactLanyard])
 
   /* 技术栈长条：直接用品牌图标，悬停时停下、恢复原色并显示「名称 · 分类」 */
   const stackLogos = useMemo(
@@ -42,47 +81,6 @@ export default function AboutSection() {
       })),
     []
   )
-
-  /* Tilt ----------------------------------------------------------------- */
-
-  useEffect(() => {
-    if (window.matchMedia('(hover: none)').matches) return
-    const tilt = visual.current?.querySelector('.about__tilt')
-    if (!tilt) return
-
-    const rotateX = gsap.quickTo(tilt, 'rotationX', { duration: 0.6, ease: 'power3.out' })
-    const rotateY = gsap.quickTo(tilt, 'rotationY', { duration: 0.6, ease: 'power3.out' })
-    const glowX = gsap.quickTo(glow.current, 'x', { duration: 0.7, ease: 'power3.out' })
-    const glowY = gsap.quickTo(glow.current, 'y', { duration: 0.7, ease: 'power3.out' })
-    quick.current = { rotateX, rotateY, glowX, glowY }
-
-    return () => {
-      quick.current = null
-      gsap.killTweensOf([tilt, glow.current])
-    }
-  }, [])
-
-  function onVisualMove(event: React.PointerEvent<HTMLDivElement>) {
-    const q = quick.current
-    if (!q || !visual.current) return
-    const rect = visual.current.getBoundingClientRect()
-    const x = (event.clientX - rect.left) / rect.width - 0.5
-    const y = (event.clientY - rect.top) / rect.height - 0.5
-
-    q.rotateY(x * 7)
-    q.rotateX(y * -6)
-    q.glowX(x * rect.width * 0.55)
-    q.glowY(y * rect.height * 0.55)
-  }
-
-  function onVisualLeave() {
-    const q = quick.current
-    if (!q) return
-    q.rotateX(0)
-    q.rotateY(0)
-    q.glowX(0)
-    q.glowY(0)
-  }
 
   /* Stats ---------------------------------------------------------------- */
 
@@ -132,47 +130,21 @@ export default function AboutSection() {
         </div>
 
         <div className="about__grid">
-          <div className="about__visual-col">
-            <div
-              ref={visual}
-              className="about__visual"
-              onPointerMove={onVisualMove}
-              onPointerLeave={onVisualLeave}
-            >
-              <div ref={glow} className="about__glow" aria-hidden="true" />
-              <div className="about__tilt">
-                <ArtworkFrame
-                  src="/art/portrait.svg"
-                  alt="我的抽象自画像，焦糖色的人像轮廓与橘色光晕"
-                  ratio="4 / 5"
-                  parallax={5}
-                >
-                  <span className="about__caption mono">Fig. 01 — At the desk, 2026</span>
-                </ArtworkFrame>
+          <div ref={colRef} className="about__visual-col">
+            <div className="about__visual">
+              <div className="about__lanyard">
+                <Suspense fallback={null}>
+                  <Lanyard
+                    frontImage="/art/avatar-kiiriing.png"
+                    backImage="/art/lanyard-back.png"
+                    cardColor="#f2ede4"
+                    size={compactLanyard ? 0.57 : 0.33}
+                    strapLength={0.35}
+                    strapImage="/brand/logo-white.png"
+                    strapColor="#191820"
+                  />
+                </Suspense>
               </div>
-
-              <button
-                className="about__badge"
-                type="button"
-                aria-label="联系我"
-                data-cursor="Hello"
-                onClick={() => scrollToSection('contact')}
-              >
-                <svg viewBox="0 0 140 140" aria-hidden="true">
-                  <defs>
-                    <path
-                      id="about-circle"
-                      d="M70,70 m-50,0 a50,50 0 1,1 100,0 a50,50 0 1,1 -100,0"
-                    />
-                  </defs>
-                  <text>
-                    <textPath href="#about-circle">
-                      OPEN FOR FULL-STACK WORK · 2026 · OPEN FOR FULL-STACK WORK ·
-                    </textPath>
-                  </text>
-                </svg>
-                <span className="about__badge-star">✦</span>
-              </button>
             </div>
 
             <div className="about__visual-meta mono">
@@ -181,7 +153,7 @@ export default function AboutSection() {
             </div>
           </div>
 
-          <div className="about__content">
+          <div ref={contentRef} className="about__content">
             <h2 className="about__title">
               <span ref={titleLine1} className="about__title-line">
                 from interface

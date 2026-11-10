@@ -5,7 +5,18 @@ import { awards, certificates, service } from '../data/profile'
 import { site } from '../data/site'
 import { useReveal } from '../hooks/useReveal'
 import Magnetic from './Magnetic'
+import PassageGallery, { type PassageItem } from './PassageGallery'
 import '../styles/components/CredentialsSection.css'
+
+/* 荣誉通道：先用 public/art/mywork 里的临时照片，换真图时同名替换即可 */
+const passageItems: PassageItem[] = [
+  { src: '/art/mywork/honor-1.jpg', alt: '颁奖典礼', title: '国际大学生创新大赛 · 一等奖' },
+  { src: '/art/mywork/honor-2.jpg', alt: '奖杯与奖牌', title: '第三届全国技能大赛 · 二等奖' },
+  { src: '/art/mywork/honor-3.jpg', alt: '比赛现场', title: '大数据技术服务赛项 · 二等奖' },
+  { src: '/art/mywork/honor-4.jpg', alt: '证书细节', title: 'AI 创新编程 · 完赛证书' },
+  { src: '/art/mywork/honor-5.jpg', alt: '路演舞台', title: 'ICode 未来编程 · 二等奖' },
+  { src: '/art/mywork/honor-6.jpg', alt: '志愿服务', title: '志愿服务 · 20+ hours' }
+]
 
 function AwardRow({
   award,
@@ -180,6 +191,37 @@ export default function CredentialsSection() {
               <span aria-hidden="true">↗</span>
             </a>
           </Magnetic>
+        </div>
+
+        <div className="credentials__passage">
+          <div className="credentials__passage-head mono">
+            <span>Passage · 荣誉通道</span>
+            <span>Drag / hold to travel · Click a photo to open</span>
+          </div>
+          <div className="credentials__passage-frame">
+            <PassageGallery
+              items={passageItems}
+              colors={['#ff5a2f', '#ffd9a8']}
+              backgroundColor="#000000"
+              lanes={5}
+              gap={0.1}
+              radius={0.06}
+              photoFill={0.45}
+              accentFill={0.07}
+              lineOpacity={0.16}
+              fog={1}
+              speed={0.6}
+              boost={12}
+              blur={1}
+              look={1}
+              fov={72}
+              hover={1}
+              seed={0}
+              /* 页面滚动交给 Lenis，画廊只用拖动 / 按住来穿行 */
+              wheel={false}
+              ariaLabel="荣誉通道：一条由照片组成的隧道，可拖动或按住前进，点击照片放大。"
+            />
+          </div>
         </div>
       </div>
     </section>

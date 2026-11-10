@@ -11,7 +11,7 @@ type ChapterTagProps = {
 }
 
 /* 子页面顶部的一枚「章节标签」：把当前页面放回全站三幕叙事里。
-   数据与首页的章节脊柱、幕间页共用同一份 chapters。 */
+   数据与首页的章节脊柱共用同一份 chapters。 */
 export default function ChapterTag({ index, meta, className }: ChapterTagProps) {
   const chapter = chapters.find((item) => item.index === index) || chapters[0]
   const total = String(chapters.length).padStart(2, '0')

@@ -1,0 +1,14 @@
+.lanyard {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.lanyard-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  /* 站点统一使用自定义反色圆环光标，画布内部交给圆环显示 Drag */
+  cursor: none !important;
+}

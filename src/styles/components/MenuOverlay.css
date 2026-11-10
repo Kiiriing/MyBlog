@@ -208,7 +208,7 @@
 .menu__preview {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
   opacity: 0;
   transform: translateY(40px) rotate(1.5deg);
   transition:
@@ -221,44 +221,15 @@
   transform: none;
 }
 
-.menu__preview-frame {
-  position: relative;
-  overflow: hidden;
-  aspect-ratio: 3 / 4;
-  background: var(--card);
-}
-
-.menu__preview-frame::after {
-  position: absolute;
-  inset: 0;
-  border: 1px solid rgba(242, 237, 228, 0.1);
-  content: '';
-  pointer-events: none;
-}
-
-.menu__preview-frame img {
+/* 个人卡片填满右栏，图片按 cover 铺满整张卡面 */
+.menu__profile {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  max-width: none;
 }
 
-.menu__preview-overlay {
-  position: absolute;
-  inset: auto 0 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 20px;
-  background: linear-gradient(transparent, rgba(5, 5, 6, 0.75));
-  color: #f2ede4;
-}
-
-.menu__preview-note {
-  max-width: 26ch;
-  font-family: var(--font-serif);
-  font-size: 21px;
-  font-style: italic;
-  line-height: 1.15;
+.menu__profile .profile-card__photo,
+.menu__profile .profile-card__avatar img {
+  object-position: center;
 }
 
 .menu__preview-foot {
@@ -318,21 +289,6 @@
   font-size: 9px;
   letter-spacing: 0.1em;
   white-space: nowrap;
-}
-
-@keyframes menu-preview-in {
-  from {
-    opacity: 0;
-    transform: scale(1.06);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-.menu__preview-frame img {
-  animation: menu-preview-in 0.65s var(--ease-out) both;
 }
 
 @media (max-width: 1024px) {

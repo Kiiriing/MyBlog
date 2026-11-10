@@ -75,7 +75,7 @@
   height: 100svh;
   min-height: 660px;
   padding-top: calc(var(--nav-h) + clamp(8px, 2vh, 24px));
-  padding-bottom: clamp(14px, 2.4vh, 28px);
+  padding-bottom: clamp(36px, 7vh, 80px);
   overflow: hidden;
 }
 
@@ -528,7 +528,7 @@
   .works__sticky {
     min-height: 600px;
     padding-top: calc(var(--nav-h) + 10px);
-    padding-bottom: 16px;
+    padding-bottom: 28px;
   }
 
   .works__head {
