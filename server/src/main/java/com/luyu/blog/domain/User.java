@@ -22,6 +22,10 @@ public class User {
 	@Column(nullable = false, unique = true, length = 190)
 	private String email;
 
+	/** 登录用用户名，注册后不可修改；历史账号可能为空 */
+	@Column(unique = true, length = 40)
+	private String username;
+
 	@Column(name = "password_hash", nullable = false, length = 100)
 	private String passwordHash;
 
@@ -45,10 +49,11 @@ public class User {
 	protected User() {
 	}
 
-	public User(String email, String passwordHash, String displayName, Role role) {
+	public User(String username, String email, String passwordHash, Role role) {
+		this.username = username;
 		this.email = email;
 		this.passwordHash = passwordHash;
-		this.displayName = displayName;
+		this.displayName = username;
 		this.role = role;
 		this.createdAt = Instant.now();
 	}
@@ -59,6 +64,10 @@ public class User {
 
 	public String getEmail() {
 		return email;
+	}
+
+	public String getUsername() {
+		return username;
 	}
 
 	public String getPasswordHash() {

@@ -3,6 +3,7 @@ export type NotificationCategory = 'SYSTEM' | 'FEEDBACK' | 'DIRECT'
 
 export type AuthUser = {
   id: number
+  username: string
   email: string
   displayName: string
   role: Role
@@ -39,10 +40,11 @@ export type Captcha = {
   expiresInSeconds: number
 }
 
-/** 验证码已通过邮件发送，只返回有效期与可重发时间 */
+/** 验证码已通过邮件发送，返回有效期、可重发时间与脱敏后的接收邮箱 */
 export type CodeTicket = {
   expiresInSeconds: number
   resendAfterSeconds: number
+  sentTo: string
 }
 
 export class ApiError extends Error {
@@ -94,16 +96,16 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 export const api = {
   me: () => request<AuthUser>('/auth/me'),
 
-  login: (email: string, password: string) =>
+  login: (account: string, password: string) =>
     request<AuthResponse>('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ account, password })
     }),
 
   captcha: () => request<Captcha>('/auth/captcha'),
 
   sendCode: (payload: {
-    email: string
+    account: string
     scene: CodeScene
     captchaId: string
     captchaCode: string
@@ -113,13 +115,13 @@ export const api = {
       body: JSON.stringify(payload)
     }),
 
-  register: (payload: { email: string; password: string; displayName: string; code: string }) =>
+  register: (payload: { username: string; email: string; password: string; code: string }) =>
     request<AuthResponse>('/auth/register', {
       method: 'POST',
       body: JSON.stringify(payload)
     }),
 
-  resetPassword: (payload: { email: string; code: string; newPassword: string }) =>
+  resetPassword: (payload: { account: string; code: string; newPassword: string }) =>
     request<void>('/auth/password/reset', {
       method: 'POST',
       body: JSON.stringify(payload)

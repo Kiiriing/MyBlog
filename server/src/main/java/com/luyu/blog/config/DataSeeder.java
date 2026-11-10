@@ -39,7 +39,7 @@ public class DataSeeder implements ApplicationRunner {
 	@Transactional
 	public void run(ApplicationArguments args) {
 		if (!adminEmail.isEmpty() && !adminPassword.isEmpty() && !users.existsByEmail(adminEmail)) {
-			users.save(new User(adminEmail, passwordEncoder.encode(adminPassword), "Admin", Role.ADMIN));
+			users.save(new User("Admin", adminEmail, passwordEncoder.encode(adminPassword), Role.ADMIN));
 		}
 
 		if (notifications.count() == 0) {

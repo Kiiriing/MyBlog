@@ -90,7 +90,21 @@ public class VerificationCodeService {
 		mailService.sendCode(email, code, register ? "注册账号" : "重置密码", ttlMinutes);
 		codes.save(new VerificationCode(email, code, scene, ip, now.plusSeconds(ttlMinutes * 60)));
 
-		return new CodeResponse(ttlMinutes * 60, resendSeconds);
+		return new CodeResponse(ttlMinutes * 60, resendSeconds, mask(email));
+	}
+
+	/** 邮箱脱敏：abc***@163.com */
+	private static String mask(String email) {
+		int at = email.indexOf('@');
+		if (at <= 0) {
+			return email;
+		}
+		String local = email.substring(0, at);
+		String domain = email.substring(at);
+		if (local.length() <= 2) {
+			return local.charAt(0) + "***" + domain;
+		}
+		return local.substring(0, 2) + "***" + domain;
 	}
 
 	/** 校验并消费验证码；失败计数在独立事务中提交，避免随业务事务回滚一起回滚。 */

@@ -68,6 +68,8 @@ app:
   mail:
     # 发件人显示名；发件地址使用 spring.mail.username
     from-name: ${MAIL_FROM_NAME:LU YU Blog}
+  # 站点地址，用于验证码邮件里的入口链接；留空则只显示文字
+  site-url: ${SITE_URL:}
   seed:
     # 该邮箱注册后自动成为管理员；留空则不指定
     admin-email: ${SEED_ADMIN_EMAIL:}

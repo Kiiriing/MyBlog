@@ -22,9 +22,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Locale;
+import java.util.Optional;
 
 @Service
 public class AuthService {
+
+	private static final String LOGIN_FAILED = "用户名 / 邮箱或密码不正确";
 
 	private final UserRepository users;
 	private final PasswordEncoder passwordEncoder;
@@ -48,48 +51,63 @@ public class AuthService {
 		return captchaService.create();
 	}
 
-	/** 发送邮箱验证码：先过人机验证，再按用途发信。 */
+	/** 发送邮箱验证码：先过人机验证，再按用途发信；找回密码时账号会解析成注册邮箱。 */
 	public CodeResponse sendCode(CodeRequest request, String ip) {
 		captchaService.verify(request.captchaId(), request.captchaCode());
-		return verificationCodes.send(request.email(), request.scene(), ip);
+
+		boolean register = VerificationCode.PURPOSE_REGISTER.equals(request.scene());
+		String email;
+		if (register) {
+			email = normalize(request.account());
+			if (!email.contains("@")) {
+				throw new ApiException(HttpStatus.BAD_REQUEST, "注册验证码请填写邮箱地址");
+			}
+		} else {
+			email = resolveAccount(request.account()).getEmail();
+		}
+
+		return verificationCodes.send(email, request.scene(), ip);
 	}
 
 	@Transactional
 	public AuthResponse register(RegisterRequest request, String ip) {
 		String email = normalize(request.email());
+		String username = request.username().trim();
+
 		if (users.existsByEmail(email)) {
 			throw new ApiException(HttpStatus.CONFLICT, "该邮箱已经注册过了");
+		}
+		if (users.existsByUsernameIgnoreCase(username)) {
+			throw new ApiException(HttpStatus.CONFLICT, "该用户名已经被占用了，换一个试试");
 		}
 
 		verificationCodes.verify(email, VerificationCode.PURPOSE_REGISTER, request.code());
 
 		Role role = !adminEmail.isEmpty() && email.equals(adminEmail) ? Role.ADMIN : Role.USER;
-		User user = users.save(new User(email, passwordEncoder.encode(request.password()),
-				request.displayName().trim(), role));
+		User user = users.save(new User(username, email, passwordEncoder.encode(request.password()), role));
 		user.recordLogin(ip);
 
 		return new AuthResponse(jwtService.issue(user), UserDto.from(user));
 	}
 
-	/** 邮箱验证码重置密码；重置后旧密码立即失效。 */
+	/** 邮箱验证码重置密码；账号可用用户名或邮箱，重置后旧密码立即失效。 */
 	@Transactional
 	public void resetPassword(ResetPasswordRequest request) {
-		String email = normalize(request.email());
-		User user = users.findByEmail(email)
-				.orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "该邮箱还没有注册，请先注册账号"));
-
-		verificationCodes.verify(email, VerificationCode.PURPOSE_RESET_PASSWORD, request.code());
+		User user = resolveAccount(request.account());
+		verificationCodes.verify(user.getEmail(), VerificationCode.PURPOSE_RESET_PASSWORD, request.code());
 		user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
 	}
 
 	@Transactional
 	public AuthResponse login(LoginRequest request, String ip) {
-		User user = users.findByEmail(normalize(request.email()))
-				.orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "邮箱或密码不正确"));
+		String account = normalize(request.account());
+		Optional<User> found = account.contains("@")
+				? users.findByEmail(account)
+				: users.findByUsernameIgnoreCase(account);
 
-		if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
-			throw new ApiException(HttpStatus.UNAUTHORIZED, "邮箱或密码不正确");
-		}
+		User user = found
+				.filter(candidate -> passwordEncoder.matches(request.password(), candidate.getPasswordHash()))
+				.orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, LOGIN_FAILED));
 
 		// 记录登录 IP：新 IP 登录后，此前 IP 上的会话会失效
 		user.recordLogin(ip);
@@ -104,7 +122,21 @@ public class AuthService {
 		return UserDto.from(user);
 	}
 
-	private static String normalize(String email) {
-		return email == null ? "" : email.trim().toLowerCase(Locale.ROOT);
+	/** 账号解析：含 @ 视为邮箱，否则视为用户名。 */
+	private User resolveAccount(String rawAccount) {
+		String account = rawAccount == null ? "" : rawAccount.trim();
+		if (account.isEmpty()) {
+			throw new ApiException(HttpStatus.BAD_REQUEST, "请填写用户名或邮箱");
+		}
+		if (account.contains("@")) {
+			return users.findByEmail(normalize(account))
+					.orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "该邮箱还没有注册，请先注册账号"));
+		}
+		return users.findByUsernameIgnoreCase(account)
+				.orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "该用户名还没有注册，请先注册账号"));
+	}
+
+	private static String normalize(String value) {
+		return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
 	}
 }
