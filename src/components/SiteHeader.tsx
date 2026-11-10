@@ -1,19 +1,29 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useUi, setMenuOpen, toggleMenu } from '../store/ui'
+import { closePanel, useNotifications } from '../store/notifications'
 import { scrollTo } from '../composables/useSmoothScroll'
 import { site } from '../data/site'
+import NotificationBell from './NotificationBell'
 import '../styles/components/SiteHeader.css'
+import '../styles/components/Notifications.css'
 
 export default function SiteHeader() {
   const ui = useUi()
+  const inbox = useNotifications()
   const location = useLocation()
 
   function onBrandClick(event: React.MouseEvent) {
     if (ui.menuOpen) setMenuOpen(false)
+    if (inbox.open) closePanel()
     if (location.pathname === '/') {
       event.preventDefault()
       scrollTo(0, { duration: 1.2 })
     }
+  }
+
+  function onMenuClick() {
+    if (inbox.open) closePanel()
+    toggleMenu()
   }
 
   return (
@@ -38,20 +48,24 @@ export default function SiteHeader() {
         <span>{site.availability}</span>
       </div>
 
-      <button
-        className="menu-btn"
-        type="button"
-        aria-expanded={ui.menuOpen}
-        aria-controls="site-menu"
-        aria-label={ui.menuOpen ? '关闭菜单' : '打开菜单'}
-        onClick={toggleMenu}
-      >
-        <span className="menu-btn__label">{ui.menuOpen ? 'Close' : 'Menu'}</span>
-        <span className="menu-btn__icon" aria-hidden="true">
-          <i />
-          <i />
-        </span>
-      </button>
+      <div className="header-actions">
+        <NotificationBell />
+
+        <button
+          className="menu-btn"
+          type="button"
+          aria-expanded={ui.menuOpen}
+          aria-controls="site-menu"
+          aria-label={ui.menuOpen ? '关闭菜单' : '打开菜单'}
+          onClick={onMenuClick}
+        >
+          <span className="menu-btn__label">{ui.menuOpen ? 'Close' : 'Menu'}</span>
+          <span className="menu-btn__icon" aria-hidden="true">
+            <i />
+            <i />
+          </span>
+        </button>
+      </div>
     </header>
   )
 }

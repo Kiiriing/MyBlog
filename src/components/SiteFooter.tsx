@@ -1,27 +1,35 @@
 import { useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { gsap } from '../lib/gsap'
 import { scrollTo, prefersReducedMotion } from '../composables/useSmoothScroll'
 import { useClock } from '../hooks/useClock'
 import { site } from '../data/site'
+import { findBannedWord } from '../data/moderation'
+import { api, ApiError } from '../lib/api'
+import { useAuth } from '../store/auth'
 import CircleButton from './CircleButton'
 import '../styles/components/SiteFooter.css'
 
 export default function SiteFooter() {
   const clock = useClock()
+  const auth = useAuth()
   const footer = useRef<HTMLElement>(null)
   const glow = useRef<HTMLDivElement>(null)
   const quick = useRef<{ x: (v: number) => void; y: (v: number) => void } | null>(null)
 
-  const [email, setEmail] = useState('')
+  const [content, setContent] = useState('')
   const [error, setError] = useState('')
-  const [subscribed, setSubscribed] = useState(false)
+  const [sending, setSending] = useState(false)
+  const [sent, setSent] = useState(false)
   const resetTimer = useRef(0)
 
   const status = error
     ? error
-    : subscribed
-      ? '已收到 — 下一封构建手记正在写。'
-      : '每月一至两封，关于构建与工程。'
+    : !auth.user
+      ? '登录后可以提交反馈与建议。'
+      : sent
+        ? '已收到反馈 — 回复会出现在站内信里。'
+        : '关于站点或项目的想法，都可以写在这里。'
 
   useEffect(() => {
     if (!footer.current || !glow.current) return
@@ -52,25 +60,38 @@ export default function SiteFooter() {
     quick.current?.y(0)
   }
 
-  function subscribe(event: React.FormEvent) {
+  async function submitFeedback(event: React.FormEvent) {
     event.preventDefault()
+    if (!auth.user) return
     if (resetTimer.current) window.clearTimeout(resetTimer.current)
 
-    const value = email.trim()
-    const valid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value)
+    const value = content.trim()
 
-    if (!valid) {
-      setSubscribed(false)
-      setError('请留下一个有效的邮箱地址。')
+    if (value.length < 2) {
+      setSent(false)
+      setError('再多写一点吧，至少 2 个字。')
+      return
+    }
+
+    if (findBannedWord(value)) {
+      setSent(false)
+      setError('内容里包含不合适的词汇，请修改后再提交。')
       return
     }
 
     setError('')
-    setSubscribed(true)
-    setEmail('')
-    resetTimer.current = window.setTimeout(() => {
-      setSubscribed(false)
-    }, 5600)
+    setSending(true)
+    try {
+      await api.submitFeedback(value)
+      setSent(true)
+      setContent('')
+      resetTimer.current = window.setTimeout(() => setSent(false), 5600)
+    } catch (err) {
+      setSent(false)
+      setError(err instanceof ApiError ? err.message : '提交失败，请稍后再试。')
+    } finally {
+      setSending(false)
+    }
   }
 
   function backToTop() {
@@ -128,32 +149,44 @@ export default function SiteFooter() {
         </a>
 
         <div className="site-footer__columns">
-          <div className="site-footer__col site-footer__col--news">
-            <span className="site-footer__label mono">Newsletter / 构建手记</span>
-            <form className="site-footer__form" noValidate onSubmit={subscribe}>
-              <label className="sr-only" htmlFor="footer-email">
-                邮箱地址
+          <div className="site-footer__col site-footer__col--feedback">
+            <div className="site-footer__label-row">
+              <span className="site-footer__label mono">Feedback / 用户反馈</span>
+              {auth.user ? (
+                <span className="site-footer__who mono">{auth.user.displayName}</span>
+              ) : (
+                <Link to="/login" className="site-footer__login mono" data-cursor="Sign in">
+                  登录 <span aria-hidden="true">↗</span>
+                </Link>
+              )}
+            </div>
+
+            <form className="site-footer__form" noValidate onSubmit={submitFeedback}>
+              <label className="sr-only" htmlFor="feedback-content">
+                反馈内容
               </label>
-              <div className="field site-footer__field">
-                <input
-                  id="footer-email"
-                  type="email"
-                  name="email"
-                  autoComplete="email"
-                  placeholder="your@email.com"
+              <div className="field site-footer__field site-footer__field--area">
+                <textarea
+                  id="feedback-content"
+                  name="feedback"
+                  rows={3}
+                  maxLength={1000}
+                  placeholder={auth.user ? '写下你的建议…' : '登录后即可提交反馈'}
                   aria-invalid={!!error}
-                  aria-describedby="newsletter-status"
-                  value={email}
+                  aria-describedby="feedback-status"
+                  value={content}
+                  disabled={!auth.user || sending}
                   onChange={(event) => {
-                    setEmail(event.target.value)
+                    setContent(event.target.value)
                     setError('')
                   }}
                 />
                 <button
                   className="site-footer__submit"
                   type="submit"
-                  aria-label="订阅来信"
+                  aria-label="发送反馈"
                   data-cursor="Send"
+                  disabled={!auth.user || sending}
                 >
                   <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <path d="M4 12h15M13 6l6 6-6 6" stroke="currentColor" strokeWidth="1.1" />
@@ -161,11 +194,11 @@ export default function SiteFooter() {
                 </button>
               </div>
               <p
-                id="newsletter-status"
+                id="feedback-status"
                 className={[
                   'site-footer__form-note mono',
                   error ? 'is-error' : '',
-                  subscribed ? 'is-ok' : ''
+                  sent ? 'is-ok' : ''
                 ]
                   .filter(Boolean)
                   .join(' ')}

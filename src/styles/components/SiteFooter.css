@@ -195,6 +195,42 @@
   letter-spacing: 0.14em;
 }
 
+.site-footer__label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.site-footer__login {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  color: var(--fg-dim);
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  text-transform: none;
+  transition:
+    background-color 0.35s ease,
+    border-color 0.35s ease,
+    color 0.35s ease;
+}
+
+.site-footer__login:hover {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff6ec;
+}
+
+.site-footer__who {
+  color: var(--fg-faint);
+  font-size: 8px;
+  letter-spacing: 0.06em;
+}
+
 .site-footer__field {
   border-bottom-color: var(--line-strong);
 }
@@ -206,6 +242,46 @@
 
 .site-footer__field input::placeholder {
   color: var(--fg-faint);
+}
+
+.site-footer__field--area {
+  align-items: flex-start;
+  padding-top: 4px;
+}
+
+.site-footer__field textarea {
+  width: 100%;
+  min-height: 92px;
+  max-height: 220px;
+  padding: 12px 44px 12px 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: inherit;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.8;
+  resize: vertical;
+}
+
+.site-footer__field textarea::placeholder {
+  color: var(--fg-faint);
+}
+
+.site-footer__field textarea:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.site-footer__field--area .site-footer__submit {
+  top: 8px;
+  bottom: auto;
+}
+
+.site-footer__submit:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .site-footer__submit {

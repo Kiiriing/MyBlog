@@ -5,6 +5,7 @@ import JournalView from './views/JournalView'
 import PostView from './views/PostView'
 import WorkIndexView from './views/WorkIndexView'
 import WorkView from './views/WorkView'
+import LoginView from './views/LoginView'
 import NotFoundView from './views/NotFoundView'
 
 export function AppRoutes({ location }: { location: Location }) {
@@ -15,6 +16,7 @@ export function AppRoutes({ location }: { location: Location }) {
       <Route path="/journal/:slug" element={<PostView />} />
       <Route path="/work" element={<WorkIndexView />} />
       <Route path="/work/:slug" element={<WorkView />} />
+      <Route path="/login" element={<LoginView />} />
       <Route path="*" element={<NotFoundView />} />
     </Routes>
   )
@@ -26,5 +28,6 @@ export function routeNameFor(pathname: string) {
   if (pathname.startsWith('/journal/')) return 'post'
   if (pathname === '/work') return 'work-index'
   if (pathname.startsWith('/work/')) return 'work'
+  if (pathname === '/login') return 'login'
   return 'not-found'
 }

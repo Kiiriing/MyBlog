@@ -10,12 +10,15 @@ import {
   scrollTo
 } from './composables/useSmoothScroll'
 import { finishBoot, getUi, setMenuOpen, setUi, useUi } from './store/ui'
+import { restoreSession } from './store/auth'
+import { closePanel, refreshNotifications } from './store/notifications'
 import { AppRoutes, routeNameFor } from './router'
 import Preloader from './components/Preloader'
 import CustomCursor from './components/CustomCursor'
 import GlowCursor from './components/GlowCursor'
 import GrainOverlay from './components/GrainOverlay'
 import SiteHeader from './components/SiteHeader'
+import NotificationPanel from './components/NotificationPanel'
 import MenuOverlay from './components/MenuOverlay'
 import ScrollProgress from './components/ScrollProgress'
 import VinylPlayer from './components/VinylPlayer'
@@ -28,6 +31,7 @@ const WIPE_NAMES: Record<string, string> = {
   work: 'Case',
   journal: 'Journal',
   post: 'Entry',
+  login: 'Login',
   'not-found': '404'
 }
 
@@ -100,6 +104,7 @@ export default function App() {
 
     setPageReady(false)
     if (getUi().menuOpen) setMenuOpen(false)
+    closePanel()
 
     if (getUi().introDone) {
       wipe.current?.play(WIPE_NAMES[routeNameFor(location.pathname)] || 'Index', location.pathname)
@@ -132,6 +137,12 @@ export default function App() {
 
     return () => window.clearTimeout(timer)
   }, [location.pathname, location.hash, ui.introDone, pageReady, showPreloader])
+
+  /* Account & inbox -------------------------------------------------------- */
+  useEffect(() => {
+    void restoreSession()
+    void refreshNotifications()
+  }, [])
 
   /* Lifecycle ------------------------------------------------------------- */
   useEffect(() => {
@@ -187,6 +198,7 @@ export default function App() {
       <RouteWipe ref={wipe} />
       <div className={`top-shade${scrolled ? ' is-on' : ''}`} aria-hidden="true" />
       <SiteHeader />
+      <NotificationPanel />
       <MenuOverlay />
 
       {isHome && ui.introDone && pageReady ? <ScrollProgress /> : null}
