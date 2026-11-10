@@ -51,6 +51,8 @@ export default function SiteHeader() {
       </div>
 
       <div className="header-actions">
+        <NotificationBell />
+
         {auth.user ? (
           <button
             className="header-login is-user"
@@ -69,8 +71,6 @@ export default function SiteHeader() {
             </span>
           </Link>
         )}
-
-        <NotificationBell />
 
         <button
           className="menu-btn"
