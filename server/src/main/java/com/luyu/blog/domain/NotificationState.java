@@ -12,6 +12,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
 import java.time.Instant;
+import java.util.UUID;
 
 /**
  * 单个用户对某条通知的阅读 / 置顶 / 删除（软隐藏）状态。
@@ -24,8 +25,8 @@ import java.time.Instant;
 public class NotificationState {
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+	@GeneratedValue(strategy = GenerationType.UUID)
+	private UUID id;
 
 	@ManyToOne(fetch = FetchType.LAZY, optional = false)
 	@JoinColumn(name = "notification_id", nullable = false)
@@ -52,7 +53,7 @@ public class NotificationState {
 		this.user = user;
 	}
 
-	public Long getId() {
+	public UUID getId() {
 		return id;
 	}
 

@@ -24,6 +24,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -46,7 +47,7 @@ public class NotificationService {
 	public NotificationListDto list(UserPrincipal principal, String filter) {
 		User user = requireUser(principal);
 		List<Notification> visible = visibleFor(user);
-		Map<Long, NotificationState> stateMap = stateMap(user, visible);
+		Map<UUID, NotificationState> stateMap = stateMap(user, visible);
 
 		boolean unreadOnly = "unread".equalsIgnoreCase(filter);
 		boolean readOnly = "read".equalsIgnoreCase(filter);
@@ -71,14 +72,14 @@ public class NotificationService {
 	public UnreadDto unread(UserPrincipal principal) {
 		User user = requireUser(principal);
 		List<Notification> visible = visibleFor(user);
-		Map<Long, NotificationState> stateMap = stateMap(user, visible);
+		Map<UUID, NotificationState> stateMap = stateMap(user, visible);
 		long unread = visible.stream()
 				.filter(notification -> !isRead(stateMap.get(notification.getId())))
 				.count();
 		return new UnreadDto(unread);
 	}
 
-	public NotificationDto markRead(UserPrincipal principal, Long id) {
+	public NotificationDto markRead(UserPrincipal principal, UUID id) {
 		User user = requireUser(principal);
 		Notification notification = requireVisible(id, user);
 		NotificationState state = stateOf(notification, user);
@@ -91,7 +92,7 @@ public class NotificationService {
 	public UnreadDto markAllRead(UserPrincipal principal) {
 		User user = requireUser(principal);
 		List<Notification> visible = visibleFor(user);
-		Map<Long, NotificationState> stateMap = stateMap(user, visible);
+		Map<UUID, NotificationState> stateMap = stateMap(user, visible);
 		List<NotificationState> changed = visible.stream()
 				.filter(notification -> !isRead(stateMap.get(notification.getId())))
 				.map(notification -> {
@@ -107,7 +108,7 @@ public class NotificationService {
 		return new UnreadDto(0);
 	}
 
-	public NotificationDto togglePin(UserPrincipal principal, Long id) {
+	public NotificationDto togglePin(UserPrincipal principal, UUID id) {
 		User user = requireUser(principal);
 		Notification notification = requireVisible(id, user);
 		NotificationState state = stateOf(notification, user);
@@ -115,7 +116,7 @@ public class NotificationService {
 		return toDto(notification, states.save(state));
 	}
 
-	public void hide(UserPrincipal principal, Long id) {
+	public void hide(UserPrincipal principal, UUID id) {
 		User user = requireUser(principal);
 		Notification notification = requireVisible(id, user);
 		NotificationState state = stateOf(notification, user);
@@ -147,16 +148,16 @@ public class NotificationService {
 		return notifications.findVisibleFor(user, user.getRole() == Role.ADMIN, Audience.ALL, Audience.ADMIN);
 	}
 
-	private Map<Long, NotificationState> stateMap(User user, List<Notification> visible) {
+	private Map<UUID, NotificationState> stateMap(User user, List<Notification> visible) {
 		if (visible.isEmpty()) {
 			return Map.of();
 		}
-		List<Long> ids = visible.stream().map(Notification::getId).toList();
+		List<UUID> ids = visible.stream().map(Notification::getId).toList();
 		return states.findByUserIdAndNotificationIdIn(user.getId(), ids).stream()
 				.collect(Collectors.toMap(state -> state.getNotification().getId(), Function.identity()));
 	}
 
-	private Notification requireVisible(Long id, User user) {
+	private Notification requireVisible(UUID id, User user) {
 		Notification notification = notifications.findById(id)
 				.orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "通知不存在"));
 

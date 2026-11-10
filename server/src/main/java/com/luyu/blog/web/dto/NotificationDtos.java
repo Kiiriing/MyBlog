@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Size;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 public final class NotificationDtos {
 
@@ -28,7 +29,7 @@ public final class NotificationDtos {
 	}
 
 	public record NotificationDto(
-			Long id,
+			UUID id,
 			String category,
 			String title,
 			String body,

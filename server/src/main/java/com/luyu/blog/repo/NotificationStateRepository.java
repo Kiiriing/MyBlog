@@ -6,10 +6,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
-public interface NotificationStateRepository extends JpaRepository<NotificationState, Long> {
+public interface NotificationStateRepository extends JpaRepository<NotificationState, UUID> {
 
-	Optional<NotificationState> findByNotificationIdAndUserId(Long notificationId, Long userId);
+	Optional<NotificationState> findByNotificationIdAndUserId(UUID notificationId, UUID userId);
 
-	List<NotificationState> findByUserIdAndNotificationIdIn(Long userId, Collection<Long> notificationIds);
+	List<NotificationState> findByUserIdAndNotificationIdIn(UUID userId, Collection<UUID> notificationIds);
 }

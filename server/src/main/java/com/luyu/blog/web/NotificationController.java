@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/api/notifications")
 public class NotificationController {
@@ -43,18 +45,18 @@ public class NotificationController {
 	}
 
 	@PostMapping("/{id}/read")
-	public NotificationDto markRead(@AuthenticationPrincipal UserPrincipal principal, @PathVariable Long id) {
+	public NotificationDto markRead(@AuthenticationPrincipal UserPrincipal principal, @PathVariable UUID id) {
 		return notificationService.markRead(principal, id);
 	}
 
 	@PostMapping("/{id}/pin")
-	public NotificationDto togglePin(@AuthenticationPrincipal UserPrincipal principal, @PathVariable Long id) {
+	public NotificationDto togglePin(@AuthenticationPrincipal UserPrincipal principal, @PathVariable UUID id) {
 		return notificationService.togglePin(principal, id);
 	}
 
 	@DeleteMapping("/{id}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
-	public void hide(@AuthenticationPrincipal UserPrincipal principal, @PathVariable Long id) {
+	public void hide(@AuthenticationPrincipal UserPrincipal principal, @PathVariable UUID id) {
 		notificationService.hide(principal, id);
 	}
 }

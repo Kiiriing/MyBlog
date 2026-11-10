@@ -2,7 +2,7 @@ export type Role = 'USER' | 'ADMIN'
 export type NotificationCategory = 'SYSTEM' | 'FEEDBACK' | 'DIRECT'
 
 export type AuthUser = {
-  id: number
+  id: string
   username: string
   email: string
   displayName: string
@@ -10,7 +10,7 @@ export type AuthUser = {
 }
 
 export type NotificationItem = {
-  id: number
+  id: string
   category: NotificationCategory
   title: string
   body: string
@@ -136,15 +136,15 @@ export const api = {
   notifications: (filter: 'all' | 'unread' | 'read' = 'all') =>
     request<NotificationList>(`/notifications?filter=${filter}`),
 
-  markRead: (id: number) =>
+  markRead: (id: string) =>
     request<NotificationItem>(`/notifications/${id}/read`, { method: 'POST' }),
 
   markAllRead: () => request<{ unread: number }>('/notifications/read-all', { method: 'POST' }),
 
-  togglePin: (id: number) =>
+  togglePin: (id: string) =>
     request<NotificationItem>(`/notifications/${id}/pin`, { method: 'POST' }),
 
-  remove: (id: number) =>
+  remove: (id: string) =>
     request<void>(`/notifications/${id}`, { method: 'DELETE' }),
 
   submitFeedback: (content: string) =>

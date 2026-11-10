@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 import java.time.Instant;
+import java.util.UUID;
 
 public final class FeedbackDtos {
 
@@ -18,7 +19,7 @@ public final class FeedbackDtos {
 	}
 
 	public record FeedbackDto(
-			Long id,
+			UUID id,
 			String content,
 			Instant createdAt,
 			boolean handled,

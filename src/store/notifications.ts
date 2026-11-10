@@ -83,7 +83,7 @@ export async function refreshNotifications() {
   }
 }
 
-export async function markRead(id: number) {
+export async function markRead(id: string) {
   try {
     await api.markRead(id)
     await refreshNotifications()
@@ -101,7 +101,7 @@ export async function markAllRead() {
   }
 }
 
-export async function togglePin(id: number) {
+export async function togglePin(id: string) {
   try {
     await api.togglePin(id)
     await refreshNotifications()
@@ -110,7 +110,7 @@ export async function togglePin(id: number) {
   }
 }
 
-export async function removeNotification(id: number) {
+export async function removeNotification(id: string) {
   try {
     await api.remove(id)
     await refreshNotifications()

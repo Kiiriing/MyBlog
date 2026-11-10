@@ -8,6 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 import java.time.Instant;
+import java.util.UUID;
 
 /**
  * 邮箱验证码：注册等场景的一次性校验码。
@@ -20,8 +21,8 @@ public class VerificationCode {
 	public static final String PURPOSE_RESET_PASSWORD = "RESET_PASSWORD";
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+	@GeneratedValue(strategy = GenerationType.UUID)
+	private UUID id;
 
 	@Column(nullable = false, length = 190)
 	private String email;
@@ -59,7 +60,7 @@ public class VerificationCode {
 		this.createdAt = Instant.now();
 	}
 
-	public Long getId() {
+	public UUID getId() {
 		return id;
 	}
 

@@ -20,7 +20,7 @@ public class DatabaseCommentInitializer implements ApplicationRunner {
 
 	private static final List<String> STATEMENTS = List.of(
 			"COMMENT ON TABLE users IS '用户账号表'",
-			"COMMENT ON COLUMN users.id IS '主键'",
+			"COMMENT ON COLUMN users.id IS '主键（UUID）'",
 			"COMMENT ON COLUMN users.email IS '登录邮箱（唯一）'",
 			"COMMENT ON COLUMN users.username IS '登录用户名（唯一，注册后不可修改）'",
 			"COMMENT ON COLUMN users.password_hash IS 'BCrypt 加密后的密码'",
@@ -31,7 +31,7 @@ public class DatabaseCommentInitializer implements ApplicationRunner {
 			"COMMENT ON COLUMN users.last_login_at IS '最近一次登录时间'",
 
 			"COMMENT ON TABLE notifications IS '站内通知表'",
-			"COMMENT ON COLUMN notifications.id IS '主键'",
+			"COMMENT ON COLUMN notifications.id IS '主键（UUID）'",
 			"COMMENT ON COLUMN notifications.category IS '分类：SYSTEM 系统通知，FEEDBACK 用户反馈，DIRECT 私信'",
 			"COMMENT ON COLUMN notifications.audience IS '可见范围：ALL 全站，ADMIN 管理员，USER 指定用户'",
 			"COMMENT ON COLUMN notifications.recipient_id IS '接收用户，仅 audience=USER 时生效'",
@@ -42,7 +42,7 @@ public class DatabaseCommentInitializer implements ApplicationRunner {
 			"COMMENT ON COLUMN notifications.created_at IS '创建时间'",
 
 			"COMMENT ON TABLE notification_states IS '用户对通知的已读 / 置顶 / 删除状态表'",
-			"COMMENT ON COLUMN notification_states.id IS '主键'",
+			"COMMENT ON COLUMN notification_states.id IS '主键（UUID）'",
 			"COMMENT ON COLUMN notification_states.notification_id IS '通知 ID'",
 			"COMMENT ON COLUMN notification_states.user_id IS '用户 ID'",
 			"COMMENT ON COLUMN notification_states.read_at IS '阅读时间，有值即为已读'",
@@ -50,14 +50,14 @@ public class DatabaseCommentInitializer implements ApplicationRunner {
 			"COMMENT ON COLUMN notification_states.hidden_at IS '从用户列表隐藏（软删除）的时间，记录本身保留'",
 
 			"COMMENT ON TABLE feedback IS '用户反馈表'",
-			"COMMENT ON COLUMN feedback.id IS '主键'",
+			"COMMENT ON COLUMN feedback.id IS '主键（UUID）'",
 			"COMMENT ON COLUMN feedback.user_id IS '提交反馈的用户 ID'",
 			"COMMENT ON COLUMN feedback.content IS '反馈内容'",
 			"COMMENT ON COLUMN feedback.created_at IS '提交时间'",
 			"COMMENT ON COLUMN feedback.handled IS '是否已处理'",
 
 			"COMMENT ON TABLE verification_codes IS '邮箱验证码表'",
-			"COMMENT ON COLUMN verification_codes.id IS '主键'",
+			"COMMENT ON COLUMN verification_codes.id IS '主键（UUID）'",
 			"COMMENT ON COLUMN verification_codes.email IS '接收验证码的邮箱'",
 			"COMMENT ON COLUMN verification_codes.code IS '6 位数字验证码'",
 			"COMMENT ON COLUMN verification_codes.purpose IS '用途：REGISTER 注册，RESET_PASSWORD 重置密码'",

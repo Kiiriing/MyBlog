@@ -12,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
+import java.util.UUID;
 
 @Service
 public class JwtService {
@@ -32,7 +33,7 @@ public class JwtService {
 	public String issue(User user) {
 		Instant now = Instant.now();
 		return Jwts.builder()
-				.subject(String.valueOf(user.getId()))
+				.subject(user.getId().toString())
 				.claim("email", user.getEmail())
 				.claim("name", user.getDisplayName())
 				.claim("role", user.getRole().name())
@@ -42,12 +43,12 @@ public class JwtService {
 				.compact();
 	}
 
-	public Long parseUserId(String token) {
+	public UUID parseUserId(String token) {
 		Claims claims = Jwts.parser()
 				.verifyWith(key)
 				.build()
 				.parseSignedClaims(token)
 				.getPayload();
-		return Long.valueOf(claims.getSubject());
+		return UUID.fromString(claims.getSubject());
 	}
 }

@@ -6,6 +6,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
+import java.util.UUID;
+
 public final class AuthDtos {
 
 	/** 用户名允许中英文、数字、下划线，2-20 个字符 */
@@ -96,7 +98,7 @@ public final class AuthDtos {
 			String password) {
 	}
 
-	public record UserDto(Long id, String username, String email, String displayName, String role) {
+	public record UserDto(UUID id, String username, String email, String displayName, String role) {
 
 		public static UserDto from(User user) {
 			// 历史账号没有用户名，回退到展示名，前端只认一个字段

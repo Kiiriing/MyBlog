@@ -13,14 +13,15 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Entity
 @Table(name = "notifications")
 public class Notification {
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+	@GeneratedValue(strategy = GenerationType.UUID)
+	private UUID id;
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false, length = 16)
@@ -66,7 +67,7 @@ public class Notification {
 		this.createdAt = Instant.now();
 	}
 
-	public Long getId() {
+	public UUID getId() {
 		return id;
 	}
 
