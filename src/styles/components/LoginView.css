@@ -258,12 +258,21 @@
   gap: clamp(12px, 1.6vh, 16px);
 }
 
-.login__field-head {
+/* 验证码格子与「获取验证码」同一行：按钮紧跟最后一格，不留大片空白 */
+.login__code-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 10px;
-  min-height: 17px;
+}
+
+.login__code-row .code-slots {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.login__pair .code-slots__row {
+  display: flex;
+  width: 100%;
 }
 
 .login__captcha {
@@ -299,7 +308,8 @@
 }
 
 .login__pair .code-slots__slot {
-  width: 36px;
+  flex: 1 1 0;
+  min-width: 0;
   height: 46px;
   border-radius: 10px;
 }
@@ -309,7 +319,7 @@
 }
 
 .login__code-btn {
-  margin-left: auto;
+  flex: none;
   padding: 2px 0;
   border: 0;
   border-bottom: 1px solid rgba(255, 90, 47, 0.45);
@@ -565,7 +575,6 @@
   }
 
   .login__pair .code-slots__slot {
-    width: 32px;
     height: 40px;
   }
 
@@ -629,10 +638,6 @@
     line-height: 1.2;
   }
 
-  .login__field-head {
-    min-height: 16px;
-  }
-
   /* 人机验证与邮箱验证码并排，省下一整行高度 */
   .login__pair {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -640,7 +645,6 @@
   }
 
   .login__pair .code-slots__slot {
-    width: 30px;
     height: 36px;
     border-radius: 8px;
   }
@@ -725,7 +729,6 @@
   }
 
   .login__pair .code-slots__slot {
-    width: 32px;
     height: 42px;
   }
 

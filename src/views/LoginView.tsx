@@ -406,11 +406,17 @@ export default function LoginView() {
                         </div>
 
                         <div className="login__field">
-                          <div className="login__field-head">
-                            <span className="login__label">
-                              邮箱验证码
-                              {mode === 'reset' ? '（发送至注册邮箱）' : ''}
-                            </span>
+                          <span className="login__label">
+                            邮箱验证码
+                            {mode === 'reset' ? '（发送至注册邮箱）' : ''}
+                          </span>
+                          <div className="login__code-row">
+                            <CodeSlots
+                              value={code}
+                              onChange={setCode}
+                              disabled={submitting}
+                              invalid={Boolean(error) && code.length > 0 && code.length < 6}
+                            />
                             <button
                               type="button"
                               className="login__code-btn"
@@ -424,12 +430,6 @@ export default function LoginView() {
                                   : '获取验证码'}
                             </button>
                           </div>
-                          <CodeSlots
-                            value={code}
-                            onChange={setCode}
-                            disabled={submitting}
-                            invalid={Boolean(error) && code.length > 0 && code.length < 6}
-                          />
                         </div>
                       </div>
                     ) : null}
