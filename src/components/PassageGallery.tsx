@@ -8,7 +8,7 @@ import '../styles/components/PassageGallery.css'
 /* 通道画廊（Passage Gallery 的等价实现）。
    一条由照片砌成的方形隧道：相机停在原地，整条隧道朝镜头流过来，
    四面墙上按格子铺照片与渐变强调块，远处按距离融进背景色。
-   指针移动会带来轻微视角偏移；点照片会从墙上飞出来放大。
+   指针移动会带来轻微视角偏移，按住会加速穿行；点照片会从墙上飞出来放大。
 
    内容与官方一致用「格子 + 环」的确定性布局：每个 (ring, slot) 的随机数由 seed 决定，
    所以回到同一圈时照片还在原来的位置，CPU 端做拾取时也能算出同一块砖。 */
@@ -39,6 +39,7 @@ type Props = {
   lineOpacity?: number
   fog?: number
   speed?: number
+  boost?: number
   blur?: number
   look?: number
   fov?: number
@@ -295,6 +296,7 @@ export default function PassageGallery({
   lineOpacity = 0.12,
   fog = 1,
   speed = 0.6,
+  boost = 10,
   blur = 1,
   look = 1,
   fov = 72,
@@ -324,6 +326,8 @@ export default function PassageGallery({
 
   const live = useRef({
     travel: 0,
+    boostHeld: false,
+    boostAmt: 0,
     pointerX: 0,
     pointerY: 0,
     hoverId: -1,
@@ -430,6 +434,7 @@ export default function PassageGallery({
       fov,
       look,
       speed,
+      boost,
       wheel,
       interactive,
       paused,
@@ -732,9 +737,23 @@ export default function PassageGallery({
       return new DOMRect(left, top, Math.max(1, right - left), Math.max(1, bottom - top))
     }
 
+    /* 远处的砖只剩几个像素，点它等于点在黑洞中央：太小就不算可点，也不高亮 */
+    const MIN_PICK_PX = 18
+    function pickable(found: {
+      cx: number
+      cy: number
+      zc: number
+      vertical: boolean
+      kind: number
+    }) {
+      if (found.kind !== 1) return false
+      const rect = tileRect(found.cx, found.cy, found.zc, found.vertical)
+      return Math.min(rect.width, rect.height) >= MIN_PICK_PX
+    }
+
     /* 指针 ------------------------------------------------------------------ */
 
-    const pointer = { down: false, dragging: false, startX: 0, startY: 0 }
+    const pointer = { down: false, dragging: false, startX: 0, startY: 0, downAt: 0 }
 
     function updateLook(clientX: number, clientY: number) {
       const box = canvas.getBoundingClientRect()
@@ -751,7 +770,7 @@ export default function PassageGallery({
         if (!pointer.dragging && Math.hypot(dx, dy) > 6) pointer.dragging = true
       }
       const found = pick(event.clientX, event.clientY)
-      const onPhoto = Boolean(found && found.kind === 1)
+      const onPhoto = Boolean(found && pickable(found))
       live.current.hoverId = onPhoto && found ? found.ring * perRing + found.slot : -1
       /* 自定义反色圆环只有压在照片上才进入可点状态：把状态挂在画布上，
          由 CustomCursor 读 [data-cursor] 决定是否放大圆环 */
@@ -770,19 +789,23 @@ export default function PassageGallery({
       pointer.dragging = false
       pointer.startX = event.clientX
       pointer.startY = event.clientY
+      pointer.downAt = performance.now()
+      live.current.boostHeld = true
       canvas.setPointerCapture(event.pointerId)
     }
 
     const onPointerUp = (event: PointerEvent) => {
       if (!pointer.down) return
       const wasDrag = pointer.dragging
+      const heldFor = performance.now() - pointer.downAt
       pointer.down = false
       pointer.dragging = false
+      live.current.boostHeld = false
       if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId)
-      /* 拖动过就只算结束，不打开照片 */
-      if (wasDrag) return
+      /* 拖动过、或按住加速后松手，都只算结束，不打开照片 */
+      if (wasDrag || heldFor > 400) return
       const found = pick(event.clientX, event.clientY)
-      if (found && found.kind === 1 && found.item >= 0) {
+      if (found && pickable(found) && found.item >= 0) {
         const rect = tileRect(found.cx, found.cy, found.zc, found.vertical)
         openItem(items[found.item], found.item, rect)
       }
@@ -822,7 +845,14 @@ export default function PassageGallery({
 
       const state = live.current
 
-      const moving = config.paused ? 0 : cruise
+      /* 长按加速：按住后由慢到快叠上去，松手缓缓落回巡航速度 */
+      if (state.boostHeld && !config.paused) {
+        state.boostAmt = Math.min(1, state.boostAmt + dt / 1.2)
+      } else {
+        state.boostAmt = Math.max(0, state.boostAmt - dt / 0.7)
+      }
+      const boostEase = state.boostAmt * state.boostAmt
+      const moving = config.paused ? 0 : cruise * (1 + (config.boost - 1) * boostEase)
       state.travel += moving * dt
       state.travel = ((state.travel % RINGS) + RINGS) % RINGS
 
@@ -891,6 +921,7 @@ export default function PassageGallery({
     fov,
     look,
     speed,
+    boost,
     wheel,
     interactive,
     paused,
