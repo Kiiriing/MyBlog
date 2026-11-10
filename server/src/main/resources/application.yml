@@ -21,9 +21,12 @@ server:
 logging:
   file:
     # 从 server/ 目录启动时写入 server/logs/
-    name: ${LOG_FILE:logs/luyu-blog.log}
+    # LOG_BASE 可改日志路径前缀（不含扩展名）
+    name: ${LOG_BASE:logs/luyu-blog}.log
   logback:
     rollingpolicy:
+      # 按日期归档：每天一个文件（luyu-blog.2026-11-10.0.gz），同日超过 20MB 时追加序号
+      file-name-pattern: ${LOG_BASE:logs/luyu-blog}.%d{yyyy-MM-dd}.%i.gz
       max-file-size: 20MB
       max-history: 30
       total-size-cap: 1GB
