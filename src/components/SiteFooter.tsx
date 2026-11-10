@@ -29,7 +29,7 @@ export default function SiteFooter() {
       ? '登录后可以提交反馈与建议。'
       : sent
         ? '已收到反馈 — 回复会出现在站内信里。'
-        : '关于站点或项目的想法，都可以写在这里。'
+        : '关于站点或项目的想法都可以写在这里，每天最多 3 条。'
 
   useEffect(() => {
     if (!footer.current || !glow.current) return

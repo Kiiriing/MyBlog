@@ -16,11 +16,20 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 
 @Service
 @Transactional
 public class FeedbackService {
+
+	/** 每位用户每天最多提交的反馈条数 */
+	private static final int DAILY_LIMIT = 3;
+
+	/** 以北京时间切分自然日 */
+	private static final ZoneId ZONE = ZoneId.of("Asia/Shanghai");
 
 	private final FeedbackRepository feedbackRepository;
 	private final NotificationRepository notifications;
@@ -38,6 +47,13 @@ public class FeedbackService {
 	public void submit(UserPrincipal principal, String content) {
 		User author = users.findById(principal.id())
 				.orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "登录状态已失效"));
+
+		Instant dayStart = LocalDate.now(ZONE).atStartOfDay(ZONE).toInstant();
+		long sentToday = feedbackRepository.countByUser_IdAndCreatedAtGreaterThanEqual(author.getId(), dayStart);
+		if (sentToday >= DAILY_LIMIT) {
+			throw new ApiException(HttpStatus.TOO_MANY_REQUESTS, "今天的 3 条反馈已经发完了，明天再来吧");
+		}
+
 		String cleaned = content.trim();
 		moderation.validate(cleaned);
 		feedbackRepository.save(new Feedback(author, cleaned));
