@@ -737,18 +737,15 @@ export default function PassageGallery({
       return new DOMRect(left, top, Math.max(1, right - left), Math.max(1, bottom - top))
     }
 
-    /* 远处的砖只剩几个像素，点它等于点在黑洞中央：太小就不算可点，也不高亮 */
-    const MIN_PICK_PX = 18
-    function pickable(found: {
-      cx: number
-      cy: number
-      zc: number
-      vertical: boolean
-      kind: number
-    }) {
+    /* 刚走出黑暗的照片也要能点：只排除正中心那团黑，
+       指针距画布中心 95px 以内不算可点，也不高亮 */
+    const MIN_PICK_RADIUS = 95
+    function pickable(found: { kind: number }, clientX: number, clientY: number) {
       if (found.kind !== 1) return false
-      const rect = tileRect(found.cx, found.cy, found.zc, found.vertical)
-      return Math.min(rect.width, rect.height) >= MIN_PICK_PX
+      const box = canvas.getBoundingClientRect()
+      const dx = clientX - (box.left + box.width / 2)
+      const dy = clientY - (box.top + box.height / 2)
+      return Math.hypot(dx, dy) >= MIN_PICK_RADIUS
     }
 
     /* 指针 ------------------------------------------------------------------ */
@@ -770,7 +767,7 @@ export default function PassageGallery({
         if (!pointer.dragging && Math.hypot(dx, dy) > 6) pointer.dragging = true
       }
       const found = pick(event.clientX, event.clientY)
-      const onPhoto = Boolean(found && pickable(found))
+      const onPhoto = Boolean(found && pickable(found, event.clientX, event.clientY))
       live.current.hoverId = onPhoto && found ? found.ring * perRing + found.slot : -1
       /* 自定义反色圆环只有压在照片上才进入可点状态：把状态挂在画布上，
          由 CustomCursor 读 [data-cursor] 决定是否放大圆环 */
@@ -805,7 +802,7 @@ export default function PassageGallery({
       /* 拖动过、或按住加速后松手，都只算结束，不打开照片 */
       if (wasDrag || heldFor > 400) return
       const found = pick(event.clientX, event.clientY)
-      if (found && pickable(found) && found.item >= 0) {
+      if (found && pickable(found, event.clientX, event.clientY) && found.item >= 0) {
         const rect = tileRect(found.cx, found.cy, found.zc, found.vertical)
         openItem(items[found.item], found.item, rect)
       }
