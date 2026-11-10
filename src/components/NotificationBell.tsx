@@ -9,11 +9,6 @@ export default function NotificationBell() {
   const inbox = useNotifications()
   const unread = auth.user ? inbox.unread : 0
   const label = unread > 0 ? `站内信，${unread} 条未读` : '站内信'
-  const hint = !auth.user
-    ? '登录后查看站内信'
-    : unread > 0
-      ? `站内信 · ${unread} 条未读`
-      : '站内信 · 全部已读'
 
   function onClick() {
     if (ui.menuOpen) setMenuOpen(false)
@@ -21,9 +16,9 @@ export default function NotificationBell() {
   }
 
   return (
-    <WarmTooltip content={hint} side="bottom">
+    <WarmTooltip content="消息" side="bottom">
       <button
-        className={`bell${inbox.open ? ' is-open' : ''}`}
+        className={`bell${unread > 0 ? ' has-unread' : ''}${inbox.open ? ' is-open' : ''}`}
         type="button"
         aria-label={label}
         aria-expanded={inbox.open}
