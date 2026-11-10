@@ -238,7 +238,8 @@
 .signout {
   position: fixed;
   inset: 0;
-  z-index: 1200;
+  /* 低于自定义光标的 1100，弹窗打开时鼠标圆环仍显示在最上层 */
+  z-index: 1090;
   display: grid;
   place-items: center;
   padding: 24px;
