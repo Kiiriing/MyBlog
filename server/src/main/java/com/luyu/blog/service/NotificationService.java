@@ -2,6 +2,7 @@ package com.luyu.blog.service;
 
 import com.luyu.blog.domain.Audience;
 import com.luyu.blog.domain.Notification;
+import com.luyu.blog.domain.NotificationCategory;
 import com.luyu.blog.domain.NotificationState;
 import com.luyu.blog.domain.Role;
 import com.luyu.blog.domain.User;
@@ -10,6 +11,7 @@ import com.luyu.blog.repo.NotificationStateRepository;
 import com.luyu.blog.repo.UserRepository;
 import com.luyu.blog.security.UserPrincipal;
 import com.luyu.blog.web.ApiException;
+import com.luyu.blog.web.dto.NotificationDtos.CreateNotificationRequest;
 import com.luyu.blog.web.dto.NotificationDtos.NotificationDto;
 import com.luyu.blog.web.dto.NotificationDtos.NotificationListDto;
 import com.luyu.blog.web.dto.NotificationDtos.UnreadDto;
@@ -20,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -118,6 +121,26 @@ public class NotificationService {
 		NotificationState state = stateOf(notification, user);
 		state.setHiddenAt(Instant.now());
 		states.save(state);
+	}
+
+	/** 管理员发布全站公告；填写 recipientEmail 时改为发送私信 */
+	public NotificationDto create(UserPrincipal principal, CreateNotificationRequest request) {
+		User sender = requireUser(principal);
+		String email = request.recipientEmail() == null ? "" : request.recipientEmail().trim().toLowerCase(Locale.ROOT);
+		String link = request.link() == null || request.link().isBlank() ? null : request.link().trim();
+
+		Notification notification;
+		if (email.isEmpty()) {
+			notification = new Notification(NotificationCategory.SYSTEM, Audience.ALL, null, sender,
+					request.title().trim(), request.body().trim(), link);
+		} else {
+			User recipient = users.findByEmail(email)
+					.orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "收件人不存在"));
+			notification = new Notification(NotificationCategory.DIRECT, Audience.USER, recipient, sender,
+					request.title().trim(), request.body().trim(), link);
+		}
+
+		return toDto(notifications.save(notification), null);
 	}
 
 	private List<Notification> visibleFor(User user) {
