@@ -103,6 +103,57 @@
   }
 }
 
+.header-login {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 0;
+  color: inherit;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.header-login__arrow {
+  font-size: 9px;
+  opacity: 0.7;
+  transition:
+    opacity 0.35s ease,
+    transform 0.45s var(--ease-out);
+}
+
+.header-login:hover .header-login__arrow {
+  opacity: 1;
+  transform: translate(2px, -2px);
+}
+
+/* 已登录：显示昵称，点击即可退出 */
+.header-login.is-user {
+  gap: 8px;
+  letter-spacing: 0.06em;
+  text-transform: none;
+}
+
+.header-login__name {
+  max-width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.header-login.is-user::after {
+  content: '×';
+  font-size: 11px;
+  opacity: 0.55;
+  transition: opacity 0.3s ease;
+}
+
+.header-login.is-user:hover::after {
+  opacity: 1;
+}
+
 .menu-btn {
   display: flex;
   align-items: center;

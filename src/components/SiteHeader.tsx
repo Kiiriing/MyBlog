@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useUi, setMenuOpen, toggleMenu } from '../store/ui'
 import { closePanel, useNotifications } from '../store/notifications'
+import { signOut, useAuth } from '../store/auth'
 import { scrollTo } from '../composables/useSmoothScroll'
 import { site } from '../data/site'
 import NotificationBell from './NotificationBell'
@@ -10,6 +11,7 @@ import '../styles/components/Notifications.css'
 export default function SiteHeader() {
   const ui = useUi()
   const inbox = useNotifications()
+  const auth = useAuth()
   const location = useLocation()
 
   function onBrandClick(event: React.MouseEvent) {
@@ -49,6 +51,25 @@ export default function SiteHeader() {
       </div>
 
       <div className="header-actions">
+        {auth.user ? (
+          <button
+            className="header-login is-user"
+            type="button"
+            title="退出登录"
+            aria-label={`${auth.user.displayName}，退出登录`}
+            onClick={signOut}
+          >
+            <span className="header-login__name">{auth.user.displayName}</span>
+          </button>
+        ) : (
+          <Link to="/login" className="header-login" aria-label="登录">
+            <span>登录</span>
+            <span className="header-login__arrow" aria-hidden="true">
+              ↗
+            </span>
+          </Link>
+        )}
+
         <NotificationBell />
 
         <button
