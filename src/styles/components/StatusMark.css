@@ -1,0 +1,107 @@
+.status-mark {
+  --sm-stroke: 2;
+  --sm-done: #22c55e;
+  --sm-fill: 0.08;
+  --sm-font: 13px;
+  --sm-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  line-height: 1;
+}
+
+.status-mark__glyph {
+  flex: none;
+  overflow: visible;
+  color: var(--fg-dim);
+  transition: color 220ms ease;
+}
+
+.status-mark[data-status='done'] .status-mark__glyph {
+  color: var(--sm-done);
+}
+
+.status-mark__track {
+  fill: currentColor;
+  fill-opacity: 0;
+  stroke: currentColor;
+  stroke-width: var(--sm-stroke);
+  stroke-opacity: 0.35;
+  transition:
+    fill-opacity 220ms ease,
+    stroke-opacity 220ms ease;
+}
+
+.status-mark[data-status='done'] .status-mark__track {
+  fill-opacity: var(--sm-fill);
+  stroke-opacity: 1;
+}
+
+.status-mark__check {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: var(--sm-stroke);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1 2;
+  stroke-dashoffset: 1.05;
+  opacity: 0;
+  transition:
+    stroke-dashoffset 160ms var(--sm-ease-out),
+    opacity 0ms linear 160ms;
+}
+
+.status-mark[data-status='done'] .status-mark__check {
+  stroke-dashoffset: 0;
+  opacity: 1;
+  transition:
+    stroke-dashoffset 260ms var(--sm-ease-out) 90ms,
+    opacity 0ms linear 90ms;
+}
+
+.status-mark__label {
+  position: relative;
+  color: var(--fg-dim);
+  font-size: var(--sm-font);
+  line-height: 1.25;
+  transition:
+    color 220ms ease,
+    opacity 220ms ease;
+}
+
+.status-mark[data-status='done'] .status-mark__label {
+  opacity: 0.62;
+}
+
+.status-mark__strike {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  left: 0;
+  height: max(1px, calc(var(--sm-font) / 14));
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left center;
+  translate: 0 -50%;
+  pointer-events: none;
+  transition: transform 160ms var(--sm-ease-out);
+}
+
+.status-mark[data-status='done'] .status-mark__strike {
+  transform: scaleX(1);
+  transition: transform 300ms var(--sm-ease-out) 240ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status-mark__check {
+    stroke-dashoffset: 0;
+    opacity: 1;
+    transition: none;
+  }
+
+  .status-mark[data-status='done'] .status-mark__strike {
+    transform: scaleX(1);
+    transition: none;
+  }
+}

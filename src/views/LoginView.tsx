@@ -6,6 +6,7 @@ import { signIn, signOut, useAuth } from '../store/auth'
 import { refreshNotifications } from '../store/notifications'
 import CodeSlots from '../components/CodeSlots'
 import RubberSegment, { type SegmentItem } from '../components/RubberSegment'
+import StatusMark from '../components/StatusMark'
 import '../styles/components/LoginView.css'
 
 type Mode = 'login' | 'register' | 'reset'
@@ -74,6 +75,8 @@ export default function LoginView() {
   const [captchaImage, setCaptchaImage] = useState('')
   const [captchaId, setCaptchaId] = useState('')
   const [captchaCode, setCaptchaCode] = useState('')
+  /* 验证码校验通过（邮件发出）后，把人机验证行换成完成态标记 */
+  const [captchaPassed, setCaptchaPassed] = useState(false)
 
   const [submitting, setSubmitting] = useState(false)
   const [sending, setSending] = useState(false)
@@ -112,6 +115,11 @@ export default function LoginView() {
     return () => window.clearTimeout(timer)
   }, [cooldown])
 
+  /* 倒计时结束才能重发，届时需要重新做一次人机验证 */
+  useEffect(() => {
+    if (cooldown === 0) setCaptchaPassed(false)
+  }, [cooldown])
+
   function switchMode(next: string) {
     if (next === mode) return
     setMode(next as Mode)
@@ -123,6 +131,7 @@ export default function LoginView() {
     setCaptchaId('')
     setCaptchaImage('')
     setCaptchaCode('')
+    setCaptchaPassed(false)
   }
 
   function goBack() {
@@ -159,6 +168,7 @@ export default function LoginView() {
         captchaCode: captchaCode.trim()
       })
       setCooldown(ticket.resendAfterSeconds)
+      setCaptchaPassed(true)
       setNotice(
         `验证码已发送至 ${ticket.sentTo}，${Math.round(ticket.expiresInSeconds / 60)} 分钟内有效`
       )
@@ -378,31 +388,37 @@ export default function LoginView() {
                       <div className="login__pair">
                         <div className="login__field">
                           <span className="login__label">人机验证</span>
-                          <div className="login__captcha">
-                            <input
-                              type="text"
-                              name="captchaCode"
-                              value={captchaCode}
-                              autoComplete="off"
-                              spellCheck={false}
-                              placeholder="输入图片中的字符"
-                              maxLength={4}
-                              onChange={(event) => setCaptchaCode(event.target.value)}
-                            />
-                            <button
-                              type="button"
-                              className="login__captcha-img"
-                              title="看不清？换一张"
-                              aria-label="换一张验证码"
-                              onClick={() => void loadCaptcha()}
-                            >
-                              {captchaImage ? (
-                                <img src={captchaImage} alt="人机验证码" />
-                              ) : (
-                                <span>加载中…</span>
-                              )}
-                            </button>
-                          </div>
+                          {captchaPassed ? (
+                            <div className="login__captcha-done">
+                              <StatusMark label="已通过人机验证" size={18} />
+                            </div>
+                          ) : (
+                            <div className="login__captcha">
+                              <input
+                                type="text"
+                                name="captchaCode"
+                                value={captchaCode}
+                                autoComplete="off"
+                                spellCheck={false}
+                                placeholder="输入图片中的字符"
+                                maxLength={4}
+                                onChange={(event) => setCaptchaCode(event.target.value)}
+                              />
+                              <button
+                                type="button"
+                                className="login__captcha-img"
+                                title="看不清？换一张"
+                                aria-label="换一张验证码"
+                                onClick={() => void loadCaptcha()}
+                              >
+                                {captchaImage ? (
+                                  <img src={captchaImage} alt="人机验证码" />
+                                ) : (
+                                  <span>加载中…</span>
+                                )}
+                              </button>
+                            </div>
+                          )}
                         </div>
 
                         <div className="login__field">

@@ -307,6 +307,17 @@
   object-fit: cover;
 }
 
+/* 人机验证通过后的完成态：勾 + 划掉的提示文字 */
+.login__captcha-done {
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px dashed rgba(34, 197, 94, 0.32);
+  border-radius: 12px;
+  background: rgba(34, 197, 94, 0.06);
+}
+
 .login__pair .code-slots__slot {
   flex: 1 1 0;
   min-width: 0;
@@ -319,28 +330,44 @@
 }
 
 .login__code-btn {
+  display: inline-flex;
   flex: none;
-  padding: 2px 0;
-  border: 0;
-  border-bottom: 1px solid rgba(255, 90, 47, 0.45);
-  background: none;
+  align-self: stretch;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 90, 47, 0.42);
+  border-radius: 10px;
+  background: rgba(255, 90, 47, 0.1);
   color: var(--accent);
   font-family: var(--font-sans);
   font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
   white-space: nowrap;
   cursor: pointer;
   transition:
-    color 0.3s ease,
-    border-color 0.3s ease;
+    background 0.25s ease,
+    border-color 0.25s ease,
+    color 0.25s ease,
+    box-shadow 0.25s ease,
+    transform 0.2s ease;
 }
 
 .login__code-btn:hover:not(:disabled) {
   border-color: var(--accent);
+  background: rgba(255, 90, 47, 0.18);
   color: #ff8a68;
+  box-shadow: 0 0 0 3px rgba(255, 90, 47, 0.12);
+}
+
+.login__code-btn:active:not(:disabled) {
+  transform: translateY(1px);
 }
 
 .login__code-btn:disabled {
-  border-color: transparent;
+  border-color: rgba(242, 237, 228, 0.1);
+  background: rgba(242, 237, 228, 0.04);
   color: var(--fg-faint);
   cursor: default;
 }
@@ -578,6 +605,10 @@
     height: 40px;
   }
 
+  .login__captcha-done {
+    min-height: 44px;
+  }
+
   .login__strength {
     margin-top: -4px;
   }
@@ -647,6 +678,25 @@
   .login__pair .code-slots__slot {
     height: 36px;
     border-radius: 8px;
+  }
+
+  .login__pair .code-slots__row {
+    gap: 5px;
+  }
+
+  .login__code-btn {
+    padding: 0 8px;
+    font-size: 12px;
+  }
+
+  .login__captcha-done {
+    min-height: 36px;
+    padding: 0 10px;
+  }
+
+  .login__captcha-done .status-mark {
+    --sm-font: 12px;
+    gap: 7px;
   }
 
   .login__pair .code-slots__digit {
@@ -730,6 +780,10 @@
 
   .login__pair .code-slots__slot {
     height: 42px;
+  }
+
+  .login__captcha-done {
+    min-height: 42px;
   }
 
   .login__pair .code-slots__digit {
