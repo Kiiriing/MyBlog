@@ -59,12 +59,19 @@ public class DatabaseCommentInitializer implements ApplicationRunner {
 			"COMMENT ON COLUMN verification_codes.id IS '主键'",
 			"COMMENT ON COLUMN verification_codes.email IS '接收验证码的邮箱'",
 			"COMMENT ON COLUMN verification_codes.code IS '6 位数字验证码'",
-			"COMMENT ON COLUMN verification_codes.purpose IS '用途：REGISTER 注册'",
+			"COMMENT ON COLUMN verification_codes.purpose IS '用途：REGISTER 注册，RESET_PASSWORD 重置密码'",
 			"COMMENT ON COLUMN verification_codes.request_ip IS '请求发送验证码的客户端 IP'",
 			"COMMENT ON COLUMN verification_codes.expires_at IS '过期时间'",
 			"COMMENT ON COLUMN verification_codes.attempts IS '已校验失败次数'",
 			"COMMENT ON COLUMN verification_codes.used IS '是否已使用或已作废'",
-			"COMMENT ON COLUMN verification_codes.created_at IS '发送时间'");
+			"COMMENT ON COLUMN verification_codes.created_at IS '发送时间'",
+
+			"COMMENT ON TABLE captcha_challenges IS '图片人机验证码表（发送邮件验证码前的校验）'",
+			"COMMENT ON COLUMN captcha_challenges.id IS '主键（UUID）'",
+			"COMMENT ON COLUMN captcha_challenges.answer IS '图片中的正确字符'",
+			"COMMENT ON COLUMN captcha_challenges.expires_at IS '过期时间'",
+			"COMMENT ON COLUMN captcha_challenges.used IS '是否已使用（一次性，校验后即作废）'",
+			"COMMENT ON COLUMN captcha_challenges.created_at IS '生成时间'");
 
 	private final JdbcTemplate jdbc;
 

@@ -23,7 +23,8 @@ public class SecurityConfig {
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.authorizeHttpRequests(auth -> auth
 						.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-						.requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/code").permitAll()
+						.requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/code",
+								"/api/auth/captcha", "/api/auth/password/reset").permitAll()
 						.requestMatchers("/api/admin/**").hasRole("ADMIN")
 						.requestMatchers("/api/**").authenticated()
 						.anyRequest().permitAll())

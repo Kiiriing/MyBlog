@@ -30,6 +30,21 @@ export type AuthResponse = {
   user: AuthUser
 }
 
+export type CodeScene = 'REGISTER' | 'RESET_PASSWORD'
+
+/** 图片人机验证码，image 为可直接放进 img.src 的 data URI */
+export type Captcha = {
+  id: string
+  image: string
+  expiresInSeconds: number
+}
+
+/** 验证码已通过邮件发送，只返回有效期与可重发时间 */
+export type CodeTicket = {
+  expiresInSeconds: number
+  resendAfterSeconds: number
+}
+
 export class ApiError extends Error {
   status: number
 
@@ -83,6 +98,31 @@ export const api = {
     request<AuthResponse>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password })
+    }),
+
+  captcha: () => request<Captcha>('/auth/captcha'),
+
+  sendCode: (payload: {
+    email: string
+    scene: CodeScene
+    captchaId: string
+    captchaCode: string
+  }) =>
+    request<CodeTicket>('/auth/code', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    }),
+
+  register: (payload: { email: string; password: string; displayName: string; code: string }) =>
+    request<AuthResponse>('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    }),
+
+  resetPassword: (payload: { email: string; code: string; newPassword: string }) =>
+    request<void>('/auth/password/reset', {
+      method: 'POST',
+      body: JSON.stringify(payload)
     }),
 
   notifications: (filter: 'all' | 'unread' | 'read' = 'all') =>

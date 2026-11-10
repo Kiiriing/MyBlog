@@ -10,7 +10,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.security.SecureRandom;
@@ -20,7 +19,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 
 /**
- * 邮箱验证码：发送频率限制、有效期、校验错误次数限制。
+ * 邮箱验证码：按用途（注册 / 重置密码）发送邮件，并做发送频率限制、有效期、错误次数限制。
  */
 @Service
 public class VerificationCodeService {
@@ -29,6 +28,7 @@ public class VerificationCodeService {
 
 	private final VerificationCodeRepository codes;
 	private final UserRepository users;
+	private final MailService mailService;
 	private final long ttlMinutes;
 	private final long resendSeconds;
 	private final long maxPerHour;
@@ -36,7 +36,7 @@ public class VerificationCodeService {
 	private final long maxPerIpHour;
 	private final TransactionTemplate requiresNew;
 
-	public VerificationCodeService(VerificationCodeRepository codes, UserRepository users,
+	public VerificationCodeService(VerificationCodeRepository codes, UserRepository users, MailService mailService,
 			PlatformTransactionManager transactionManager,
 			@Value("${app.auth.code-ttl-minutes:10}") long ttlMinutes,
 			@Value("${app.auth.code-resend-seconds:60}") long resendSeconds,
@@ -45,6 +45,7 @@ public class VerificationCodeService {
 			@Value("${app.auth.code-max-per-ip-hour:20}") long maxPerIpHour) {
 		this.codes = codes;
 		this.users = users;
+		this.mailService = mailService;
 		this.ttlMinutes = ttlMinutes;
 		this.resendSeconds = resendSeconds;
 		this.maxPerHour = maxPerHour;
@@ -54,25 +55,31 @@ public class VerificationCodeService {
 		this.requiresNew.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
 	}
 
-	@Transactional
-	public CodeResponse sendRegisterCode(String rawEmail, String ip) {
+	/**
+	 * 生成验证码并通过 163 SMTP 发送。
+	 * 先发信后落库：发信失败时不占用发送频率，用户可立即重试。
+	 */
+	public CodeResponse send(String rawEmail, String scene, String ip) {
 		String email = normalize(rawEmail);
-		if (users.existsByEmail(email)) {
-			throw new ApiException(HttpStatus.CONFLICT, "该邮箱已经注册过了");
+		boolean register = VerificationCode.PURPOSE_REGISTER.equals(scene);
+		if (register && users.existsByEmail(email)) {
+			throw new ApiException(HttpStatus.CONFLICT, "该邮箱已经注册过了，可以直接登录");
+		}
+		if (!register && !users.existsByEmail(email)) {
+			throw new ApiException(HttpStatus.NOT_FOUND, "该邮箱还没有注册，请先注册账号");
 		}
 
 		Instant now = Instant.now();
-		codes.findTopByEmailAndPurposeOrderByCreatedAtDesc(email, VerificationCode.PURPOSE_REGISTER)
-				.ifPresent(last -> {
-					Instant availableAt = last.getCreatedAt().plusSeconds(resendSeconds);
-					if (availableAt.isAfter(now)) {
-						long wait = Math.max(1, Duration.between(now, availableAt).toSeconds());
-						throw new ApiException(HttpStatus.TOO_MANY_REQUESTS, "验证码发送得太频繁，请 " + wait + " 秒后再试");
-					}
-				});
+		codes.findTopByEmailAndPurposeOrderByCreatedAtDesc(email, scene).ifPresent(last -> {
+			Instant availableAt = last.getCreatedAt().plusSeconds(resendSeconds);
+			if (availableAt.isAfter(now)) {
+				long wait = Math.max(1, Duration.between(now, availableAt).toSeconds());
+				throw new ApiException(HttpStatus.TOO_MANY_REQUESTS, "验证码发送得太频繁，请 " + wait + " 秒后再试");
+			}
+		});
 
 		Instant oneHourAgo = now.minus(1, ChronoUnit.HOURS);
-		if (codes.countByEmailAndPurposeAndCreatedAtAfter(email, VerificationCode.PURPOSE_REGISTER, oneHourAgo) >= maxPerHour) {
+		if (codes.countByEmailAndPurposeAndCreatedAtAfter(email, scene, oneHourAgo) >= maxPerHour) {
 			throw new ApiException(HttpStatus.TOO_MANY_REQUESTS, "该邮箱一小时内获取验证码次数过多，请稍后再试");
 		}
 		if (ip != null && !ip.isBlank() && codes.countByRequestIpAndCreatedAtAfter(ip, oneHourAgo) >= maxPerIpHour) {
@@ -80,25 +87,24 @@ public class VerificationCodeService {
 		}
 
 		String code = String.format("%06d", RANDOM.nextInt(1_000_000));
-		codes.save(new VerificationCode(email, code, VerificationCode.PURPOSE_REGISTER, ip,
-				now.plusSeconds(ttlMinutes * 60)));
+		mailService.sendCode(email, code, register ? "注册账号" : "重置密码", ttlMinutes);
+		codes.save(new VerificationCode(email, code, scene, ip, now.plusSeconds(ttlMinutes * 60)));
 
-		// 暂未接入邮件服务，验证码直接返回给调用方
-		return new CodeResponse(code, ttlMinutes * 60, resendSeconds);
+		return new CodeResponse(ttlMinutes * 60, resendSeconds);
 	}
 
-	/** 校验并消费验证码；失败计数在独立事务中提交，避免随注册失败一起回滚。 */
-	public void verifyRegisterCode(String rawEmail, String code) {
-		CodeFailure failure = requiresNew.execute(status -> check(rawEmail, code));
+	/** 校验并消费验证码；失败计数在独立事务中提交，避免随业务事务回滚一起回滚。 */
+	public void verify(String rawEmail, String scene, String code) {
+		CodeFailure failure = requiresNew.execute(status -> check(rawEmail, scene, code));
 		if (failure != null) {
 			throw new ApiException(failure.status(), failure.message());
 		}
 	}
 
-	private CodeFailure check(String rawEmail, String code) {
+	private CodeFailure check(String rawEmail, String scene, String code) {
 		String email = normalize(rawEmail);
 		VerificationCode record = codes
-				.findTopByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc(email, VerificationCode.PURPOSE_REGISTER)
+				.findTopByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc(email, scene)
 				.orElse(null);
 
 		if (record == null) {

@@ -14,6 +14,19 @@ spring:
       ddl-auto: update
   jackson:
     default-property-inclusion: non_null
+  mail:
+    # 163 邮箱：在 application-local.yml 填 MAIL_USERNAME / MAIL_PASSWORD（SMTP 授权码）
+    host: ${MAIL_HOST:smtp.163.com}
+    port: ${MAIL_PORT:465}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    default-encoding: UTF-8
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.ssl.enable: true
+      mail.smtp.connectiontimeout: 8000
+      mail.smtp.timeout: 8000
+      mail.smtp.writetimeout: 8000
 
 server:
   port: ${SERVER_PORT:8080}
@@ -50,6 +63,11 @@ app:
     code-max-per-ip-hour: ${AUTH_CODE_MAX_PER_IP_HOUR:20}
     # 同一验证码允许的最大错误次数
     code-max-attempts: ${AUTH_CODE_MAX_ATTEMPTS:5}
+    # 图片验证码有效期（秒）
+    captcha-ttl-seconds: ${AUTH_CAPTCHA_TTL_SECONDS:120}
+  mail:
+    # 发件人显示名；发件地址使用 spring.mail.username
+    from-name: ${MAIL_FROM_NAME:LU YU Blog}
   seed:
     # 该邮箱注册后自动成为管理员；留空则不指定
     admin-email: ${SEED_ADMIN_EMAIL:}

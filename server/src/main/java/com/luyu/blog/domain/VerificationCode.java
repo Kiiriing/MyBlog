@@ -17,6 +17,7 @@ import java.time.Instant;
 public class VerificationCode {
 
 	public static final String PURPOSE_REGISTER = "REGISTER";
+	public static final String PURPOSE_RESET_PASSWORD = "RESET_PASSWORD";
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)

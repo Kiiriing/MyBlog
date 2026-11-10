@@ -2,15 +2,18 @@ package com.luyu.blog.service;
 
 import com.luyu.blog.domain.Role;
 import com.luyu.blog.domain.User;
+import com.luyu.blog.domain.VerificationCode;
 import com.luyu.blog.repo.UserRepository;
 import com.luyu.blog.security.JwtService;
 import com.luyu.blog.security.UserPrincipal;
 import com.luyu.blog.web.ApiException;
 import com.luyu.blog.web.dto.AuthDtos.AuthResponse;
+import com.luyu.blog.web.dto.AuthDtos.CaptchaResponse;
 import com.luyu.blog.web.dto.AuthDtos.CodeRequest;
 import com.luyu.blog.web.dto.AuthDtos.CodeResponse;
 import com.luyu.blog.web.dto.AuthDtos.LoginRequest;
 import com.luyu.blog.web.dto.AuthDtos.RegisterRequest;
+import com.luyu.blog.web.dto.AuthDtos.ResetPasswordRequest;
 import com.luyu.blog.web.dto.AuthDtos.UserDto;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -27,20 +30,28 @@ public class AuthService {
 	private final PasswordEncoder passwordEncoder;
 	private final JwtService jwtService;
 	private final VerificationCodeService verificationCodes;
+	private final CaptchaService captchaService;
 	private final String adminEmail;
 
 	public AuthService(UserRepository users, PasswordEncoder passwordEncoder, JwtService jwtService,
-			VerificationCodeService verificationCodes,
+			VerificationCodeService verificationCodes, CaptchaService captchaService,
 			@Value("${app.seed.admin-email:}") String adminEmail) {
 		this.users = users;
 		this.passwordEncoder = passwordEncoder;
 		this.jwtService = jwtService;
 		this.verificationCodes = verificationCodes;
+		this.captchaService = captchaService;
 		this.adminEmail = normalize(adminEmail);
 	}
 
-	public CodeResponse sendRegisterCode(CodeRequest request, String ip) {
-		return verificationCodes.sendRegisterCode(request.email(), ip);
+	public CaptchaResponse createCaptcha() {
+		return captchaService.create();
+	}
+
+	/** 发送邮箱验证码：先过人机验证，再按用途发信。 */
+	public CodeResponse sendCode(CodeRequest request, String ip) {
+		captchaService.verify(request.captchaId(), request.captchaCode());
+		return verificationCodes.send(request.email(), request.scene(), ip);
 	}
 
 	@Transactional
@@ -50,7 +61,7 @@ public class AuthService {
 			throw new ApiException(HttpStatus.CONFLICT, "该邮箱已经注册过了");
 		}
 
-		verificationCodes.verifyRegisterCode(email, request.code());
+		verificationCodes.verify(email, VerificationCode.PURPOSE_REGISTER, request.code());
 
 		Role role = !adminEmail.isEmpty() && email.equals(adminEmail) ? Role.ADMIN : Role.USER;
 		User user = users.save(new User(email, passwordEncoder.encode(request.password()),
@@ -58,6 +69,17 @@ public class AuthService {
 		user.recordLogin(ip);
 
 		return new AuthResponse(jwtService.issue(user), UserDto.from(user));
+	}
+
+	/** 邮箱验证码重置密码；重置后旧密码立即失效。 */
+	@Transactional
+	public void resetPassword(ResetPasswordRequest request) {
+		String email = normalize(request.email());
+		User user = users.findByEmail(email)
+				.orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "该邮箱还没有注册，请先注册账号"));
+
+		verificationCodes.verify(email, VerificationCode.PURPOSE_RESET_PASSWORD, request.code());
+		user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
 	}
 
 	@Transactional

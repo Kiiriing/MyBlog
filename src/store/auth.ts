@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react'
-import { api, getToken, setToken, type AuthUser } from '../lib/api'
+import { api, getToken, setToken, type AuthResponse, type AuthUser } from '../lib/api'
 
 type AuthState = {
   user: AuthUser | null
@@ -43,6 +43,12 @@ export async function restoreSession() {
     setToken(null)
     commit({ user: null, ready: true })
   }
+}
+
+/** 登录 / 注册成功后写入令牌与用户信息 */
+export function signIn(result: AuthResponse) {
+  setToken(result.token)
+  commit({ user: result.user, ready: true })
 }
 
 export function signOut() {
