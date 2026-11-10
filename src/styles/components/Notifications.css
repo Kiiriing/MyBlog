@@ -52,11 +52,14 @@
   z-index: 920;
   visibility: hidden;
   pointer-events: none;
+  /* 关闭时等抽屉向右抽完再隐藏，否则动画会被 visibility 直接截断 */
+  transition: visibility 0s linear 0.72s;
 }
 
 .inbox.is-open {
   visibility: visible;
   pointer-events: auto;
+  transition: visibility 0s linear 0s;
 }
 
 .inbox__backdrop {
