@@ -10,10 +10,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.imageio.ImageIO;
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.GradientPaint;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.awt.geom.Path2D;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -28,8 +31,19 @@ import java.util.Base64;
 @Service
 public class CaptchaService {
 
-	/** 去掉 0/O、1/I/L 等易混淆字符 */
-	private static final char[] ALPHABET = "23456789ABCDEFGHJKMNPQRTUVWXYZ".toCharArray();
+	/**
+	 * 去掉易混淆字符：0/O、1/I/L、5/S、2/Z、8/B、U/V，
+	 * 保证加了扭曲与噪声之后仍能分辨。
+	 */
+	private static final char[] ALPHABET = "34679ACDEFGHJKMNPQRTWXY".toCharArray();
+
+	/** 字符随机使用不同字族，增加模板匹配难度 */
+	private static final String[] FAMILIES = {Font.SANS_SERIF, Font.SERIF, Font.MONOSPACED};
+
+	/** 字符颜色在同一暖色系内抖动，保证深色底上的可读性 */
+	private static final Color[] INK = {
+			new Color(0xF2EDE4), new Color(0xFFD9B8), new Color(0xE8D7A8), new Color(0xCFE3F5)
+	};
 
 	private static final SecureRandom RANDOM = new SecureRandom();
 
@@ -75,38 +89,53 @@ public class CaptchaService {
 		return builder.toString();
 	}
 
+	/**
+	 * 渲染验证码：字符随机字族 / 字号 / 旋转 / 基线偏移，整层做正弦扭曲，
+	 * 再叠加曲线与噪点干扰。按 2 倍尺寸绘制，前端缩放后更清晰。
+	 */
 	private String render(String code) {
-		int width = 132;
-		int height = 44;
+		int width = 264;
+		int height = 88;
+
 		BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 		Graphics2D graphics = image.createGraphics();
 		try {
 			graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-			graphics.setColor(new Color(0x15151a));
+			graphics.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+			graphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+					RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+
+			// 背景：深色渐变 + 随机光斑，破坏纯色背景分割
+			graphics.setPaint(new GradientPaint(0, 0, new Color(0x16161c), width, height, new Color(0x0b0b10)));
 			graphics.fillRect(0, 0, width, height);
+			for (int i = 0; i < 5; i++) {
+				int size = 40 + RANDOM.nextInt(90);
+				graphics.setColor(new Color(120, 120, 160, 14));
+				graphics.fillOval(RANDOM.nextInt(width) - size / 2, RANDOM.nextInt(height) - size / 2, size, size);
+			}
 
-			// 干扰线
+			// 底层干扰曲线（文字之前）
+			drawCurves(graphics, 3, 3.4f, new Color(130, 130, 170, 45), width, height);
+
+			// 文字层：单独绘制后再做扭曲，字符笔画会随波浪变形
+			BufferedImage textLayer = drawText(code, width, height);
+			drawWarped(graphics, textLayer, width, height);
+
+			// 顶层干扰：细曲线横穿字符
+			drawCurves(graphics, 2, 1.5f, new Color(235, 230, 220, 80), width, height);
+			drawArcs(graphics, 3, width, height);
+
+			// 噪点与横向切割块
+			for (int i = 0; i < 160; i++) {
+				graphics.setColor(new Color(170 + RANDOM.nextInt(80), 170 + RANDOM.nextInt(80), 200,
+						50 + RANDOM.nextInt(80)));
+				int size = 1 + RANDOM.nextInt(3);
+				graphics.fillOval(RANDOM.nextInt(width), RANDOM.nextInt(height), size, size);
+			}
 			for (int i = 0; i < 6; i++) {
-				graphics.setColor(new Color(90, 90, 110, 90));
-				graphics.drawLine(RANDOM.nextInt(width), RANDOM.nextInt(height),
-						RANDOM.nextInt(width), RANDOM.nextInt(height));
-			}
-
-			// 噪点
-			for (int i = 0; i < 70; i++) {
-				graphics.setColor(new Color(200, 200, 210, 70));
-				graphics.fillRect(RANDOM.nextInt(width), RANDOM.nextInt(height), 1, 1);
-			}
-
-			graphics.setFont(new Font("Consolas", Font.BOLD, 26));
-			for (int i = 0; i < code.length(); i++) {
-				double angle = Math.toRadians(RANDOM.nextInt(35) - 17);
-				int x = 12 + i * 28;
-				int y = 31;
-				graphics.rotate(angle, x, y);
-				graphics.setColor(i % 2 == 0 ? new Color(0xe6e1d7) : new Color(0xd8b892));
-				graphics.drawString(String.valueOf(code.charAt(i)), x, y);
-				graphics.rotate(-angle, x, y);
+				graphics.setColor(new Color(14, 14, 20, 170));
+				graphics.fillRect(RANDOM.nextInt(width / 2), RANDOM.nextInt(height),
+						24 + RANDOM.nextInt(70), 1 + RANDOM.nextInt(3));
 			}
 		} finally {
 			graphics.dispose();
@@ -117,6 +146,71 @@ public class CaptchaService {
 			return Base64.getEncoder().encodeToString(output.toByteArray());
 		} catch (IOException exception) {
 			throw new IllegalStateException("验证码图片生成失败", exception);
+		}
+	}
+
+	private static BufferedImage drawText(String code, int width, int height) {
+		BufferedImage layer = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+		Graphics2D graphics = layer.createGraphics();
+		try {
+			graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+			graphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+					RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+
+			int slot = (width - 36) / code.length();
+			for (int i = 0; i < code.length(); i++) {
+				int size = 46 + RANDOM.nextInt(14);
+				graphics.setFont(new Font(FAMILIES[RANDOM.nextInt(FAMILIES.length)], Font.BOLD, size));
+
+				int x = 18 + i * slot + RANDOM.nextInt(9);
+				int baseline = height / 2 + size / 3 + RANDOM.nextInt(11) - 5;
+				double angle = Math.toRadians((RANDOM.nextDouble() - 0.5) * 44);
+
+				graphics.rotate(angle, x, baseline);
+				// 先描一层暗色投影，保证叠加干扰后笔画边界依然清楚
+				graphics.setColor(new Color(6, 6, 9, 170));
+				graphics.drawString(String.valueOf(code.charAt(i)), x + 2, baseline + 2);
+				graphics.setColor(INK[RANDOM.nextInt(INK.length)]);
+				graphics.drawString(String.valueOf(code.charAt(i)), x, baseline);
+				graphics.rotate(-angle, x, baseline);
+			}
+		} finally {
+			graphics.dispose();
+		}
+		return layer;
+	}
+
+	/** 逐行水平位移，形成波浪扭曲 */
+	private static void drawWarped(Graphics2D graphics, BufferedImage layer, int width, int height) {
+		double phase = RANDOM.nextDouble() * Math.PI * 2;
+		double amplitude = 3 + RANDOM.nextDouble() * 4;
+		for (int y = 0; y < height; y++) {
+			int shift = (int) Math.round(Math.sin(y * 3.0 / height * Math.PI + phase) * amplitude);
+			graphics.drawImage(layer, shift, y, shift + width, y + 1, 0, y, width, y + 1, null);
+		}
+	}
+
+	private static void drawCurves(Graphics2D graphics, int count, float strokeWidth, Color color,
+			int width, int height) {
+		graphics.setStroke(new BasicStroke(strokeWidth, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+		graphics.setColor(color);
+		for (int i = 0; i < count; i++) {
+			Path2D path = new Path2D.Double();
+			path.moveTo(RANDOM.nextInt(width / 3), RANDOM.nextInt(height));
+			path.curveTo(RANDOM.nextInt(width), RANDOM.nextInt(height),
+					RANDOM.nextInt(width), RANDOM.nextInt(height),
+					width - RANDOM.nextInt(width / 3), RANDOM.nextInt(height));
+			graphics.draw(path);
+		}
+	}
+
+	private static void drawArcs(Graphics2D graphics, int count, int width, int height) {
+		graphics.setStroke(new BasicStroke(2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+		for (int i = 0; i < count; i++) {
+			graphics.setColor(new Color(200, 190, 175, 60 + RANDOM.nextInt(50)));
+			int size = 50 + RANDOM.nextInt(90);
+			graphics.drawArc(RANDOM.nextInt(width) - size / 2, RANDOM.nextInt(height) - size / 2,
+					size, size, RANDOM.nextInt(360), 90 + RANDOM.nextInt(180));
 		}
 	}
 }
