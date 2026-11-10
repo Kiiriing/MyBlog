@@ -11,6 +11,7 @@ import com.luyu.blog.web.dto.AuthDtos.AuthResponse;
 import com.luyu.blog.web.dto.AuthDtos.CaptchaResponse;
 import com.luyu.blog.web.dto.AuthDtos.CodeRequest;
 import com.luyu.blog.web.dto.AuthDtos.CodeResponse;
+import com.luyu.blog.web.dto.AuthDtos.CodeVerifyRequest;
 import com.luyu.blog.web.dto.AuthDtos.LoginRequest;
 import com.luyu.blog.web.dto.AuthDtos.RegisterRequest;
 import com.luyu.blog.web.dto.AuthDtos.ResetPasswordRequest;
@@ -67,6 +68,15 @@ public class AuthService {
 		}
 
 		return verificationCodes.send(email, request.scene(), ip);
+	}
+
+	/** 6 位验证码输完即校验：只提示对错，不消费验证码（提交注册 / 重置时仍会再校验一次） */
+	public void verifyCode(CodeVerifyRequest request) {
+		boolean register = VerificationCode.PURPOSE_REGISTER.equals(request.scene());
+		String email = register
+				? normalize(request.account())
+				: resolveAccount(request.account()).getEmail();
+		verificationCodes.peek(email, request.scene(), request.code());
 	}
 
 	@Transactional

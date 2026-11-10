@@ -71,6 +71,8 @@ export default function LoginView() {
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [code, setCode] = useState('')
+  /* 6 位输完自动校验邮箱验证码，格子按结果变绿 / 变红 */
+  const [codeStatus, setCodeStatus] = useState<'idle' | 'checking' | 'valid' | 'invalid'>('idle')
 
   const [captchaImage, setCaptchaImage] = useState('')
   const [captchaId, setCaptchaId] = useState('')
@@ -119,6 +121,35 @@ export default function LoginView() {
   useEffect(() => {
     if (cooldown === 0) setCaptchaPassed(false)
   }, [cooldown])
+
+  /* 6 位输完即校验邮箱验证码：正确变绿、错误变红，不必等提交 */
+  useEffect(() => {
+    const target = (mode === 'register' ? email : account).trim()
+    if (code.length !== 6 || !target) {
+      setCodeStatus('idle')
+      return
+    }
+
+    let cancelled = false
+    setCodeStatus('checking')
+    const timer = window.setTimeout(() => {
+      api
+        .verifyCode({ account: target, scene: sceneOf(mode), code })
+        .then(() => {
+          if (cancelled) return
+          setCodeStatus('valid')
+          setError('')
+        })
+        .catch(() => {
+          if (!cancelled) setCodeStatus('invalid')
+        })
+    }, 240)
+
+    return () => {
+      cancelled = true
+      window.clearTimeout(timer)
+    }
+  }, [code, mode, email, account])
 
   function switchMode(next: string) {
     if (next === mode) return
@@ -431,7 +462,14 @@ export default function LoginView() {
                               value={code}
                               onChange={setCode}
                               disabled={submitting}
-                              invalid={Boolean(error) && code.length > 0 && code.length < 6}
+                              status={
+                                codeStatus === 'idle' &&
+                                Boolean(error) &&
+                                code.length > 0 &&
+                                code.length < 6
+                                  ? 'invalid'
+                                  : codeStatus
+                              }
                             />
                             <button
                               type="button"

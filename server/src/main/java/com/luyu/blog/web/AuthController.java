@@ -7,6 +7,7 @@ import com.luyu.blog.web.dto.AuthDtos.AuthResponse;
 import com.luyu.blog.web.dto.AuthDtos.CaptchaResponse;
 import com.luyu.blog.web.dto.AuthDtos.CodeRequest;
 import com.luyu.blog.web.dto.AuthDtos.CodeResponse;
+import com.luyu.blog.web.dto.AuthDtos.CodeVerifyRequest;
 import com.luyu.blog.web.dto.AuthDtos.LoginRequest;
 import com.luyu.blog.web.dto.AuthDtos.RegisterRequest;
 import com.luyu.blog.web.dto.AuthDtos.ResetPasswordRequest;
@@ -42,6 +43,13 @@ public class AuthController {
 	@PostMapping("/code")
 	public CodeResponse code(@Valid @RequestBody CodeRequest request, HttpServletRequest http) {
 		return authService.sendCode(request, ClientIp.resolve(http));
+	}
+
+	/** 6 位验证码输完即校验，仅用于前端即时提示，不消费验证码 */
+	@PostMapping("/code/verify")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	public void verifyCode(@Valid @RequestBody CodeVerifyRequest request) {
+		authService.verifyCode(request);
 	}
 
 	@PostMapping("/register")

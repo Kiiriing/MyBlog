@@ -109,13 +109,22 @@ public class VerificationCodeService {
 
 	/** 校验并消费验证码；失败计数在独立事务中提交，避免随业务事务回滚一起回滚。 */
 	public void verify(String rawEmail, String scene, String code) {
-		CodeFailure failure = requiresNew.execute(status -> check(rawEmail, scene, code));
+		check(rawEmail, scene, code, true);
+	}
+
+	/** 仅校验不消费：6 位输完的即时提示用，错误次数照常累计 */
+	public void peek(String rawEmail, String scene, String code) {
+		check(rawEmail, scene, code, false);
+	}
+
+	private void check(String rawEmail, String scene, String code, boolean consume) {
+		CodeFailure failure = requiresNew.execute(status -> inspect(rawEmail, scene, code, consume));
 		if (failure != null) {
 			throw new ApiException(failure.status(), failure.message());
 		}
 	}
 
-	private CodeFailure check(String rawEmail, String scene, String code) {
+	private CodeFailure inspect(String rawEmail, String scene, String code, boolean consume) {
 		String email = normalize(rawEmail);
 		VerificationCode record = codes
 				.findTopByEmailAndPurposeAndUsedFalseOrderByCreatedAtDesc(email, scene)
@@ -138,7 +147,9 @@ public class VerificationCodeService {
 					"验证码不正确，还可以再试 " + (maxAttempts - record.getAttempts()) + " 次");
 		}
 
-		record.markUsed();
+		if (consume) {
+			record.markUsed();
+		}
 		return null;
 	}
 

@@ -115,6 +115,12 @@ export const api = {
       body: JSON.stringify(payload)
     }),
 
+  verifyCode: (payload: { account: string; scene: CodeScene; code: string }) =>
+    request<void>('/auth/code/verify', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    }),
+
   register: (payload: { username: string; email: string; password: string; code: string }) =>
     request<AuthResponse>('/auth/register', {
       method: 'POST',

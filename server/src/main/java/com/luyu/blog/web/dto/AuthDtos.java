@@ -53,6 +53,21 @@ public final class AuthDtos {
 	public record CaptchaResponse(String id, String image, long expiresInSeconds) {
 	}
 
+	/** 6 位邮箱验证码输完即自动校验；只提示对错，不消费验证码 */
+	public record CodeVerifyRequest(
+			@NotBlank(message = "请填写用户名或邮箱")
+			@Size(max = 190, message = "用户名或邮箱过长")
+			String account,
+
+			@NotBlank(message = "请选择验证码用途")
+			@Pattern(regexp = "REGISTER|RESET_PASSWORD", message = "验证码用途不正确")
+			String scene,
+
+			@NotBlank(message = "请填写邮箱验证码")
+			@Size(min = 6, max = 6, message = "验证码为 6 位数字")
+			String code) {
+	}
+
 	/** 验证码已改为邮件发送；sentTo 为脱敏后的接收邮箱 */
 	public record CodeResponse(long expiresInSeconds, long resendAfterSeconds, String sentTo) {
 	}

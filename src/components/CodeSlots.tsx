@@ -6,7 +6,8 @@ type CodeSlotsProps = {
   value: string
   onChange: (value: string) => void
   length?: number
-  invalid?: boolean
+  /** idle 默认；checking 校验中；valid / invalid 是自动校验结果 */
+  status?: 'idle' | 'checking' | 'valid' | 'invalid'
   disabled?: boolean
   ariaLabel?: string
 }
@@ -19,7 +20,7 @@ export default function CodeSlots({
   value,
   onChange,
   length = 6,
-  invalid = false,
+  status = 'idle',
   disabled = false,
   ariaLabel = '邮箱验证码'
 }: CodeSlotsProps) {
@@ -57,7 +58,7 @@ export default function CodeSlots({
   return (
     <div
       className="code-slots"
-      data-invalid={invalid || undefined}
+      data-status={status === 'idle' ? undefined : status}
       data-disabled={disabled || undefined}
     >
       <div className="code-slots__row" onMouseDown={() => inputRef.current?.focus()}>
