@@ -21,7 +21,21 @@ public final class AuthDtos {
 
 			@NotBlank(message = "请填写昵称")
 			@Size(min = 2, max = 40, message = "昵称长度需要在 2 到 40 个字符之间")
-			String displayName) {
+			String displayName,
+
+			@NotBlank(message = "请填写邮箱验证码")
+			@Size(min = 6, max = 6, message = "验证码为 6 位数字")
+			String code) {
+	}
+
+	public record CodeRequest(
+			@NotBlank(message = "请填写邮箱")
+			@Email(message = "邮箱格式不正确")
+			String email) {
+	}
+
+	/** 暂未接入邮件服务，验证码随响应一并返回 */
+	public record CodeResponse(String code, long expiresInSeconds, long resendAfterSeconds) {
 	}
 
 	public record LoginRequest(

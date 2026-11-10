@@ -35,6 +35,13 @@ public class User {
 	@Column(name = "created_at", nullable = false)
 	private Instant createdAt = Instant.now();
 
+	/** 最近一次登录 IP，IP 变化后需要重新登录 */
+	@Column(name = "last_login_ip", length = 64)
+	private String lastLoginIp;
+
+	@Column(name = "last_login_at")
+	private Instant lastLoginAt;
+
 	protected User() {
 	}
 
@@ -68,6 +75,20 @@ public class User {
 
 	public Instant getCreatedAt() {
 		return createdAt;
+	}
+
+	public String getLastLoginIp() {
+		return lastLoginIp;
+	}
+
+	public Instant getLastLoginAt() {
+		return lastLoginAt;
+	}
+
+	/** 记录本次登录的 IP 与时间，写入后旧 IP 的会话即失效。 */
+	public void recordLogin(String ip) {
+		this.lastLoginIp = ip;
+		this.lastLoginAt = Instant.now();
 	}
 
 	public void setPasswordHash(String passwordHash) {

@@ -20,7 +20,7 @@ public class JwtService {
 	private final long ttlHours;
 
 	public JwtService(@Value("${app.jwt.secret}") String secret,
-			@Value("${app.jwt.ttl-hours:168}") long ttlHours) {
+			@Value("${app.jwt.ttl-hours:72}") long ttlHours) {
 		byte[] bytes = secret.getBytes(StandardCharsets.UTF_8);
 		if (bytes.length < 32) {
 			throw new IllegalStateException("app.jwt.secret 至少需要 32 字节");
@@ -34,6 +34,7 @@ public class JwtService {
 		return Jwts.builder()
 				.subject(String.valueOf(user.getId()))
 				.claim("email", user.getEmail())
+				.claim("name", user.getDisplayName())
 				.claim("role", user.getRole().name())
 				.issuedAt(Date.from(now))
 				.expiration(Date.from(now.plus(ttlHours, ChronoUnit.HOURS)))

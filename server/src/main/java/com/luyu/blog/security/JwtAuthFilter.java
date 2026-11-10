@@ -6,6 +6,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -18,6 +20,8 @@ import java.util.List;
 
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
+
+	private static final Logger log = LoggerFactory.getLogger(JwtAuthFilter.class);
 
 	private final JwtService jwtService;
 	private final UserRepository users;
@@ -36,7 +40,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 				&& SecurityContextHolder.getContext().getAuthentication() == null) {
 			try {
 				Long userId = jwtService.parseUserId(header.substring(7));
+				String clientIp = ClientIp.resolve(request);
 				users.findById(userId).ifPresent(user -> {
+					if (!ClientIp.same(user.getLastLoginIp(), clientIp)) {
+						log.info("登录 IP 已变化，要求用户 {} 重新登录（{} -> {}）", userId, user.getLastLoginIp(), clientIp);
+						return;
+					}
 					UserPrincipal principal = new UserPrincipal(user.getId(), user.getEmail(), user.getRole());
 					UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
 							principal, null,
