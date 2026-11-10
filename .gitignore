@@ -27,3 +27,7 @@ pnpm-debug.log*
 .trae-html-share-packages/
 .agents/
 .tmp-*
+
+# backend local credentials / build output
+server/application-local.yml
+server/target/
