@@ -196,7 +196,7 @@ export default function CredentialsSection() {
         <div className="credentials__passage">
           <div className="credentials__passage-head mono">
             <span>Passage · 荣誉通道</span>
-            <span>Drag / hold to travel · Click a photo to open</span>
+            <span>Auto travel · Click a photo to open</span>
           </div>
           <div className="credentials__passage-frame">
             <PassageGallery
@@ -211,15 +211,14 @@ export default function CredentialsSection() {
               lineOpacity={0.16}
               fog={1}
               speed={0.6}
-              boost={12}
               blur={1}
               look={1}
               fov={72}
               hover={1}
               seed={0}
-              /* 页面滚动交给 Lenis，画廊只用拖动 / 按住来穿行 */
+              /* 页面滚动交给 Lenis，隧道按设定速度自动向前穿行 */
               wheel={false}
-              ariaLabel="荣誉通道：一条由照片组成的隧道，可拖动或按住前进，点击照片放大。"
+              ariaLabel="荣誉通道：一条由照片自动穿行的隧道，点击照片放大。"
             />
           </div>
         </div>
