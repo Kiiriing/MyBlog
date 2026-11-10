@@ -5,10 +5,15 @@ import jakarta.mail.internet.MimeMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * 通过 163 SMTP 发送验证码邮件（深色 HTML 模板 + 纯文本兜底）。
@@ -18,10 +23,14 @@ public class MailService {
 
 	private static final Logger log = LoggerFactory.getLogger(MailService.class);
 
+	/** 邮件顶部品牌图，随包发布，避免外链图片被邮件客户端拦截 */
+	private static final String LOGO_PATH = "static/brand/logo.png";
+
 	private final JavaMailSender sender;
 	private final String from;
 	private final String fromName;
 	private final String siteUrl;
+	private final byte[] logo;
 
 	public MailService(JavaMailSender sender,
 			@Value("${spring.mail.username:}") String from,
@@ -31,6 +40,7 @@ public class MailService {
 		this.from = from;
 		this.fromName = fromName;
 		this.siteUrl = siteUrl == null ? "" : siteUrl.trim();
+		this.logo = loadLogo();
 	}
 
 	public void sendCode(String to, String code, String sceneLabel, long ttlMinutes) {
@@ -46,11 +56,24 @@ public class MailService {
 			helper.setTo(to);
 			helper.setSubject("【LU YU】" + sceneLabel + "验证码：" + code);
 			helper.setText(plainBody(code, sceneLabel, ttlMinutes), htmlBody(code, sceneLabel, ttlMinutes));
+			if (logo.length > 0) {
+				// 用 CID 内嵌，邮件客户端不加载外链也能看到 logo
+				helper.addInline("brandLogo", new ByteArrayResource(logo), "image/png");
+			}
 			sender.send(message);
 			log.info("验证码邮件已发送：to={} scene={}", to, sceneLabel);
 		} catch (Exception exception) {
 			log.warn("验证码邮件发送失败：to={} 原因={}", to, exception.getMessage());
 			throw new ApiException(HttpStatus.BAD_GATEWAY, "验证码邮件发送失败，请稍后再试");
+		}
+	}
+
+	private static byte[] loadLogo() {
+		try (InputStream input = new ClassPathResource(LOGO_PATH).getInputStream()) {
+			return input.readAllBytes();
+		} catch (IOException exception) {
+			log.warn("邮件 logo 读取失败，将使用文字徽标：{}", exception.getMessage());
+			return new byte[0];
 		}
 	}
 
@@ -73,6 +96,27 @@ public class MailService {
 				: "前往 <a href=\"" + siteUrl + "\" style=\"color:#7ea6ff;text-decoration:underline;\">LU YU 博客</a>，"
 						+ "在登录页输入验证码即可完成操作。";
 
+		// 有 logo 时用 CID 内嵌图片，读取失败则退回文字徽标
+		String badge = logo.length > 0
+				? """
+						<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 30px auto;">
+							<tr>
+								<td align="center">
+									<img src="cid:brandLogo" width="132" alt="LU YU"
+										style="display:block;width:132px;max-width:132px;height:auto;border:0;">
+								</td>
+							</tr>
+						</table>"""
+				: """
+						<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 34px auto;">
+							<tr>
+								<td align="center" width="60" height="60"
+									style="width:60px;height:60px;background-color:#ff5a2f;border-radius:50%;color:#ffffff;font-size:19px;font-weight:700;letter-spacing:1px;line-height:60px;text-align:center;">
+									LU
+								</td>
+							</tr>
+						</table>""";
+
 		return """
 				<!DOCTYPE html>
 				<html lang="zh-CN">
@@ -92,14 +136,7 @@ public class MailService {
 									<td style="padding:44px 40px 40px 40px;font-family:-apple-system,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;">
 
 										<!-- 品牌徽标 -->
-										<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 34px auto;">
-											<tr>
-												<td align="center" width="60" height="60"
-													style="width:60px;height:60px;background-color:#ff5a2f;border-radius:50%%;color:#ffffff;font-size:19px;font-weight:700;letter-spacing:1px;line-height:60px;text-align:center;">
-													LU
-												</td>
-											</tr>
-										</table>
+										%s
 
 										<!-- 标题 -->
 										<p style="margin:0 0 8px 0;color:#8b8b9c;font-size:13px;letter-spacing:2px;text-transform:uppercase;">
@@ -147,6 +184,6 @@ public class MailService {
 				</table>
 				</body>
 				</html>
-				""".formatted(code, sceneLabel, ttlMinutes, entry);
+				""".formatted(badge, code, sceneLabel, ttlMinutes, entry);
 	}
 }
