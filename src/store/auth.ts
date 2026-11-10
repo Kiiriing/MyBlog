@@ -22,6 +22,14 @@ function subscribe(listener: () => void) {
   }
 }
 
+if (typeof window !== 'undefined') {
+  /* 任意接口返回 401 时同步退出登录，让站内信等模块回到未登录态 */
+  window.addEventListener('luyu:unauthorized', () => {
+    setToken(null)
+    commit({ user: null, ready: true })
+  })
+}
+
 export function useAuth() {
   return useSyncExternalStore(subscribe, () => state, () => state)
 }

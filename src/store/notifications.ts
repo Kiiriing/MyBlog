@@ -36,6 +36,13 @@ function subscribe(listener: () => void) {
   }
 }
 
+if (typeof window !== 'undefined') {
+  /* 登录态失效后清空缓存的通知，避免继续展示无法操作的旧数据 */
+  window.addEventListener('luyu:unauthorized', () => {
+    commit({ items: [], unread: 0, loading: false, error: '' })
+  })
+}
+
 export function useNotifications() {
   return useSyncExternalStore(subscribe, () => state, () => state)
 }

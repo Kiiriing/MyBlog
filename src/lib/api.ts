@@ -80,6 +80,12 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     }
   })
 
+  if (response.status === 401) {
+    /* 令牌失效（过期或服务端重置）时立即清掉本地登录态，避免界面继续展示旧数据 */
+    setToken(null)
+    if (typeof window !== 'undefined') window.dispatchEvent(new Event('luyu:unauthorized'))
+  }
+
   if (response.status === 204) return undefined as T
 
   const data = await response.json().catch(() => null)

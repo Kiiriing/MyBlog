@@ -151,13 +151,16 @@ export default function SwipeRow({
     const dy = event.clientY - state.y0
 
     if (!state.axis) {
-      if (Math.abs(dx) < HYST && Math.abs(dy) < HYST) return
-      /* 纵向滑动交给页面滚动，不抢手势 */
-      if (Math.abs(dy) >= Math.abs(dx)) {
+      const ax = Math.abs(dx)
+      const ay = Math.abs(dy)
+      if (ax < HYST && ay < HYST) return
+      /* 纵向滑动交给页面滚动，不抢手势；方向未明朗时先继续等待，避免轻微抖动直接放弃 */
+      if (ay > ax && ay >= HYST * 1.5) {
         drag.current = null
         if (surfaceRef.current) surfaceRef.current.style.transition = ''
         return
       }
+      if (ax <= ay) return
       state.axis = 'x'
       setDragging(true)
     }
