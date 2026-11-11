@@ -1,10 +1,10 @@
-import { useEffect } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import type { NotificationCategory, NotificationItem } from '../lib/api'
 import { useAuth } from '../store/auth'
 import WarmTooltip from './WarmTooltip'
-import SwipeRow from './SwipeRow'
+import SwipeRow, { type SwipeAction } from './SwipeRow'
 import {
   closePanel,
   markAllRead,
@@ -44,10 +44,127 @@ function formatTime(iso: string) {
   return date.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' })
 }
 
+function TrashIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M4 7h16" />
+      <path d="M9.5 7V4.5h5V7" />
+      <path d="M6.5 7l.9 12.5h9.2L17.5 7" />
+    </svg>
+  )
+}
+
+function PinIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M9 4h6l-1 5 3 3v2H7v-2l3-3-1-5Z" />
+      <path d="M12 14v6" />
+    </svg>
+  )
+}
+
+type InboxRowProps = {
+  item: NotificationItem
+  index: number
+}
+
+function InboxRow({ item, index }: InboxRowProps) {
+  const [expanded, setExpanded] = useState(false)
+  const [long, setLong] = useState(false)
+  const bodyRef = useRef<HTMLSpanElement>(null)
+
+  const measure = useCallback(() => {
+    const el = bodyRef.current
+    if (!el) return
+    setLong(el.scrollHeight - el.clientHeight > 2)
+  }, [])
+
+  useLayoutEffect(() => {
+    if (!expanded) measure()
+  }, [expanded, measure, item.body])
+
+  useEffect(() => {
+    const el = bodyRef.current
+    if (!el || expanded) return undefined
+    const observer = new ResizeObserver(measure)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [expanded, measure])
+
+  function onToggle() {
+    if (!item.read) void markRead(item.id)
+    setExpanded((value) => !value)
+  }
+
+  const actions: SwipeAction[] = [
+    {
+      id: 'delete',
+      label: '删除',
+      icon: <TrashIcon />,
+      onSelect: () => removeNotification(item.id)
+    },
+    {
+      id: 'pin',
+      label: item.pinned ? '取消置顶' : '置顶',
+      icon: <PinIcon />,
+      onSelect: () => togglePin(item.id)
+    }
+  ]
+
+  return (
+    <SwipeRow
+      className="inbox__row"
+      style={{ '--i': Math.min(index, 9) } as CSSProperties}
+      height="auto"
+      actions={actions}
+      label={`${CATEGORY_LABEL[item.category]}：${item.title}`}
+    >
+      <article
+        className={[
+          'inbox__item',
+          item.read ? 'is-read' : '',
+          item.pinned ? 'is-pinned' : '',
+          expanded ? 'is-expanded' : ''
+        ]
+          .filter(Boolean)
+          .join(' ')}
+      >
+        <button
+          className="inbox__item-main"
+          type="button"
+          aria-expanded={expanded}
+          onClick={onToggle}
+        >
+          <span className="inbox__item-meta">
+            <span className={`inbox__tag inbox__tag--${item.category.toLowerCase()}`}>
+              {CATEGORY_LABEL[item.category]}
+            </span>
+            <span className="inbox__time mono">{formatTime(item.createdAt)}</span>
+            {item.pinned ? <span className="inbox__pin-mark mono">Pinned</span> : null}
+            {!item.read ? <span className="inbox__dot" aria-label="未读" /> : null}
+          </span>
+          <span className="inbox__item-title">{item.title}</span>
+          <span ref={bodyRef} className="inbox__item-body">
+            {item.senderName ? `${item.senderName} · ` : ''}
+            {item.body}
+          </span>
+          {long || expanded ? (
+            <span className="inbox__more mono">{expanded ? '收起' : '…… 点击查看全文'}</span>
+          ) : null}
+        </button>
+        {item.link ? (
+          <Link className="inbox__item-link mono" to={item.link} onClick={closePanel}>
+            查看详情 <span aria-hidden="true">↗</span>
+          </Link>
+        ) : null}
+      </article>
+    </SwipeRow>
+  )
+}
+
 export default function NotificationPanel() {
   const inbox = useNotifications()
   const auth = useAuth()
-  const navigate = useNavigate()
 
   useEffect(() => {
     if (!inbox.open) return
@@ -59,13 +176,6 @@ export default function NotificationPanel() {
     window.addEventListener('keydown', onKeydown)
     return () => window.removeEventListener('keydown', onKeydown)
   }, [inbox.open])
-
-  function openItem(item: NotificationItem) {
-    if (!item.read) void markRead(item.id)
-    if (!item.link) return
-    closePanel()
-    navigate(item.link)
-  }
 
   return (
     <div
@@ -119,77 +229,11 @@ export default function NotificationPanel() {
                 <p className="inbox__hint">这里还没有消息。</p>
               ) : (
                 inbox.items.map((item, index) => (
-                  <SwipeRow
+                  <InboxRow
                     key={`${inbox.filter}-${item.id}`}
-                    className="inbox__row"
-                    style={{ '--i': Math.min(index, 9) } as CSSProperties}
-                    label={`${CATEGORY_LABEL[item.category]}：${item.title}`}
-                    actions={[
-                      {
-                        id: 'delete',
-                        label: '删除',
-                        tone: 'danger',
-                        onSelect: () => removeNotification(item.id)
-                      }
-                    ]}
-                  >
-                    <article
-                      className={[
-                        'inbox__item',
-                        item.read ? 'is-read' : '',
-                        item.pinned ? 'is-pinned' : ''
-                      ]
-                        .filter(Boolean)
-                        .join(' ')}
-                    >
-                      <button
-                        className="inbox__item-main"
-                        type="button"
-                        onClick={() => openItem(item)}
-                      >
-                        <span className="inbox__item-meta">
-                          <span className={`inbox__tag inbox__tag--${item.category.toLowerCase()}`}>
-                            {CATEGORY_LABEL[item.category]}
-                          </span>
-                          <span className="inbox__time mono">{formatTime(item.createdAt)}</span>
-                          {item.pinned ? (
-                            <span className="inbox__pin-mark mono">Pinned</span>
-                          ) : null}
-                          {!item.read ? <span className="inbox__dot" aria-label="未读" /> : null}
-                        </span>
-                        <span className="inbox__item-title">{item.title}</span>
-                        <span className="inbox__item-body">
-                          {item.senderName ? `${item.senderName} · ` : ''}
-                          {item.body}
-                        </span>
-                      </button>
-
-                      <div className="inbox__item-actions">
-                        <WarmTooltip
-                          content={item.pinned ? '取消置顶' : '置顶后排在最前'}
-                          side="top"
-                          disabled={!inbox.open}
-                        >
-                          <button
-                            type="button"
-                            onClick={() => togglePin(item.id)}
-                            aria-label={item.pinned ? '取消置顶' : '置顶'}
-                          >
-                            {item.pinned ? '取消置顶' : '置顶'}
-                          </button>
-                        </WarmTooltip>
-                        <WarmTooltip content="仅从我的列表移除" side="top" disabled={!inbox.open}>
-                          <button
-                            type="button"
-                            onClick={() => removeNotification(item.id)}
-                            aria-label="删除"
-                          >
-                            删除
-                          </button>
-                        </WarmTooltip>
-                      </div>
-                    </article>
-                  </SwipeRow>
+                    item={item}
+                    index={index}
+                  />
                 ))
               )}
 
