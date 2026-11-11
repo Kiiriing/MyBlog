@@ -8,7 +8,7 @@
   /* 颜色跟随站点令牌：暗色是暖炭底 + 奶白字，纸色主题自动反相 */
   --sr-row: color-mix(in srgb, var(--card, #121214) 94%, var(--fg, #f2ede4) 6%);
   --sr-text: var(--fg, #f2ede4);
-  --sr-drawer: color-mix(in srgb, var(--card, #121214) 76%, var(--fg, #f2ede4) 24%);
+  --sr-drawer: color-mix(in srgb, var(--card, #121214) 86%, var(--fg, #f2ede4) 14%);
   --sr-on-drawer: var(--fg, #f2ede4);
   --sr-action: var(--accent, #ff5a2f);
   --sr-on-action: #ffffff;
@@ -144,7 +144,6 @@
   padding: 0 16px;
   background: var(--sr-row);
   color: var(--sr-text);
-  border-radius: inherit;
   touch-action: pan-y;
   -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent;
