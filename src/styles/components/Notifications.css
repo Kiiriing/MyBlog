@@ -272,8 +272,10 @@
 .inbox__undo-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
+  gap: 12px;
+  /* 四周多留一口气，和上下消息拉开距离 */
+  margin: 8px 0 20px;
+  padding: 12px 12px 12px 14px;
   animation: inbox-row-in 0.52s var(--ease-out) backwards;
   animation-delay: calc(var(--i, 0) * 42ms);
 }
