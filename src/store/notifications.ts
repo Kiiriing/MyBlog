@@ -24,6 +24,10 @@ let state: NotificationState = {
 
 const listeners = new Set<() => void>()
 
+/* 抽屉滑入 / 滑出各 0.72s，动画期间锁住开关，避免连点让关闭打断展开 */
+const INBOX_ANIMATION_MS = 760
+let inboxLockedUntil = 0
+
 function commit(patch: Partial<NotificationState>) {
   state = { ...state, ...patch }
   listeners.forEach((listener) => listener())
@@ -51,8 +55,14 @@ export function getNotifications() {
   return state
 }
 
+/** 站内信抽屉动画是否还在进行中 */
+function isInboxAnimating() {
+  return performance.now() < inboxLockedUntil
+}
+
 export function openPanel() {
   if (state.open) return
+  inboxLockedUntil = performance.now() + INBOX_ANIMATION_MS
   commit({ open: true, error: '' })
   lockScroll()
   void refreshNotifications()
@@ -60,11 +70,13 @@ export function openPanel() {
 
 export function closePanel() {
   if (!state.open) return
+  inboxLockedUntil = performance.now() + INBOX_ANIMATION_MS
   commit({ open: false })
   unlockScroll()
 }
 
 export function togglePanel() {
+  if (isInboxAnimating()) return
   if (state.open) closePanel()
   else openPanel()
 }
