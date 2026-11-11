@@ -212,9 +212,11 @@
 }
 
 .timeline {
+  /* 正文与竖线之间的间距；圆点用同一个值反向偏移，才能正好压在竖线上 */
+  --timeline-pad: clamp(34px, 3.6vw, 66px);
   position: relative;
   margin: 0;
-  padding: 0 0 0 clamp(34px, 3.6vw, 66px);
+  padding: 0 0 0 var(--timeline-pad);
   list-style: none;
 }
 
@@ -243,7 +245,7 @@
 .timeline__dot {
   position: absolute;
   top: 5px;
-  left: -5px;
+  left: calc(var(--timeline-pad) * -1 - 5px);
   width: 11px;
   height: 11px;
   border: 1px solid var(--fg-dim);
@@ -398,7 +400,7 @@
   }
 
   .timeline {
-    padding-left: 24px;
+    --timeline-pad: 24px;
   }
 }
 
