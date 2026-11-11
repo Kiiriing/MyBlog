@@ -286,11 +286,18 @@
 }
 
 .timeline__item {
+  /* 与左侧目录当前项对应的一条保持正色，其余整体压淡 */
+  --timeline-o: 0.42;
   position: relative;
   padding: 0 0 clamp(34px, 4.6vw, 56px);
   scroll-margin-top: calc(var(--nav-h) + 28px);
+  opacity: var(--timeline-o);
   animation: timeline-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
   animation-delay: calc(var(--i, 0) * 45ms);
+}
+
+.timeline__item.is-active {
+  --timeline-o: 1;
 }
 
 .timeline__item:not(:last-child) {
@@ -401,7 +408,7 @@
   }
 
   to {
-    opacity: 1;
+    opacity: var(--timeline-o, 1);
     transform: translate3d(0, 0, 0);
   }
 }

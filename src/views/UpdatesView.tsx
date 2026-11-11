@@ -201,7 +201,7 @@ export default function UpdatesView() {
                 <li
                   key={entry.version}
                   id={entry.version}
-                  className={`timeline__item timeline__item--${levelOf(entry.version)}`}
+                  className={`timeline__item timeline__item--${levelOf(entry.version)}${active === entry.version ? ' is-active' : ''}`}
                   style={{ '--i': Math.min(i, 6) } as CSSProperties}
                 >
                   <span className="timeline__dot" aria-hidden="true" />
