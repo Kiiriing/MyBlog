@@ -44,6 +44,15 @@ export const menuItems = [
   },
   {
     index: '03',
+    en: 'Updates',
+    cn: '更新',
+    type: 'route',
+    to: '/updates',
+    note: 'Every release, logged on one line',
+    art: '/art/post-gaps.svg'
+  },
+  {
+    index: '04',
     en: 'About',
     cn: '关于',
     type: 'section',
@@ -52,7 +61,7 @@ export const menuItems = [
     art: '/art/portrait.svg'
   },
   {
-    index: '04',
+    index: '05',
     en: 'Experience',
     cn: '经历',
     type: 'section',
@@ -61,7 +70,7 @@ export const menuItems = [
     art: '/art/work-tide.svg'
   },
   {
-    index: '05',
+    index: '06',
     en: 'Credentials',
     cn: '荣誉',
     type: 'section',
@@ -70,7 +79,7 @@ export const menuItems = [
     art: '/art/work-garden.svg'
   },
   {
-    index: '06',
+    index: '07',
     en: 'Contact',
     cn: '联系',
     type: 'section',

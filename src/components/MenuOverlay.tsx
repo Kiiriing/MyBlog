@@ -13,6 +13,7 @@ type MenuItem = (typeof menuItems)[number]
 function chooseInitialPreview(path: string) {
   if (path.startsWith('/work')) return 1
   if (path.startsWith('/journal')) return 2
+  if (path.startsWith('/updates')) return 3
   return 0
 }
 
@@ -86,7 +87,7 @@ export default function MenuOverlay() {
         <div className="menu__inner shell">
           <div className="menu__nav-wrap">
             <div className="menu__eyebrow eyebrow">Navigation / 导航</div>
-            <nav className="menu__nav" aria-label="主要导航" onMouseLeave={() => setHovered(3)}>
+            <nav className="menu__nav" aria-label="主要导航" onMouseLeave={() => setHovered(4)}>
               {menuItems.map((item, i) => (
                 <button
                   key={item.index}

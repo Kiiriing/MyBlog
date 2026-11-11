@@ -31,6 +31,7 @@ const WIPE_NAMES: Record<string, string> = {
   work: 'Case',
   journal: 'Journal',
   post: 'Entry',
+  updates: 'Updates',
   login: 'Login',
   'not-found': '404'
 }
@@ -59,6 +60,7 @@ export default function App() {
   /* 手记与文章页是 `.theme-paper` 的奶油色底，加光（screen）会把整页洗白，
      换成 GlowCursor 自带的 light 主题：同样的流体，改成落墨式渲染、正常混合。 */
   const isPaper = rendered.pathname === '/journal' || rendered.pathname.startsWith('/journal/')
+    || rendered.pathname === '/updates'
 
   function later(fn: () => void, delay: number) {
     const id = window.setTimeout(fn, delay)
