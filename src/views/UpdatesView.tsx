@@ -1,6 +1,7 @@
-import { useEffect } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { Link } from 'react-router-dom'
+import { scrollTo } from '../composables/useSmoothScroll'
 import { changelog } from '../data/changelog'
 import SiteFooter from '../components/SiteFooter'
 import '../styles/components/UpdatesView.css'
@@ -21,8 +22,54 @@ function renderText(text: string) {
 }
 
 export default function UpdatesView() {
+  const [active, setActive] = useState(changelog[0].version)
+  const listRef = useRef<HTMLOListElement>(null)
+  /* 点击目录后先锁住高亮，等平滑滚动结束再交还给滚动监听，避免中途闪到别的版本 */
+  const lockUntil = useRef(0)
+
   useEffect(() => {
     document.title = '更新记录 Changelog — 陆屿 LU YU'
+  }, [])
+
+  /* 滚动时把左侧目录同步到当前正在读的那条：
+     取「顶部已越过视口 32% 线」的最后一条，比 IntersectionObserver 在窄检测带内更稳，
+     也不会在点击跳转的平滑滚动过程中跳到别的版本。 */
+  useEffect(() => {
+    let frame = 0
+
+    const update = () => {
+      frame = 0
+      if (performance.now() < lockUntil.current) return
+
+      const items = listRef.current?.querySelectorAll<HTMLElement>('.timeline__item')
+      if (!items?.length) return
+
+      const line = window.innerHeight * 0.32
+      let current = items[0].id
+      items.forEach((item) => {
+        if (item.getBoundingClientRect().top <= line) current = item.id
+      })
+      setActive(current)
+    }
+
+    const onScroll = () => {
+      if (!frame) frame = window.requestAnimationFrame(update)
+    }
+
+    update()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      if (frame) window.cancelAnimationFrame(frame)
+    }
+  }, [])
+
+  const jump = useCallback((version: string) => {
+    const el = document.getElementById(version)
+    if (!el) return
+    lockUntil.current = performance.now() + 1500
+    setActive(version)
+    scrollTo(el, { offset: -200 })
   }, [])
 
   const total = String(changelog.length).padStart(2, '0')
@@ -60,34 +107,55 @@ export default function UpdatesView() {
 
       <main className="updates-page__body">
         <div className="shell">
-          <ol className="timeline">
-            {changelog.map((entry, i) => (
-              <li
-                key={entry.version}
-                id={entry.version}
-                className={`timeline__item timeline__item--${levelOf(entry.version)}`}
-                style={{ '--i': Math.min(i, 6) } as CSSProperties}
-              >
-                <span className="timeline__dot" aria-hidden="true" />
+          <div className="updates-layout">
+            <aside className="updates-nav" aria-label="版本目录">
+              <p className="updates-nav__label mono">Milestones</p>
+              <ol className="updates-nav__list" data-lenis-prevent>
+                {changelog.map((entry) => (
+                  <li key={entry.version}>
+                    <button
+                      type="button"
+                      className={`updates-nav__item${active === entry.version ? ' is-active' : ''}`}
+                      aria-current={active === entry.version ? 'true' : undefined}
+                      onClick={() => jump(entry.version)}
+                    >
+                      <span className="updates-nav__version mono">{entry.version}</span>
+                      <span className="updates-nav__title">{entry.title}</span>
+                    </button>
+                  </li>
+                ))}
+              </ol>
+            </aside>
 
-                <div className="timeline__meta">
-                  <span className="timeline__version mono">{entry.version}</span>
-                  {i === 0 ? <span className="timeline__latest mono">Latest</span> : null}
-                  <time className="timeline__date mono" dateTime={entry.dateTime}>
-                    {entry.date}
-                  </time>
-                </div>
+            <ol className="timeline" ref={listRef}>
+              {changelog.map((entry, i) => (
+                <li
+                  key={entry.version}
+                  id={entry.version}
+                  className={`timeline__item timeline__item--${levelOf(entry.version)}`}
+                  style={{ '--i': Math.min(i, 6) } as CSSProperties}
+                >
+                  <span className="timeline__dot" aria-hidden="true" />
 
-                <h2 className="timeline__title">{entry.title}</h2>
+                  <div className="timeline__meta">
+                    <span className="timeline__version mono">{entry.version}</span>
+                    {i === 0 ? <span className="timeline__latest mono">Latest</span> : null}
+                    <time className="timeline__date mono" dateTime={entry.dateTime}>
+                      {entry.date}
+                    </time>
+                  </div>
 
-                <ul className="timeline__list">
-                  {entry.items.map((item) => (
-                    <li key={item}>{renderText(item)}</li>
-                  ))}
-                </ul>
-              </li>
-            ))}
-          </ol>
+                  <h2 className="timeline__title">{entry.title}</h2>
+
+                  <ul className="timeline__list">
+                    {entry.items.map((item) => (
+                      <li key={item}>{renderText(item)}</li>
+                    ))}
+                  </ul>
+                </li>
+              ))}
+            </ol>
+          </div>
 
           <div className="updates-page__foot">
             <p className="mono">End of log — 共 {changelog.length} 个里程碑。</p>
