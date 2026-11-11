@@ -115,19 +115,32 @@
   top: calc(var(--nav-h) + 26px);
   display: flex;
   flex-direction: column;
-  max-height: calc(100svh - var(--nav-h) - 52px);
+  max-height: calc(100svh - var(--nav-h) - 34px);
   padding-right: clamp(18px, 2.2vw, 36px);
   min-height: 240px;
 }
 
-.updates-nav__label {
+.updates-nav__head {
+  display: flex;
   flex: 0 0 auto;
-  padding-bottom: 14px;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
   border-bottom: 1px solid var(--line);
-  color: var(--fg-faint);
-  font-size: 8px;
+}
+
+.updates-nav__label {
+  color: var(--fg-dim);
+  font-size: 9px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
+}
+
+.updates-nav__total {
+  color: var(--fg-faint);
+  font-size: 9px;
+  letter-spacing: 0.08em;
 }
 
 /* 目录自身可滚动：隐藏滚动条，用上下渐隐表示两端还有内容 */
@@ -171,10 +184,10 @@
 
 .updates-nav__item {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: baseline;
+  gap: 10px;
   width: 100%;
-  padding: 7px 10px 7px 12px;
+  padding: 8px 10px 8px 12px;
   border: 0;
   border-left: 1px solid transparent;
   border-radius: 0;
@@ -183,22 +196,27 @@
   font: inherit;
   text-align: left;
   cursor: pointer;
-  transition: color 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+  transition:
+    color 0.25s ease,
+    border-color 0.25s ease,
+    background-color 0.25s ease;
 }
 
 .updates-nav__item:hover {
   color: var(--fg);
-  background: rgba(17, 16, 14, 0.03);
+  background: rgba(17, 16, 14, 0.035);
 }
 
 .updates-nav__item.is-active {
   border-left-color: var(--accent);
+  background: rgba(255, 90, 47, 0.05);
   color: var(--fg);
 }
 
 .updates-nav__version {
-  font-size: 9px;
-  letter-spacing: 0.1em;
+  flex: 0 0 auto;
+  font-size: 10px;
+  letter-spacing: 0.08em;
 }
 
 .updates-nav__item.is-active .updates-nav__version {
@@ -206,9 +224,46 @@
 }
 
 .updates-nav__title {
-  font-size: 0.72rem;
-  line-height: 1.35;
-  opacity: 0.85;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  opacity: 0.9;
+}
+
+/* 目录底部的进度：告诉读者列表还有多少没显示 */
+.updates-nav__foot {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.updates-nav__count {
+  flex: 0 0 auto;
+  color: var(--fg-faint);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+}
+
+.updates-nav__track {
+  position: relative;
+  flex: 1 1 auto;
+  height: 1px;
+  background: var(--line);
+}
+
+.updates-nav__track-fill {
+  position: absolute;
+  inset: 0;
+  background: var(--accent);
+  transform-origin: left center;
+  transition: transform 0.35s ease;
 }
 
 .timeline {

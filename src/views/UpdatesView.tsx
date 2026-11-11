@@ -124,6 +124,7 @@ export default function UpdatesView() {
 
   const total = String(changelog.length).padStart(2, '0')
   const latest = changelog[0]
+  const activeIndex = changelog.findIndex((entry) => entry.version === active)
 
   return (
     <div className="updates-page theme-paper">
@@ -159,7 +160,10 @@ export default function UpdatesView() {
         <div className="shell">
           <div className="updates-layout">
             <aside className="updates-nav" aria-label="版本目录">
-              <p className="updates-nav__label mono">Milestones</p>
+              <div className="updates-nav__head">
+                <span className="updates-nav__label mono">Milestones</span>
+                <span className="updates-nav__total mono">{total}</span>
+              </div>
               <ol
                 ref={navListRef}
                 className={`updates-nav__list${edge.top ? ' is-faded-top' : ''}${edge.bottom ? ' is-faded-bottom' : ''}`}
@@ -179,6 +183,17 @@ export default function UpdatesView() {
                   </li>
                 ))}
               </ol>
+              <div className="updates-nav__foot">
+                <span className="updates-nav__count mono">
+                  {String(activeIndex + 1).padStart(2, '0')} / {total}
+                </span>
+                <span className="updates-nav__track" aria-hidden="true">
+                  <span
+                    className="updates-nav__track-fill"
+                    style={{ transform: `scaleX(${(activeIndex + 1) / changelog.length})` }}
+                  />
+                </span>
+              </div>
             </aside>
 
             <ol className="timeline" ref={listRef}>
