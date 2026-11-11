@@ -41,6 +41,8 @@ type SwipeRowProps = {
   onAction?: (action: SwipeAction) => void
   onCommit?: (action: SwipeAction) => void
   closeOnAction?: boolean
+  /** 提交后是否折叠收尾；交给外部原地替换时设为 false，避免先塌陷再撑开 */
+  collapseOnCommit?: boolean
   haptic?: boolean
   label?: string
   className?: string
@@ -123,6 +125,7 @@ export default function SwipeRow({
   onAction,
   onCommit,
   closeOnAction = true,
+  collapseOnCommit = true,
   haptic = true,
   label = '列表行',
   className = '',
@@ -253,6 +256,12 @@ export default function SwipeRow({
 
   /* 收起时把当前高度写成具体像素再归零，行高自适应时也能平滑折叠 */
   const fold = (action: SwipeAction) => {
+    /* 外部会立刻原地换成别的行时不折叠，否则整列会先塌陷再被撑回去 */
+    if (!collapseOnCommit) {
+      onCommit?.(action)
+      action.onSelect?.()
+      return
+    }
     const el = root.current
     if (el) {
       const current = el.offsetHeight

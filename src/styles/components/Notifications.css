@@ -268,16 +268,36 @@
   animation-delay: calc(var(--i, 0) * 42ms);
 }
 
-/* 删除后的保险丝条：撤销窗口结束前不落库 */
+/* 删除后的保险丝条：先按原行高度与行距原地占位，等保险丝亮起再平顺收掉余量 */
 .inbox__undo-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  /* 四周多留一口气，和上下消息拉开距离 */
-  margin: 8px 0 20px;
-  padding: 12px 12px 12px 14px;
-  animation: inbox-row-in 0.52s var(--ease-out) backwards;
+  overflow: hidden;
+  margin: 0 0 10px;
+  transition:
+    height 380ms var(--ease-out),
+    margin 380ms var(--ease-out),
+    opacity 240ms ease;
+  animation: inbox-row-in 0.42s var(--ease-out) backwards;
   animation-delay: calc(var(--i, 0) * 42ms);
+}
+
+.inbox__undo-row.is-relaxed {
+  margin: 8px 0 20px;
+}
+
+.inbox__undo-row.is-closing {
+  margin-top: 0;
+  margin-bottom: 0;
+  opacity: 0;
+}
+
+.inbox__undo-inner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 12px 12px 14px;
 }
 
 .inbox__undo-label {
@@ -303,8 +323,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .inbox__row {
+  .inbox__row,
+  .inbox__undo-row {
     animation: none;
+    transition: none;
   }
 }
 

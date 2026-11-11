@@ -67,13 +67,14 @@ function PinIcon() {
 type InboxRowProps = {
   item: NotificationItem
   index: number
-  onDelete: () => void
+  onDelete: (rowHeight: number) => void
 }
 
 function InboxRow({ item, index, onDelete }: InboxRowProps) {
   const [expanded, setExpanded] = useState(false)
   const [long, setLong] = useState(false)
   const bodyRef = useRef<HTMLSpanElement>(null)
+  const shellRef = useRef<HTMLElement>(null)
 
   const measure = useCallback(() => {
     const el = bodyRef.current
@@ -103,7 +104,7 @@ function InboxRow({ item, index, onDelete }: InboxRowProps) {
       id: 'delete',
       label: '删除',
       icon: <TrashIcon />,
-      onSelect: onDelete
+      onSelect: () => onDelete(shellRef.current?.offsetHeight ?? 0)
     },
     {
       id: 'pin',
@@ -119,9 +120,11 @@ function InboxRow({ item, index, onDelete }: InboxRowProps) {
       style={{ '--i': Math.min(index, 9) } as CSSProperties}
       height="auto"
       actions={actions}
+      collapseOnCommit={false}
       label={`${CATEGORY_LABEL[item.category]}：${item.title}`}
     >
       <article
+        ref={shellRef}
         className={[
           'inbox__item',
           item.read ? 'is-read' : '',
@@ -167,34 +170,72 @@ function InboxRow({ item, index, onDelete }: InboxRowProps) {
 type UndoStripProps = {
   item: NotificationItem
   index: number
+  rowHeight: number
   onUndo: () => void
   onDone: () => void
 }
 
-/* 删除后留在原位的保险丝条：4 秒内可撤销，烧完才真正落库删除 */
-function UndoStrip({ item, index, onUndo, onDone }: UndoStripProps) {
+/* 删除后留在原位的保险丝条：先按原行高度占位，等保险丝亮起再把余量平顺收掉 */
+function UndoStrip({ item, index, rowHeight, onUndo, onDone }: UndoStripProps) {
+  const innerRef = useRef<HTMLDivElement>(null)
+  const [height, setHeight] = useState<number | undefined>(rowHeight || undefined)
+  const [relaxed, setRelaxed] = useState(!rowHeight)
+  const [closing, setClosing] = useState(false)
+  const timers = useRef<number[]>([])
+
+  useEffect(() => {
+    const id = window.setTimeout(() => {
+      const natural = innerRef.current?.offsetHeight
+      if (natural) setHeight(natural)
+      setRelaxed(true)
+    }, 280)
+    timers.current.push(id)
+    return () => window.clearTimeout(id)
+  }, [])
+
+  useEffect(
+    () => () => {
+      timers.current.forEach((id) => window.clearTimeout(id))
+    },
+    []
+  )
+
+  /* 烧完先收掉保险丝条的高度，动画结束后才真正落库 */
+  const close = () => {
+    setClosing(true)
+    setHeight(0)
+    timers.current.push(window.setTimeout(onDone, 380))
+  }
+
   return (
     <div
-      className="inbox__undo-row"
-      style={{ '--i': Math.min(index, 9) } as CSSProperties}
+      className={`inbox__undo-row${relaxed ? ' is-relaxed' : ''}${closing ? ' is-closing' : ''}`}
+      style={
+        {
+          '--i': Math.min(index, 9),
+          height: height === undefined ? undefined : `${height}px`
+        } as CSSProperties
+      }
     >
-      <span className="inbox__undo-label mono">已删除「{item.title}」</span>
-      <FuseButton
-        className="inbox__undo"
-        label="删除"
-        undoLabel="撤销删除"
-        doneLabel="已删除"
-        size="sm"
-        radius={12}
-        undoWindow={4000}
-        autoArm
-        commitOn="fuseEnd"
-        settle="stay"
-        onUndo={onUndo}
-        onCommit={(reason) => {
-          if (reason === 'fuseEnd') onDone()
-        }}
-      />
+      <div ref={innerRef} className="inbox__undo-inner">
+        <span className="inbox__undo-label mono">已删除「{item.title}」</span>
+        <FuseButton
+          className="inbox__undo"
+          label="删除"
+          undoLabel="撤销删除"
+          doneLabel="已删除"
+          size="sm"
+          radius={12}
+          undoWindow={4000}
+          autoArm
+          commitOn="fuseEnd"
+          settle="stay"
+          onUndo={onUndo}
+          onCommit={(reason) => {
+            if (reason === 'fuseEnd') close()
+          }}
+        />
+      </div>
     </div>
   )
 }
@@ -202,10 +243,10 @@ function UndoStrip({ item, index, onUndo, onDone }: UndoStripProps) {
 export default function NotificationPanel() {
   const inbox = useNotifications()
   const auth = useAuth()
-  const [pending, setPending] = useState<Record<string, NotificationItem>>({})
+  const [pending, setPending] = useState<Record<string, { item: NotificationItem; height: number }>>({})
 
-  const stageDelete = (item: NotificationItem) => {
-    setPending((prev) => (prev[item.id] ? prev : { ...prev, [item.id]: item }))
+  const stageDelete = (item: NotificationItem, height: number) => {
+    setPending((prev) => (prev[item.id] ? prev : { ...prev, [item.id]: { item, height } }))
   }
 
   const undoDelete = (id: string) => {
@@ -284,12 +325,14 @@ export default function NotificationPanel() {
               ) : inbox.items.length === 0 ? (
                 <p className="inbox__hint">这里还没有消息。</p>
               ) : (
-                inbox.items.map((item, index) =>
-                  pending[item.id] ? (
+                inbox.items.map((item, index) => {
+                  const staged = pending[item.id]
+                  return staged ? (
                     <UndoStrip
                       key={`undo-${item.id}`}
-                      item={item}
+                      item={staged.item}
                       index={index}
+                      rowHeight={staged.height}
                       onUndo={() => undoDelete(item.id)}
                       onDone={() => void commitDelete(item.id)}
                     />
@@ -298,10 +341,10 @@ export default function NotificationPanel() {
                       key={`${inbox.filter}-${item.id}`}
                       item={item}
                       index={index}
-                      onDelete={() => stageDelete(item)}
+                      onDelete={(height) => stageDelete(item, height)}
                     />
                   )
-                )
+                })
               )}
 
               {inbox.error ? (
