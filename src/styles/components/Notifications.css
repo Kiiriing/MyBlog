@@ -268,6 +268,31 @@
   animation-delay: calc(var(--i, 0) * 42ms);
 }
 
+/* 删除后的保险丝条：撤销窗口结束前不落库 */
+.inbox__undo-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  animation: inbox-row-in 0.52s var(--ease-out) backwards;
+  animation-delay: calc(var(--i, 0) * 42ms);
+}
+
+.inbox__undo-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fg-faint);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inbox__undo {
+  flex: none;
+}
+
 @keyframes inbox-row-in {
   from {
     opacity: 0;

@@ -5,6 +5,7 @@ import type { NotificationCategory, NotificationItem } from '../lib/api'
 import { useAuth } from '../store/auth'
 import WarmTooltip from './WarmTooltip'
 import SwipeRow, { type SwipeAction } from './SwipeRow'
+import FuseButton from './FuseButton'
 import {
   closePanel,
   markAllRead,
@@ -66,9 +67,10 @@ function PinIcon() {
 type InboxRowProps = {
   item: NotificationItem
   index: number
+  onDelete: () => void
 }
 
-function InboxRow({ item, index }: InboxRowProps) {
+function InboxRow({ item, index, onDelete }: InboxRowProps) {
   const [expanded, setExpanded] = useState(false)
   const [long, setLong] = useState(false)
   const bodyRef = useRef<HTMLSpanElement>(null)
@@ -101,7 +103,7 @@ function InboxRow({ item, index }: InboxRowProps) {
       id: 'delete',
       label: '删除',
       icon: <TrashIcon />,
-      onSelect: () => removeNotification(item.id)
+      onSelect: onDelete
     },
     {
       id: 'pin',
@@ -162,9 +164,63 @@ function InboxRow({ item, index }: InboxRowProps) {
   )
 }
 
+type UndoStripProps = {
+  item: NotificationItem
+  index: number
+  onUndo: () => void
+  onDone: () => void
+}
+
+/* 删除后留在原位的保险丝条：4 秒内可撤销，烧完才真正落库删除 */
+function UndoStrip({ item, index, onUndo, onDone }: UndoStripProps) {
+  return (
+    <div
+      className="inbox__undo-row"
+      style={{ '--i': Math.min(index, 9) } as CSSProperties}
+    >
+      <span className="inbox__undo-label mono">已删除「{item.title}」</span>
+      <FuseButton
+        className="inbox__undo"
+        label="删除"
+        undoLabel="撤销删除"
+        doneLabel="已删除"
+        size="sm"
+        radius={12}
+        undoWindow={4000}
+        autoArm
+        commitOn="fuseEnd"
+        settle="stay"
+        onUndo={onUndo}
+        onCommit={(reason) => {
+          if (reason === 'fuseEnd') onDone()
+        }}
+      />
+    </div>
+  )
+}
+
 export default function NotificationPanel() {
   const inbox = useNotifications()
   const auth = useAuth()
+  const [pending, setPending] = useState<Record<string, NotificationItem>>({})
+
+  const stageDelete = (item: NotificationItem) => {
+    setPending((prev) => (prev[item.id] ? prev : { ...prev, [item.id]: item }))
+  }
+
+  const undoDelete = (id: string) => {
+    setPending((prev) => {
+      if (!prev[id]) return prev
+      const next = { ...prev }
+      delete next[id]
+      return next
+    })
+  }
+
+  const commitDelete = async (id: string) => {
+    await removeNotification(id)
+    undoDelete(id)
+  }
 
   useEffect(() => {
     if (!inbox.open) return
@@ -228,13 +284,24 @@ export default function NotificationPanel() {
               ) : inbox.items.length === 0 ? (
                 <p className="inbox__hint">这里还没有消息。</p>
               ) : (
-                inbox.items.map((item, index) => (
-                  <InboxRow
-                    key={`${inbox.filter}-${item.id}`}
-                    item={item}
-                    index={index}
-                  />
-                ))
+                inbox.items.map((item, index) =>
+                  pending[item.id] ? (
+                    <UndoStrip
+                      key={`undo-${item.id}`}
+                      item={item}
+                      index={index}
+                      onUndo={() => undoDelete(item.id)}
+                      onDone={() => void commitDelete(item.id)}
+                    />
+                  ) : (
+                    <InboxRow
+                      key={`${inbox.filter}-${item.id}`}
+                      item={item}
+                      index={index}
+                      onDelete={() => stageDelete(item)}
+                    />
+                  )
+                )
               )}
 
               {inbox.error ? (
