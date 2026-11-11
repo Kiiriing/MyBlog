@@ -104,10 +104,10 @@ const watchWindow = (live: { current: LiveDrag }) => {
 export default function SwipeRow({
   children,
   actions = DEFAULT_ACTIONS,
-  actionColor = '#e5484d',
-  drawerColor = '#3f3f46',
-  rowColor = '#27272a',
-  textColor = '#f5f5f5',
+  actionColor,
+  drawerColor,
+  rowColor,
+  textColor,
   height = 64,
   radius = 16,
   actionWidth = 80,
@@ -445,13 +445,16 @@ export default function SwipeRow({
           '--sr-h': height === 'auto' ? 'auto' : `${height}px`,
           '--sr-r': `${radius}px`,
           '--sr-a': `${A}px`,
-          '--sr-row': rowColor,
-          '--sr-text': textColor,
-          '--sr-drawer': drawerColor,
-          '--sr-on-drawer': onColor(drawerColor),
-          '--sr-action': actionColor,
-          '--sr-on-action': onColor(actionColor),
           '--sr-collapse': `${collapseMs}ms`,
+          /* 颜色留给 CSS 变量兜底，跟随站点的暗色 / 纸色主题 */
+          ...(rowColor ? { '--sr-row': rowColor } : null),
+          ...(textColor ? { '--sr-text': textColor } : null),
+          ...(drawerColor
+            ? { '--sr-drawer': drawerColor, '--sr-on-drawer': onColor(drawerColor) }
+            : null),
+          ...(actionColor
+            ? { '--sr-action': actionColor, '--sr-on-action': onColor(actionColor) }
+            : null),
           ...style
         } as CSSProperties
       }
@@ -474,13 +477,15 @@ export default function SwipeRow({
                 s < 0
                   ? {
                       right: (i + 1) * A,
-                      background: action.color ?? drawerColor,
-                      color: onColor(action.color ?? drawerColor)
+                      ...(action.color
+                        ? { background: action.color, color: onColor(action.color) }
+                        : null)
                     }
                   : {
                       left: (i + 1) * A,
-                      background: action.color ?? drawerColor,
-                      color: onColor(action.color ?? drawerColor)
+                      ...(action.color
+                        ? { background: action.color, color: onColor(action.color) }
+                        : null)
                     }
               }
             >

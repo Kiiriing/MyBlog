@@ -281,10 +281,6 @@
   }
 }
 
-.inbox__item:hover {
-  background: rgba(242, 237, 228, 0.028);
-}
-
 .inbox__item-main {
   display: flex;
   flex-direction: column;
