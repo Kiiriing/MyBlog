@@ -24,6 +24,9 @@ function renderText(text: string) {
 export default function UpdatesView() {
   const [active, setActive] = useState(changelog[0].version)
   const listRef = useRef<HTMLOListElement>(null)
+  const navListRef = useRef<HTMLOListElement>(null)
+  /* 目录列表是否还有被遮住的内容：决定上下两条渐隐遮罩是否出现 */
+  const [edge, setEdge] = useState({ top: false, bottom: false })
   /* 点击目录后先锁住高亮，等平滑滚动结束再交还给滚动监听，避免中途闪到别的版本 */
   const lockUntil = useRef(0)
 
@@ -63,6 +66,53 @@ export default function UpdatesView() {
       if (frame) window.cancelAnimationFrame(frame)
     }
   }, [])
+
+  /* 目录列表自身可滚动（滚轮 / 触摸），滚到两端时切换渐隐遮罩 */
+  useEffect(() => {
+    const nav = navListRef.current
+    if (!nav) return
+
+    let frame = 0
+    const sync = () => {
+      frame = 0
+      const max = nav.scrollHeight - nav.clientHeight
+      const top = nav.scrollTop > 4
+      const bottom = nav.scrollTop < max - 4
+      setEdge((prev) => (prev.top === top && prev.bottom === bottom ? prev : { top, bottom }))
+    }
+    const onScroll = () => {
+      if (!frame) frame = window.requestAnimationFrame(sync)
+    }
+
+    sync()
+    nav.addEventListener('scroll', onScroll, { passive: true })
+    const observer = new ResizeObserver(sync)
+    observer.observe(nav)
+
+    return () => {
+      nav.removeEventListener('scroll', onScroll)
+      observer.disconnect()
+      if (frame) window.cancelAnimationFrame(frame)
+    }
+  }, [])
+
+  /* 页面滚动把当前版本推到目录可视区之外时，目录自己跟着滚，保持高亮项始终可见 */
+  useEffect(() => {
+    const nav = navListRef.current
+    const item = nav?.querySelector<HTMLElement>(`[data-nav-version="${active}"]`)
+    if (!nav || !item) return
+
+    const navRect = nav.getBoundingClientRect()
+    const itemRect = item.getBoundingClientRect()
+    const offset = itemRect.top - navRect.top
+
+    if (offset < 0 || offset + itemRect.height > navRect.height) {
+      nav.scrollTo({
+        top: nav.scrollTop + offset - nav.clientHeight / 2 + itemRect.height / 2,
+        behavior: 'smooth'
+      })
+    }
+  }, [active])
 
   const jump = useCallback((version: string) => {
     const el = document.getElementById(version)
@@ -110,9 +160,13 @@ export default function UpdatesView() {
           <div className="updates-layout">
             <aside className="updates-nav" aria-label="版本目录">
               <p className="updates-nav__label mono">Milestones</p>
-              <ol className="updates-nav__list" data-lenis-prevent>
+              <ol
+                ref={navListRef}
+                className={`updates-nav__list${edge.top ? ' is-faded-top' : ''}${edge.bottom ? ' is-faded-bottom' : ''}`}
+                data-lenis-prevent
+              >
                 {changelog.map((entry) => (
-                  <li key={entry.version}>
+                  <li key={entry.version} data-nav-version={entry.version}>
                     <button
                       type="button"
                       className={`updates-nav__item${active === entry.version ? ' is-active' : ''}`}

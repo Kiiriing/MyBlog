@@ -102,23 +102,26 @@
 
 /* 时间线 ------------------------------------------------------------- */
 
-/* 左侧目录 + 中间竖线 + 右侧正文 */
+/* 左侧目录 + 中间竖线 + 右侧正文。
+   左栏按百分比留白，把竖线推到偏中线的位置，正文整体写在竖线右侧。 */
 .updates-layout {
   display: grid;
-  grid-template-columns: minmax(0, 186px) minmax(0, 1fr);
-  column-gap: clamp(34px, 5vw, 84px);
+  grid-template-columns: minmax(0, 34%) minmax(0, 1fr);
   align-items: start;
 }
 
 .updates-nav {
   position: sticky;
-  top: calc(var(--nav-h) + 30px);
+  top: calc(var(--nav-h) + 26px);
   display: flex;
   flex-direction: column;
-  max-height: calc(100vh - var(--nav-h) - 60px);
+  max-height: calc(100svh - var(--nav-h) - 52px);
+  padding-right: clamp(18px, 2.2vw, 36px);
+  min-height: 240px;
 }
 
 .updates-nav__label {
+  flex: 0 0 auto;
   padding-bottom: 14px;
   border-bottom: 1px solid var(--line);
   color: var(--fg-faint);
@@ -127,25 +130,43 @@
   text-transform: uppercase;
 }
 
+/* 目录自身可滚动：隐藏滚动条，用上下渐隐表示两端还有内容 */
 .updates-nav__list {
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
   gap: 2px;
+  min-height: 0;
   margin: 12px 0 0;
   padding: 2px 6px 2px 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
   list-style: none;
-  scrollbar-width: thin;
-  scrollbar-color: var(--line) transparent;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  mask-image: none;
 }
 
 .updates-nav__list::-webkit-scrollbar {
-  width: 3px;
+  display: none;
 }
 
-.updates-nav__list::-webkit-scrollbar-thumb {
-  border-radius: 999px;
-  background: var(--line);
+.updates-nav__list.is-faded-top {
+  mask-image: linear-gradient(to bottom, transparent, #000 28px);
+}
+
+.updates-nav__list.is-faded-bottom {
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent);
+}
+
+.updates-nav__list.is-faded-top.is-faded-bottom {
+  mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    #000 28px,
+    #000 calc(100% - 28px),
+    transparent
+  );
 }
 
 .updates-nav__item {
@@ -193,7 +214,7 @@
 .timeline {
   position: relative;
   margin: 0;
-  padding: 0 0 0 34px;
+  padding: 0 0 0 clamp(34px, 3.6vw, 66px);
   list-style: none;
 }
 
@@ -359,6 +380,12 @@
 
 .updates-page__home:hover span:last-child {
   transform: translate(-2px, -2px);
+}
+
+@media (max-width: 1100px) {
+  .updates-layout {
+    grid-template-columns: minmax(0, 27%) minmax(0, 1fr);
+  }
 }
 
 @media (max-width: 900px) {
