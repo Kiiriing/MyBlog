@@ -69,6 +69,45 @@
 
 	<build>
 		<plugins>
+			<!-- 先混淆再打包：ProGuard 在 package 阶段改写普通 jar 里的类名，
+			     随后 spring-boot:repackage 把它重新打成可执行 fat jar。
+			     规则见 proguard.conf。 -->
+			<plugin>
+				<groupId>com.github.wvengen</groupId>
+				<artifactId>proguard-maven-plugin</artifactId>
+				<version>2.7.0</version>
+				<executions>
+					<execution>
+						<id>obfuscate</id>
+						<phase>package</phase>
+						<goals>
+							<goal>proguard</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<proguardVersion>7.10.0</proguardVersion>
+					<obfuscate>true</obfuscate>
+					<proguardInclude>${project.basedir}/proguard.conf</proguardInclude>
+					<injar>${project.build.finalName}.jar</injar>
+					<outjar>${project.build.finalName}.jar</outjar>
+					<attach>false</attach>
+				</configuration>
+				<dependencies>
+					<!-- 显式声明 ProGuard 本体：7.10 起才支持 Java 25 的 class 文件（major 69）。
+					     core 必须一起声明，否则插件自带的旧 core 会先被选中，仍报 unsupported version 69。 -->
+					<dependency>
+						<groupId>com.guardsquare</groupId>
+						<artifactId>proguard-base</artifactId>
+						<version>7.10.0</version>
+					</dependency>
+					<dependency>
+						<groupId>com.guardsquare</groupId>
+						<artifactId>proguard-core</artifactId>
+						<version>9.4.0</version>
+					</dependency>
+				</dependencies>
+			</plugin>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>

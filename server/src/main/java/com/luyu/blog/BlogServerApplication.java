@@ -1,10 +1,11 @@
 package com.luyu.blog;
 
 import com.luyu.blog.config.DatabaseBootstrapInitializer;
+import com.luyu.blog.config.FqcnBeanNameGenerator;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-@SpringBootApplication
+@SpringBootApplication(nameGenerator = FqcnBeanNameGenerator.class)
 public class BlogServerApplication {
 
 	public static void main(String[] args) {
