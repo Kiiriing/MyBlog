@@ -89,6 +89,8 @@ export type TextTypeProps = {
   as?: ElementType
   /** 为 false 时保持空文本等待开场，用于等预加载结束再开始打字 */
   start?: boolean
+  /** 跳过打字过程直接呈现完整文本，用于站内返回时不再重播开场 */
+  instant?: boolean
   typingSpeed?: number
   initialDelay?: number
   pauseDuration?: number
@@ -136,6 +138,7 @@ export default function TextType({
   text,
   as: Component = 'div',
   start = true,
+  instant = false,
   typingSpeed = 50,
   initialDelay = 0,
   pauseDuration = 2000,
@@ -290,6 +293,11 @@ export default function TextType({
   useEffect(() => {
     if (!isVisible || !start) return
 
+    if (instant) {
+      setCount(total)
+      return
+    }
+
     let timeout: ReturnType<typeof setTimeout> | undefined
     const wait = (ms: number, next: () => void) => {
       timeout = setTimeout(next, ms)
@@ -358,6 +366,7 @@ export default function TextType({
   }, [
     isVisible,
     start,
+    instant,
     isDeleting,
     shown,
     total,

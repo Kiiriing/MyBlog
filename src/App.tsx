@@ -182,10 +182,10 @@ export default function App() {
       {showPreloader ? <Preloader onIntro={onIntro} onDone={onPreloaderDone} /> : null}
 
       {/* 触屏没有指针轨迹，整层不挂载：省掉一个 WebGL2 上下文与几张浮点贴图。
-          key 按深浅主题变化，路由切换时整层重挂载，残留的旧主题光迹不会跟到下一页。 */}
+         深浅主题切换不再重挂这一层，由 GlowCursor 内部清掉旧光迹，
+         避免路由换页时重建整套着色器把主线程卡住。 */}
       {finePointer ? (
         <GlowCursor
-          key={isPaper ? 'paper' : 'dark'}
           className={`glow-cursor--fixed${isPaper ? ' is-paper' : ''}`}
           theme={isPaper ? 'light' : 'dark'}
           color={isPaper ? '#1b1a17' : undefined}

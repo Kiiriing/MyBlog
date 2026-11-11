@@ -15,14 +15,19 @@ const HERO_INTRO =
 /* WebGL 抖动之幕按需加载：首屏不进入主包，所有断点都渲染（窄屏改为下方居中展示） */
 const DitherVeil = lazy(() => import('./DitherVeil'))
 
+/* 开场只在整页加载后播一次：站内从别的页面返回首页时直接呈现完成态。
+   200px 描边 SVG 的逐字勾画 + 逐字打字都很吃渲染，重新播放正好压在
+   路由幕布揭开的那几帧上，看起来就是首页卡顿。 */
+let heroIntroPlayed = false
+
 export default function HeroSection() {
   const ui = useUi()
   const hero = useRef<HTMLElement>(null)
 
-  const [ready, setReady] = useState(false)
+  const playIntro = useRef(!heroIntroPlayed).current
+  const [ready, setReady] = useState(!playIntro)
 
   const timeline = useRef<gsap.core.Timeline | null>(null)
-  const hasPlayed = useRef(false)
 
   /* Scroll ---------------------------------------------------------------- */
 
@@ -76,12 +81,20 @@ export default function HeroSection() {
 
   useEffect(() => {
     const el = hero.current
-    if (!ui.introDone || hasPlayed.current || !el) return
-
-    hasPlayed.current = true
-    setReady(true)
+    if (!ui.introDone || !el) return
 
     const q = gsap.utils.selector(el) as (selector: string) => HTMLElement[]
+
+    /* 站内返回：直接落到开场结束的状态（CSS 里这些元素初始 opacity 为 0） */
+    if (!playIntro || heroIntroPlayed) {
+      gsap.set(q('.hero__title'), { opacity: 1 })
+      gsap.set(q('.hero__kicker'), { opacity: 1, y: 0 })
+      gsap.set(q('.hero-fade'), { opacity: 1, y: 0 })
+      return
+    }
+
+    heroIntroPlayed = true
+    setReady(true)
 
     if (prefersReducedMotion()) {
       gsap.set(q('.hero__title'), { opacity: 1 })
@@ -107,7 +120,7 @@ export default function HeroSection() {
       },
       '-=0.8'
     )
-  }, [ui.introDone])
+  }, [ui.introDone, playIntro])
 
   /* Pointer depth --------------------------------------------------------- */
 
@@ -209,7 +222,7 @@ export default function HeroSection() {
                 strokeWidth={2}
                 strokeColor="#ff5a2f"
                 fillColor="#efe8db"
-                start={ready}
+                start={playIntro && ready}
               />
             </span>
             <span className="hero__line hero__line--two">
@@ -222,7 +235,7 @@ export default function HeroSection() {
                 strokeWidth={2}
                 strokeColor="#ff5a2f"
                 fillColor="#efe8db"
-                start={ready}
+                start={playIntro && ready}
               />
             </span>
           </h1>
@@ -239,6 +252,7 @@ export default function HeroSection() {
                 className="hero__desc-type"
                 text={HERO_INTRO}
                 start={ready}
+                instant={!playIntro}
                 loop={false}
                 typingSpeed={26}
               />

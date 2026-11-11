@@ -3,6 +3,7 @@ import { gsap } from '../lib/gsap'
 import { prefersReducedMotion } from '../composables/useSmoothScroll'
 import { awards, certificates, service } from '../data/profile'
 import { site } from '../data/site'
+import { useNearViewport } from '../hooks/useNearViewport'
 import { useReveal } from '../hooks/useReveal'
 import Magnetic from './Magnetic'
 import PassageGallery, { type PassageItem } from './PassageGallery'
@@ -70,6 +71,8 @@ export default function CredentialsSection() {
   const ledeReveal = useReveal<HTMLParagraphElement>({ delay: 70 })
   const awardsReveal = useReveal<HTMLDivElement>()
   const sideReveal = useReveal<HTMLDivElement>({ delay: 80 })
+  /* 照片隧道在第六屏：接近视口时才初始化 WebGL，返回首页时不和首屏抢主线程 */
+  const [passageHost, passageNear] = useNearViewport<HTMLDivElement>('600px')
 
   useEffect(() => {
     const host = section.current
@@ -198,29 +201,31 @@ export default function CredentialsSection() {
             <span>Passage · 荣誉通道</span>
             <span>Hold to boost · Click a photo to open</span>
           </div>
-          <div className="credentials__passage-frame">
-            <PassageGallery
-              items={passageItems}
-              colors={['#ff5a2f', '#ffd9a8']}
-              backgroundColor="#000000"
-              lanes={5}
-              gap={0.1}
-              radius={0.06}
-              photoFill={0.45}
-              accentFill={0.07}
-              lineOpacity={0.16}
-              fog={1}
-              speed={0.6}
-              boost={12}
-              blur={1}
-              look={1}
-              fov={72}
-              hover={1}
-              seed={0}
-              /* 页面滚动交给 Lenis，隧道自动穿行，按住画布可加速 */
-              wheel={false}
-              ariaLabel="荣誉通道：一条由照片自动穿行的隧道，按住可加速，点击照片放大。"
-            />
+          <div ref={passageHost} className="credentials__passage-frame">
+            {passageNear ? (
+              <PassageGallery
+                items={passageItems}
+                colors={['#ff5a2f', '#ffd9a8']}
+                backgroundColor="#000000"
+                lanes={5}
+                gap={0.1}
+                radius={0.06}
+                photoFill={0.45}
+                accentFill={0.07}
+                lineOpacity={0.16}
+                fog={1}
+                speed={0.6}
+                boost={12}
+                blur={1}
+                look={1}
+                fov={72}
+                hover={1}
+                seed={0}
+                /* 页面滚动交给 Lenis，隧道自动穿行，按住画布可加速 */
+                wheel={false}
+                ariaLabel="荣誉通道：一条由照片自动穿行的隧道，按住可加速，点击照片放大。"
+              />
+            ) : null}
           </div>
         </div>
       </div>

@@ -5,6 +5,7 @@ import { site } from '../data/site'
 import { capabilities, stats } from '../data/profile'
 import { techStack } from '../data/stack'
 import LogoLoop from './LogoLoop'
+import { useNearViewport } from '../hooks/useNearViewport'
 import { useReveal } from '../hooks/useReveal'
 import '../styles/components/AboutSection.css'
 
@@ -27,6 +28,8 @@ export default function AboutSection() {
   /* 宽屏双栏时画布被拉高到与右栏同底，卡片按画布高度取比例会过大，
      因此宽屏单独收一档卡片尺寸；挂绳长度保持原值不动 */
   const [compactLanyard, setCompactLanyard] = useState(false)
+  /* 吊牌在第三屏，首屏看不到：等滚到附近再建 three 场景，避免返回首页时卡顿 */
+  const [lanyardHost, lanyardNear] = useNearViewport<HTMLDivElement>('500px')
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 1100px)')
@@ -132,18 +135,20 @@ export default function AboutSection() {
         <div className="about__grid">
           <div ref={colRef} className="about__visual-col">
             <div className="about__visual">
-              <div className="about__lanyard">
-                <Suspense fallback={null}>
-                  <Lanyard
-                    frontImage="/art/avatar-kiiriing.png"
-                    backImage="/art/lanyard-back.png"
-                    cardColor="#f2ede4"
-                    size={compactLanyard ? 0.57 : 0.33}
-                    strapLength={0.35}
-                    strapImage="/brand/logo-white.png"
-                    strapColor="#191820"
-                  />
-                </Suspense>
+              <div ref={lanyardHost} className="about__lanyard">
+                {lanyardNear ? (
+                  <Suspense fallback={null}>
+                    <Lanyard
+                      frontImage="/art/avatar-kiiriing.png"
+                      backImage="/art/lanyard-back.png"
+                      cardColor="#f2ede4"
+                      size={compactLanyard ? 0.57 : 0.33}
+                      strapLength={0.35}
+                      strapImage="/brand/logo-white.png"
+                      strapColor="#191820"
+                    />
+                  </Suspense>
+                ) : null}
               </div>
             </div>
 

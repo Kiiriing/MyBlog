@@ -396,6 +396,10 @@ export default function GlowCursor({
   const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const settingsRef = useRef<Settings | null>(null)
+  /* 深浅主题切换时只清空旧的染料，不再重挂整块 WebGL：
+     重挂要重新建上下文、编译十几段着色器，正好卡在路由换页那一帧。 */
+  const resetRef = useRef<() => void>(() => {})
+  const themeRef = useRef(theme)
   settingsRef.current = {
     color: String(color),
     secondaryColor: secondaryColor ? String(secondaryColor) : '',
@@ -944,6 +948,12 @@ export default function GlowCursor({
       if (!raf && alive && visible && !document.hidden) raf = requestAnimationFrame(frame)
     }
 
+    resetRef.current = () => {
+      clearTargets()
+      blank()
+      wake()
+    }
+
     const onPointerMove = (event: PointerEvent) => {
       const rect = container.getBoundingClientRect()
       const x = event.clientX - rect.left
@@ -1017,6 +1027,7 @@ export default function GlowCursor({
     return () => {
       alive = false
       cancelAnimationFrame(raf)
+      resetRef.current = () => {}
       resizeObserver.disconnect()
       intersection.disconnect()
       window.removeEventListener('pointermove', onPointerMove)
@@ -1028,10 +1039,17 @@ export default function GlowCursor({
       gl.deleteShader(vertexShader)
       gl.deleteBuffer(buffer)
       gl.deleteVertexArray(vao)
-      /* 卸下时主动回收上下文：深浅主题切换（本站按路由重挂载）不会累积 WebGL2 上下文 */
+      /* 卸下时主动回收上下文，避免热更新或触屏/指针模式切换时累积 WebGL2 上下文 */
       gl.getExtension('WEBGL_lose_context')?.loseContext()
     }
   }, [])
+
+  /* 换页换主题时把上一页的光迹清掉；WebGL 场景本身沿用，不再重挂 */
+  useEffect(() => {
+    if (themeRef.current === theme) return
+    themeRef.current = theme
+    resetRef.current()
+  }, [theme])
 
   const mode = blendMode ?? (theme === 'light' ? 'normal' : 'screen')
 
