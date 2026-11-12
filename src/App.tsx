@@ -191,6 +191,12 @@ export default function App() {
           className={`glow-cursor--fixed${isPaper ? ' is-paper' : ''}`}
           theme={isPaper ? 'light' : 'dark'}
           color={isPaper ? '#1b1a17' : undefined}
+          /* 光迹调轻：更细、散得更快、光晕更弱 */
+          trailWidth={2.2}
+          linger={0.95}
+          glow={0.85}
+          intensity={1}
+          hotspot={0.5}
         />
       ) : null}
       <CustomCursor />
