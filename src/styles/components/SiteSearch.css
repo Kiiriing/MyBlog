@@ -1,46 +1,72 @@
-/* 头部搜索入口：一枚细边胶囊，放在消息铃铛左侧 */
+/* 头部搜索入口：无边框，只用图标 + 字重和一条随悬停展开的下划线 */
 .search-trigger {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 8px;
   height: 32px;
-  padding: 0 11px 0 10px;
-  border: 1px solid rgba(242, 237, 228, 0.3);
-  border-radius: 999px;
-  color: inherit;
+  padding: 0 1px;
+  border: 0;
   background: none;
+  color: inherit;
   font-family: var(--font-mono);
   font-size: 10px;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
   cursor: pointer;
+}
+
+.search-trigger::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 2px;
+  left: 0;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.28;
+  transform: scaleX(0.42);
+  transform-origin: left center;
   transition:
-    border-color 0.35s ease,
-    background-color 0.35s ease;
+    transform 0.6s var(--ease-out),
+    opacity 0.45s ease;
+}
+
+.search-trigger:hover::after,
+.search-trigger[aria-expanded='true']::after {
+  opacity: 0.75;
+  transform: scaleX(1);
+}
+
+.search-trigger:focus-visible {
+  outline: none;
+}
+
+.search-trigger:focus-visible::after {
+  opacity: 1;
+  transform: scaleX(1);
 }
 
 .search-trigger svg {
   width: 14px;
   height: 14px;
   flex: 0 0 auto;
-  opacity: 0.75;
+  opacity: 0.7;
+  transition:
+    opacity 0.4s ease,
+    transform 0.55s var(--ease-out);
+}
+
+.search-trigger:hover svg {
+  opacity: 1;
+  transform: scale(1.08);
 }
 
 .search-trigger__kbd {
-  padding-left: 8px;
-  border-left: 1px solid rgba(242, 237, 228, 0.22);
+  margin-left: 2px;
   font-size: 9px;
   letter-spacing: 0.06em;
-  opacity: 0.5;
-}
-
-.search-trigger:hover {
-  border-color: currentColor;
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.search-trigger:focus-visible {
-  outline: 1px solid currentColor;
-  outline-offset: 3px;
+  opacity: 0.42;
 }
 
 /* 搜索面板：挂在 body 上，始终是深色纸面 */
@@ -73,11 +99,23 @@
   width: min(680px, 100%);
   max-height: min(70vh, 620px);
   overflow: hidden;
-  border: 1px solid rgba(242, 237, 228, 0.16);
-  border-radius: 6px;
+  border: 0;
+  border-radius: 8px;
   background: #101014;
-  box-shadow: 0 40px 120px rgba(0, 0, 0, 0.62);
-  animation: search-pop 0.36s var(--ease-out) both;
+  box-shadow:
+    0 40px 120px rgba(0, 0, 0, 0.66),
+    0 0 0 1px rgba(242, 237, 228, 0.06);
+  animation: search-panel-in 0.42s var(--ease-out) both;
+  will-change: transform, opacity;
+}
+
+.search.is-closing .search__panel {
+  animation: search-panel-out 0.2s var(--ease-in-out) both;
+  pointer-events: none;
+}
+
+.search.is-closing .search__backdrop {
+  animation: search-fade-out 0.2s ease both;
 }
 
 .search__panel::before {
@@ -124,21 +162,18 @@
 
 .search__esc {
   flex: 0 0 auto;
-  padding: 4px 7px;
-  border: 1px solid rgba(242, 237, 228, 0.18);
+  padding: 4px 2px;
+  border: 0;
   border-radius: 3px;
   color: #615c54;
   font-size: 9px;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   background: none;
   cursor: pointer;
-  transition:
-    color 0.3s ease,
-    border-color 0.3s ease;
+  transition: color 0.3s ease;
 }
 
 .search__esc:hover {
-  border-color: rgba(242, 237, 228, 0.4);
   color: #f2ede4;
 }
 
@@ -174,10 +209,11 @@
   color: #9b9487;
   text-align: left;
   cursor: pointer;
+  animation: search-row-in 0.34s var(--ease-out) both;
   transition:
-    background-color 0.2s ease,
-    color 0.2s ease,
-    border-color 0.2s ease;
+    background-color 0.22s ease,
+    color 0.22s ease,
+    border-color 0.22s ease;
 }
 
 .search__row.is-active {
@@ -262,10 +298,40 @@
   }
 }
 
-@keyframes search-pop {
+@keyframes search-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes search-panel-in {
   from {
     opacity: 0;
+    transform: translate3d(0, -16px, 0) scale(0.972);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes search-panel-out {
+  to {
+    opacity: 0;
     transform: translate3d(0, -10px, 0) scale(0.985);
+  }
+}
+
+@keyframes search-row-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 7px, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
   }
 }
 
@@ -305,7 +371,15 @@
 
 @media (prefers-reduced-motion: reduce) {
   .search__backdrop,
-  .search__panel {
+  .search__panel,
+  .search.is-closing .search__panel,
+  .search.is-closing .search__backdrop,
+  .search__row {
     animation: none;
+  }
+
+  .search-trigger::after,
+  .search-trigger svg {
+    transition: none;
   }
 }

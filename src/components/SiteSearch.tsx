@@ -14,41 +14,66 @@ import '../styles/components/SiteSearch.css'
 const isMac =
   typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/i.test(navigator.userAgent)
 
+/** 收起动画的时长，和 CSS 里的 search-panel-out 保持一致；减弱动效时直接跳过等待 */
+const CLOSE_MS =
+  typeof window !== 'undefined' &&
+  window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    ? 0
+    : 200
+
 /* 全站搜索：头部的搜索按钮打开一层面板，匹配页面 / 作品 / 手记 / 更新 / 履历。
-   面板挂在 body 上，避免被头部的 mix-blend-mode 反相。 */
+   面板挂在 body 上，避免被头部的 mix-blend-mode 反相；
+   打开、收起、跳转都有过渡，收起动画放完才真正卸载。 */
 export default function SiteSearch() {
   const navigate = useNavigate()
   const location = useLocation()
-  const [open, setOpen] = useState(false)
+  const [phase, setPhase] = useState<'closed' | 'open' | 'closing'>('closed')
   const [query, setQuery] = useState('')
   const [active, setActive] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
+  const closeTimer = useRef(0)
 
+  const mounted = phase !== 'closed'
   const tokens = useMemo(() => splitTokens(query), [query])
   const results = useMemo(
     () => (tokens.length ? searchSite(query) : suggestions),
     [query, tokens.length]
   )
 
+  const openPanel = useCallback(() => {
+    window.clearTimeout(closeTimer.current)
+    setQuery('')
+    setActive(0)
+    setPhase('open')
+  }, [])
+
   const close = useCallback(() => {
-    setOpen(false)
-    triggerRef.current?.focus({ preventScroll: true })
+    setPhase((prev) => (prev === 'open' ? 'closing' : prev))
+    window.clearTimeout(closeTimer.current)
+    closeTimer.current = window.setTimeout(() => {
+      setPhase('closed')
+      triggerRef.current?.focus({ preventScroll: true })
+    }, CLOSE_MS)
   }, [])
 
   const jump = useCallback(
     (item: SearchItem) => {
-      setOpen(false)
-      const hashAt = item.path.indexOf('#')
-      if (hashAt < 0) {
-        if (location.pathname === item.path) scrollTo(0, { duration: 1.1 })
-        else navigate(item.path)
-        return
-      }
-      const target = item.path.slice(hashAt + 1)
-      if (location.pathname === '/') window.setTimeout(() => scrollToSection(target), 220)
-      else navigate(`/#${target}`)
+      setPhase('closing')
+      window.clearTimeout(closeTimer.current)
+      closeTimer.current = window.setTimeout(() => {
+        setPhase('closed')
+        const hashAt = item.path.indexOf('#')
+        if (hashAt < 0) {
+          if (location.pathname === item.path) scrollTo(0, { duration: 1.1 })
+          else navigate(item.path)
+          return
+        }
+        const target = item.path.slice(hashAt + 1)
+        if (location.pathname === '/') window.setTimeout(() => scrollToSection(target), 160)
+        else navigate(`/#${target}`)
+      }, CLOSE_MS)
     },
     [location.pathname, navigate]
   )
@@ -59,31 +84,35 @@ export default function SiteSearch() {
       if (event.repeat) return
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault()
-        setQuery('')
-        setActive(0)
-        setOpen((prev) => !prev)
+        if (phase === 'closed') openPanel()
+        else close()
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [])
+  }, [close, openPanel, phase])
+
+  useEffect(() => () => window.clearTimeout(closeTimer.current), [])
+
+  /* 面板打开期间锁住页面滚动，收起动画结束后再放开 */
+  useEffect(() => {
+    if (!mounted) return undefined
+    lockScroll()
+    return () => unlockScroll()
+  }, [mounted])
 
   useEffect(() => {
-    if (!open) return undefined
-    lockScroll()
+    if (phase !== 'open') return undefined
     const frame = window.requestAnimationFrame(() => inputRef.current?.focus())
-    return () => {
-      window.cancelAnimationFrame(frame)
-      unlockScroll()
-    }
-  }, [open])
+    return () => window.cancelAnimationFrame(frame)
+  }, [phase])
 
   /* 键盘上下切换时，让当前行留在可视区内 */
   useEffect(() => {
-    if (!open) return
+    if (!mounted) return
     const row = listRef.current?.querySelector<HTMLElement>(`[data-row="${active}"]`)
-    row?.scrollIntoView({ block: 'nearest' })
-  }, [active, open])
+    row?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  }, [active, mounted])
 
   function onInputKey(event: React.KeyboardEvent<HTMLInputElement>) {
     if (event.key === 'ArrowDown') {
@@ -120,12 +149,8 @@ export default function SiteSearch() {
         type="button"
         aria-label={`搜索全站（${shortcut}）`}
         aria-haspopup="dialog"
-        aria-expanded={open}
-        onClick={() => {
-          setQuery('')
-          setActive(0)
-          setOpen(true)
-        }}
+        aria-expanded={mounted}
+        onClick={openPanel}
       >
         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <circle cx="10.8" cy="10.8" r="6.3" stroke="currentColor" strokeWidth="1.4" />
@@ -135,9 +160,14 @@ export default function SiteSearch() {
         <span className="search-trigger__kbd mono">{shortcut}</span>
       </button>
 
-      {open
+      {mounted
         ? createPortal(
-            <div className="search" role="dialog" aria-modal="true" aria-label="全站搜索">
+            <div
+              className={`search${phase === 'closing' ? ' is-closing' : ' is-open'}`}
+              role="dialog"
+              aria-modal="true"
+              aria-label="全站搜索"
+            >
               <button
                 className="search__backdrop"
                 type="button"
@@ -178,9 +208,7 @@ export default function SiteSearch() {
                 </div>
 
                 <div className="search__body" ref={listRef} data-lenis-prevent>
-                  {!tokens.length ? (
-                    <p className="search__group mono">快速前往</p>
-                  ) : null}
+                  {!tokens.length ? <p className="search__group mono">快速前往</p> : null}
 
                   {results.length ? (
                     results.map((item, index) => (
@@ -189,6 +217,7 @@ export default function SiteSearch() {
                         type="button"
                         data-row={index}
                         className={`search__row${index === active ? ' is-active' : ''}`}
+                        style={{ animationDelay: `${Math.min(index, 8) * 22}ms` }}
                         onMouseEnter={() => setActive(index)}
                         onClick={() => jump(item)}
                       >
