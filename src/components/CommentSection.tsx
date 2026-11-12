@@ -106,8 +106,16 @@ export default function CommentSection({ slug }: { slug: string }) {
   useEffect(() => {
     if (!replyTo) return
     const frame = requestAnimationFrame(() => {
-      composer.current?.focus()
-      composer.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      const box = composer.current
+      if (!box) return
+      /* preventScroll：交给页面自己的平滑滚动，避免浏览器把视口拽走 */
+      box.focus({ preventScroll: true })
+      const rect = box.getBoundingClientRect()
+      const navH = 88
+      /* 输入框已经完整可见时就不要动页面，避免点击回复时页面往上跑 */
+      if (rect.top >= navH + 16 && rect.bottom <= window.innerHeight) return
+      const top = window.scrollY + rect.top - navH - 28
+      scrollTo(Math.max(0, top), { duration: 0.9, force: true })
     })
     return () => cancelAnimationFrame(frame)
   }, [replyTo])
