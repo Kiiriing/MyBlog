@@ -64,7 +64,7 @@ export default function AboutSection() {
        都是同步长任务，叠在动画上就是肉眼可见的卡顿 */
     if (!ui.introDone) return
 
-    /* 入场动画结束后 0.6 秒就预热：这段还在入场幕布收尾、用户没开始下滑，
+    /* 入场动画结束后 0.45 秒就预热：这段还在入场幕布收尾、用户没开始下滑，
        把建场景的长任务压在这里，滚到吊牌时已经建好，不会看到空白画布 */
     const timer = window.setTimeout(() => {
       setIntroSettled(true)
@@ -74,7 +74,7 @@ export default function AboutSection() {
       if (conn?.saveData) return
       /* 已经在往下看了就不在视野里建场景，交给接近视口的挂载逻辑 */
       if (window.scrollY < window.innerHeight * 0.6) setLanyardWarm(true)
-    }, 600)
+    }, 450)
     return () => window.clearTimeout(timer)
   }, [ui.introDone])
 
