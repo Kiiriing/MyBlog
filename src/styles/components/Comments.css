@@ -427,7 +427,7 @@
 
 .comment__main {
   min-width: 0;
-  padding: clamp(14px, 1.8vw, 18px) clamp(16px, 2.2vw, 20px) clamp(12px, 1.5vw, 16px);
+  padding: clamp(17px, 2vw, 21px) clamp(20px, 2.5vw, 26px) clamp(15px, 1.7vw, 19px);
   border: 1px solid var(--line);
   border-radius: 2px 16px 16px 16px;
   background: var(--card);
@@ -438,9 +438,8 @@
   border-color: var(--line-strong);
 }
 
-/* 自己的评论：暖橙纸感气泡，四周留足留白，文字不贴边 */
+/* 自己的评论：暖橙纸感气泡，与普通评论同样的留白 */
 .comment.is-mine .comment__main {
-  padding: clamp(17px, 2vw, 21px) clamp(20px, 2.5vw, 26px) clamp(15px, 1.7vw, 19px);
   border-color: color-mix(in srgb, var(--accent) 30%, var(--line));
   border-radius: 3px 18px 18px 18px;
   background: linear-gradient(
@@ -912,12 +911,11 @@
   }
 
   .comment__main {
-    padding: 13px 14px 12px;
+    padding: 15px 16px 13px;
     border-radius: 2px 13px 13px 13px;
   }
 
   .comment.is-mine .comment__main {
-    padding: 15px 16px 13px;
     border-radius: 3px 15px 15px 15px;
   }
 
