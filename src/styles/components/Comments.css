@@ -600,24 +600,47 @@
   color: var(--accent);
 }
 
-/* 从通知跳转过来时，目标评论闪烁提示几次 */
+/* 从通知跳转过来时的提示：柔和的光晕呼吸两下，不再用硬描边框 */
 .comment.is-target .comment__main {
   border-radius: 14px;
-  outline: 2px solid transparent;
-  outline-offset: 8px;
-  animation: comment-flash 0.8s ease-in-out 3;
+  animation: comment-halo 1.2s cubic-bezier(0.22, 1, 0.36, 1) 2;
 }
 
-@keyframes comment-flash {
-  0%,
-  100% {
-    outline-color: transparent;
-    box-shadow: 0 0 0 0 transparent;
+@keyframes comment-halo {
+  0% {
+    border-color: var(--line);
+    box-shadow:
+      0 0 0 0 color-mix(in srgb, var(--accent) 0%, transparent),
+      0 0 0 0 color-mix(in srgb, var(--accent) 0%, transparent);
   }
 
-  45% {
-    outline-color: color-mix(in srgb, var(--accent) 78%, transparent);
-    box-shadow: 0 0 0 7px color-mix(in srgb, var(--accent) 15%, transparent);
+  30% {
+    border-color: color-mix(in srgb, var(--accent) 58%, var(--line));
+    box-shadow:
+      0 0 0 4px color-mix(in srgb, var(--accent) 15%, transparent),
+      0 16px 34px -16px color-mix(in srgb, var(--accent) 42%, transparent);
+  }
+
+  70% {
+    border-color: color-mix(in srgb, var(--accent) 30%, var(--line));
+    box-shadow:
+      0 0 0 10px color-mix(in srgb, var(--accent) 7%, transparent),
+      0 16px 34px -16px color-mix(in srgb, var(--accent) 24%, transparent);
+  }
+
+  100% {
+    border-color: var(--line);
+    box-shadow:
+      0 0 0 14px color-mix(in srgb, var(--accent) 0%, transparent),
+      0 16px 34px -16px color-mix(in srgb, var(--accent) 0%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .comment.is-target .comment__main {
+    border-color: color-mix(in srgb, var(--accent) 52%, var(--line));
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 12%, transparent);
+    animation: none;
   }
 }
 
