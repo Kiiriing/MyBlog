@@ -236,24 +236,25 @@ export default function PostView() {
         <span ref={progressEl} />
       </div>
 
-      <header className="post-hero">
+      <header className="post-head">
         <div className="shell">
-          <div className="post-hero__bar">
-            <Link to="/journal" className="post-hero__back mono" data-cursor="Back">
+          <div className="post-head__top">
+            <Link to="/journal" className="post-back mono" data-cursor="Back">
               <span aria-hidden="true">←</span>
               <span>Journal / {t('手记', 'Journal')}</span>
             </Link>
-            <span className="mono post-hero__folio">
-              {t('第', 'No.')} {post.index} / {total}
+            <span className="mono post-head__no">
+              {post.index} / {total}
             </span>
           </div>
 
-          <div className="post-hero__masthead">
-            <div className="post-hero__intro">
-              <div className="post-hero__kicker">
-                <span className="post-hero__cat mono">{post.category}</span>
+          {/* 桌面端把标题与配图并成杂志式双栏：正文起点从第二屏拉回首屏 */}
+          <div className="post-head__masthead">
+            <div className="post-head__intro">
+              <div className="post-head__meta">
+                <span className="post-head__cat mono">{post.category}</span>
                 {project ? (
-                  <Link to={`/journal?project=${project.slug}`} className="post-hero__project mono">
+                  <Link to={`/journal?project=${project.slug}`} className="post-head__project mono">
                     {project.title} · {project.cn}
                   </Link>
                 ) : null}
@@ -263,22 +264,22 @@ export default function PostView() {
                 </span>
               </div>
 
-              <h1 className="post-hero__title">
+              <h1 className="post-head__title">
                 {titleParts.map((part, index) => (
-                  <span key={index} className="post-hero__title-part">
+                  <span key={index} className="post-head__title-part">
                     {part}
                   </span>
                 ))}
               </h1>
-              <p className="post-hero__en">{post.en}</p>
-              <p className="post-hero__excerpt">{post.excerpt}</p>
+              <p className="post-head__en">{post.en}</p>
+              <p className="post-head__excerpt">{post.excerpt}</p>
 
-              <div className="post-hero__tags">
+              <div className="post-head__tags">
                 {post.tags.map((tag) => (
                   <Link
                     key={tag}
                     to={`/journal/tag/${encodeURIComponent(tag)}`}
-                    className="post-hero__tag mono"
+                    className="post-head__tag mono"
                     data-cursor="Tag"
                   >
                     #{tag}
@@ -289,15 +290,7 @@ export default function PostView() {
               <EngagementBar slug={post.slug} />
             </div>
 
-            <figure className="post-hero__cover">
-              <div className="post-hero__cover-top">
-                <span className="post-hero__cover-no" aria-hidden="true">
-                  {post.index}
-                </span>
-                <span className="mono post-hero__cover-label">
-                  Cover / {post.en}
-                </span>
-              </div>
+            <figure className="post-cover">
               <ArtworkFrame
                 src={post.art}
                 alt={t(`${post.title} — 文章配图`, `${post.en} — article image`)}
@@ -305,41 +298,15 @@ export default function PostView() {
                 parallax={8}
                 eager
               >
-                <div className="post-hero__cover-meta mono">
+                <div className="post-cover__meta mono">
                   <span>LU YU / Journal</span>
                   <span>{post.date}</span>
                 </div>
               </ArtworkFrame>
-              <figcaption className="post-hero__caption mono">
-                <span>Fig. {post.index}</span>
-                <span>
-                  {post.en}, {post.date.slice(0, 4)}
-                </span>
+              <figcaption className="post-cover__caption mono">
+                Fig. {post.index} — {post.en}, {post.date.slice(0, 4)}
               </figcaption>
             </figure>
-          </div>
-
-          <div className="post-hero__strip">
-            <div className="post-hero__strip-item">
-              <span className="mono">{t('归入', 'Filed under')}</span>
-              {project ? (
-                <Link to={`/journal?project=${project.slug}`}>{project.cn}</Link>
-              ) : (
-                <span>{post.category}</span>
-              )}
-            </div>
-            <div className="post-hero__strip-item">
-              <span className="mono">{t('文字', 'Words')}</span>
-              <span>陆屿 / LU YU</span>
-            </div>
-            <div className="post-hero__strip-item">
-              <span className="mono">{t('地点', 'Place')}</span>
-              <span>Beijing, CN</span>
-            </div>
-            <div className="post-hero__strip-item">
-              <span className="mono">{t('卷号', 'Edition')}</span>
-              <span>Vol. 03 — Journal</span>
-            </div>
           </div>
         </div>
       </header>
