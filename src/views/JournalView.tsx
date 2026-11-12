@@ -15,7 +15,6 @@ import { useI18n } from '../store/i18n'
 import JournalList from '../components/JournalList'
 import SiteFooter from '../components/SiteFooter'
 import ChapterTag from '../components/ChapterTag'
-import ChapterNext from '../components/ChapterNext'
 import Seo from '../components/Seo'
 import '../styles/components/JournalView.css'
 
@@ -301,8 +300,6 @@ export default function JournalView() {
           </div>
         </div>
       </main>
-
-      <ChapterNext index="08" />
 
       <SiteFooter />
     </div>
