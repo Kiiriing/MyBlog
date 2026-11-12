@@ -41,7 +41,7 @@ function legacyCopy(text: string) {
   }
 }
 
-function CodeBlock({ code }: { code: string }) {
+function CodeBlock({ code, language }: { code: string; language?: string }) {
   const [copied, setCopied] = useState(false)
   const timer = useRef(0)
   const { t } = useI18n()
@@ -58,17 +58,22 @@ function CodeBlock({ code }: { code: string }) {
 
   return (
     <div className="post-code">
+      <div className="post-code__bar">
+        <span className="post-code__lang mono">
+          {language ? `${language} / snippet` : t('代码片段', 'Code')}
+        </span>
+        <button
+          type="button"
+          className={`post-code__copy mono${copied ? ' is-copied' : ''}`}
+          onClick={copy}
+          aria-label={copied ? t('已复制代码', 'Code copied') : t('复制代码', 'Copy code')}
+        >
+          {copied ? t('已复制 ✓', 'Copied ✓') : t('复制', 'Copy')}
+        </button>
+      </div>
       <pre className="post-body__code">
         <code>{code}</code>
       </pre>
-      <button
-        type="button"
-        className={`post-code__copy mono${copied ? ' is-copied' : ''}`}
-        onClick={copy}
-        aria-label={copied ? t('已复制代码', 'Code copied') : t('复制代码', 'Copy code')}
-      >
-        {copied ? t('已复制 ✓', 'Copied ✓') : t('复制', 'Copy')}
-      </button>
     </div>
   )
 }
@@ -102,7 +107,7 @@ export default function PostView() {
   })
   const headings = [...headingIds.entries()].map(([index, id]) => ({
     id,
-    text: String(blocks[index].text)
+    text: String(blocks[index].text).replace(/^\d+\s*\/\s*/, '')
   }))
 
   useEffect(() => {
@@ -231,48 +236,49 @@ export default function PostView() {
         <span ref={progressEl} />
       </div>
 
-      <header className="post-head">
+      <header className="post-hero">
         <div className="shell">
-          <div className="post-head__top">
-            <Link to="/journal" className="post-back mono" data-cursor="Back">
+          <div className="post-hero__bar">
+            <Link to="/journal" className="post-hero__back mono" data-cursor="Back">
               <span aria-hidden="true">←</span>
               <span>Journal / {t('手记', 'Journal')}</span>
             </Link>
-            <span className="mono post-head__no">
-              {post.index} / {total}
+            <span className="mono post-hero__folio">
+              {t('第', 'No.')} {post.index} / {total}
             </span>
           </div>
 
-          {/* 桌面端把标题与配图并成杂志式双栏：正文起点从第二屏拉回首屏 */}
-          <div className="post-head__masthead">
-            <div className="post-head__intro">
-              <div className="post-head__meta">
-                <span className="post-head__cat mono">{post.category}</span>
+          <div className="post-hero__masthead">
+            <div className="post-hero__intro">
+              <div className="post-hero__kicker">
+                <span className="post-hero__cat mono">{post.category}</span>
                 {project ? (
-                  <Link to={`/journal?project=${project.slug}`} className="post-head__project mono">
+                  <Link to={`/journal?project=${project.slug}`} className="post-hero__project mono">
                     {project.title} · {project.cn}
                   </Link>
                 ) : null}
                 <span className="mono">{post.date}</span>
-                <span className="mono">{post.reading} {t('阅读', 'read')}</span>
+                <span className="mono">
+                  {post.reading} {t('阅读', 'read')}
+                </span>
               </div>
 
-              <h1 className="post-head__title">
+              <h1 className="post-hero__title">
                 {titleParts.map((part, index) => (
-                  <span key={index} className="post-head__title-part">
+                  <span key={index} className="post-hero__title-part">
                     {part}
                   </span>
                 ))}
               </h1>
-              <p className="post-head__en">{post.en}</p>
-              <p className="post-head__excerpt">{post.excerpt}</p>
+              <p className="post-hero__en">{post.en}</p>
+              <p className="post-hero__excerpt">{post.excerpt}</p>
 
-              <div className="post-head__tags">
+              <div className="post-hero__tags">
                 {post.tags.map((tag) => (
                   <Link
                     key={tag}
                     to={`/journal/tag/${encodeURIComponent(tag)}`}
-                    className="post-head__tag mono"
+                    className="post-hero__tag mono"
                     data-cursor="Tag"
                   >
                     #{tag}
@@ -283,7 +289,15 @@ export default function PostView() {
               <EngagementBar slug={post.slug} />
             </div>
 
-            <figure className="post-cover">
+            <figure className="post-hero__cover">
+              <div className="post-hero__cover-top">
+                <span className="post-hero__cover-no" aria-hidden="true">
+                  {post.index}
+                </span>
+                <span className="mono post-hero__cover-label">
+                  Cover / {post.en}
+                </span>
+              </div>
               <ArtworkFrame
                 src={post.art}
                 alt={t(`${post.title} — 文章配图`, `${post.en} — article image`)}
@@ -291,25 +305,51 @@ export default function PostView() {
                 parallax={8}
                 eager
               >
-                <div className="post-cover__meta mono">
+                <div className="post-hero__cover-meta mono">
                   <span>LU YU / Journal</span>
                   <span>{post.date}</span>
                 </div>
               </ArtworkFrame>
-              <figcaption className="post-cover__caption mono">
-                Fig. {post.index} — {post.en}, {post.date.slice(0, 4)}
+              <figcaption className="post-hero__caption mono">
+                <span>Fig. {post.index}</span>
+                <span>
+                  {post.en}, {post.date.slice(0, 4)}
+                </span>
               </figcaption>
             </figure>
+          </div>
+
+          <div className="post-hero__strip">
+            <div className="post-hero__strip-item">
+              <span className="mono">{t('归入', 'Filed under')}</span>
+              {project ? (
+                <Link to={`/journal?project=${project.slug}`}>{project.cn}</Link>
+              ) : (
+                <span>{post.category}</span>
+              )}
+            </div>
+            <div className="post-hero__strip-item">
+              <span className="mono">{t('文字', 'Words')}</span>
+              <span>陆屿 / LU YU</span>
+            </div>
+            <div className="post-hero__strip-item">
+              <span className="mono">{t('地点', 'Place')}</span>
+              <span>Beijing, CN</span>
+            </div>
+            <div className="post-hero__strip-item">
+              <span className="mono">{t('卷号', 'Edition')}</span>
+              <span>Vol. 03 — Journal</span>
+            </div>
           </div>
         </div>
       </header>
 
-      <div className="post-layout shell">
-        <aside className="post-aside">
-          <div className="post-aside__inner">
-            {headings.length ? (
-              <div className="post-aside__toc">
-                <span className="post-aside__label mono">{t('本页目录', 'On this page')}</span>
+      <div className="post-main shell">
+        <aside className="post-rail" aria-label={t('文章索引', 'Post index')}>
+          <div className="post-rail__inner">
+            <nav className="post-rail__toc" aria-label={t('本页目录', 'On this page')}>
+              <span className="post-rail__label mono">{t('本页目录', 'On this page')}</span>
+              {headings.length ? (
                 <ol>
                   {headings.map((heading, index) => (
                     <li key={heading.id}>
@@ -324,23 +364,32 @@ export default function PostView() {
                     </li>
                   ))}
                 </ol>
-              </div>
-            ) : null}
+              ) : (
+                <p className="post-rail__single mono">{t('单页短文', 'Single page')}</p>
+              )}
+            </nav>
 
-            <span className="post-aside__label mono">{t('归入', 'Filed under')}</span>
-            <ul className="post-aside__tags">
-              {post.tags.map((tag) => (
-                <li key={tag}>
-                  <Link to={`/journal/tag/${encodeURIComponent(tag)}`}>#{tag}</Link>
-                </li>
-              ))}
-            </ul>
-            <div className="post-aside__rule" />
-            <div className="post-aside__meta mono">
-              <span>Words — {t('我', 'me')}</span>
-              <span>Images — {t('我', 'me')}</span>
-              <span>Beijing, CN</span>
+            <div className="post-rail__block">
+              <span className="post-rail__label mono">{t('归入', 'Filed under')}</span>
+              <ul className="post-rail__tags">
+                {post.tags.map((tag) => (
+                  <li key={tag}>
+                    <Link to={`/journal/tag/${encodeURIComponent(tag)}`}>#{tag}</Link>
+                  </li>
+                ))}
+              </ul>
             </div>
+
+            <div className="post-rail__block">
+              <span className="post-rail__label mono">{t('页码', 'Folio')}</span>
+              <p className="post-rail__folio mono">
+                {post.index} / {total}
+              </p>
+            </div>
+
+            <Link to="/journal" className="post-rail__back mono" data-cursor="Index">
+              {t('全部手记', 'All notes')} <span aria-hidden="true">↖</span>
+            </Link>
           </div>
         </aside>
 
@@ -355,9 +404,16 @@ export default function PostView() {
             }
 
             if (block.type === 'h2') {
+              const raw = String(block.text)
+              const matched = raw.match(/^(\d+)\s*\/\s*(.*)$/)
               return (
                 <h2 key={index} id={headingIds.get(index)} className="post-body__h2">
-                  <span>{block.text}</span>
+                  {matched ? (
+                    <span className="post-body__h2-no" aria-hidden="true">
+                      {matched[1]}
+                    </span>
+                  ) : null}
+                  <span className="post-body__h2-text">{matched ? matched[2] : raw}</span>
                 </h2>
               )
             }
@@ -365,6 +421,9 @@ export default function PostView() {
             if (block.type === 'quote') {
               return (
                 <blockquote key={index} className="post-body__quote">
+                  <span className="post-body__quote-mark" aria-hidden="true">
+                    “
+                  </span>
                   <p>{block.text}</p>
                   {block.cite ? <cite className="mono">{block.cite}</cite> : null}
                 </blockquote>
@@ -397,25 +456,37 @@ export default function PostView() {
                       decoding="async"
                       style={{ objectPosition: block.position || '50% 50%' }}
                     />
+                    <span className="post-body__figure-hint mono" aria-hidden="true">
+                      {t('放大', 'Enlarge')} ↗
+                    </span>
                   </button>
-                  <figcaption className="mono">{block.caption}</figcaption>
+                  <figcaption className="post-body__figure-caption mono">
+                    <span>Fig.</span>
+                    <span>{block.caption}</span>
+                  </figcaption>
                 </figure>
               )
             }
 
             if (block.type === 'code') {
-              return <CodeBlock key={index} code={block.text} />
+              return <CodeBlock key={index} code={block.text} language={block.language} />
             }
 
             return null
           })}
+
+          <div className="post-body__end" aria-hidden="true">
+            <span />
+            <span className="mono">End of note — {post.index}</span>
+            <span />
+          </div>
         </article>
       </div>
 
       {related.length ? (
         <section className="post-related shell" aria-label={t('相关手记', 'Related notes')}>
           <div className="post-related__head">
-            <span className="eyebrow">Related / {t('相关手记', 'Related')}</span>
+            <span className="eyebrow">Related / {t('延伸阅读', 'Keep reading')}</span>
             <span className="mono">{t('同项目或同标签', 'Same project or tags')}</span>
           </div>
           <div className="post-related__grid">
@@ -426,8 +497,11 @@ export default function PostView() {
                 className="post-related__item"
                 data-cursor="Read"
               >
+                <span className="post-related__no" aria-hidden="true">
+                  {item.index}
+                </span>
                 <span className="mono post-related__meta">
-                  {item.index} — {projectOf(item)?.cn ?? item.category} · {item.date}
+                  {projectOf(item)?.cn ?? item.category} · {item.date}
                 </span>
                 <span className="post-related__title">{item.title}</span>
                 <span className="post-related__en">{item.en}</span>
@@ -445,7 +519,9 @@ export default function PostView() {
       <nav className="post-adjacent shell" aria-label={t('文章导航', 'Post navigation')}>
         {adjacent.prev ? (
           <Link to={`/journal/${adjacent.prev.slug}`} className="post-adjacent__item" data-cursor="Read">
-            <span className="mono">{t('更新一篇', 'Newer')}</span>
+            <span className="mono post-adjacent__dir">
+              <span aria-hidden="true">←</span> {t('更新一篇', 'Newer')}
+            </span>
             <span className="post-adjacent__title">{adjacent.prev.title}</span>
             <span className="post-adjacent__en">{adjacent.prev.en}</span>
           </Link>
@@ -459,7 +535,9 @@ export default function PostView() {
             className="post-adjacent__item post-adjacent__item--right"
             data-cursor="Read"
           >
-            <span className="mono">{t('更早一篇', 'Older')}</span>
+            <span className="mono post-adjacent__dir">
+              {t('更早一篇', 'Older')} <span aria-hidden="true">→</span>
+            </span>
             <span className="post-adjacent__title">{adjacent.next.title}</span>
             <span className="post-adjacent__en">{adjacent.next.en}</span>
           </Link>

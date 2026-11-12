@@ -30,6 +30,13 @@ function formatTime(iso: string) {
   })
 }
 
+/** 根据昵称取一个稳定的头像色调，让每条评论有轻微差别 */
+function avatarTone(name: string) {
+  let sum = 0
+  for (const char of name) sum += char.codePointAt(0) ?? 0
+  return sum % 3
+}
+
 export default function CommentSection({ slug }: { slug: string }) {
   const { user } = useAuth()
   const location = useLocation()
@@ -117,6 +124,7 @@ export default function CommentSection({ slug }: { slug: string }) {
   }
 
   const loginHref = `/login?next=${encodeURIComponent(location.pathname)}`
+  const count = data ? String(data.total).padStart(2, '0') : '00'
 
   function renderComment(comment: PostComment, isReply = false) {
     const initial = comment.authorName.trim().charAt(0).toUpperCase() || '·'
@@ -125,13 +133,19 @@ export default function CommentSection({ slug }: { slug: string }) {
         key={comment.id}
         className={`comment${isReply ? ' comment--reply' : ''}${comment.deleted ? ' is-deleted' : ''}`}
       >
-        <span className="comment__avatar" aria-hidden="true">
+        <span
+          className={`comment__avatar comment__avatar--${avatarTone(comment.authorName)}`}
+          aria-hidden="true"
+        >
           {initial}
         </span>
 
         <div className="comment__main">
           <header className="comment__head">
             <span className="comment__author">{comment.authorName}</span>
+            {comment.mine && !comment.deleted ? (
+              <span className="comment__badge mono">{t('我', 'me')}</span>
+            ) : null}
             <time className="mono" dateTime={comment.createdAt}>
               {formatTime(comment.createdAt)}
             </time>
@@ -141,7 +155,9 @@ export default function CommentSection({ slug }: { slug: string }) {
               </button>
             ) : null}
           </header>
+
           <p className="comment__body">{comment.content}</p>
+
           {!comment.deleted ? (
             <div className="comment__foot">
               <button
@@ -149,6 +165,7 @@ export default function CommentSection({ slug }: { slug: string }) {
                 className="comment__reply"
                 onClick={() => setReplyTo(replyTo?.id === comment.id ? null : comment)}
               >
+                <span aria-hidden="true">↳</span>
                 {replyTo?.id === comment.id ? t('取消回复', 'Cancel reply') : t('回复', 'Reply')}
               </button>
             </div>
@@ -166,86 +183,112 @@ export default function CommentSection({ slug }: { slug: string }) {
 
   return (
     <section className="comments shell" id="comments" aria-label={t('评论区', 'Comments')}>
-      <div className="comments__head">
-        <div>
-          <span className="eyebrow">Comments / {t('评论', 'Comments')}</span>
+      <header className="comments__head">
+        <div className="comments__intro">
+          <span className="eyebrow">Discussion / {t('讨论', 'Discussion')}</span>
           <h2 className="comments__title">
-            {t('说点什么', 'Say something')}
-            <em>{data ? String(data.total).padStart(2, '0') : '00'}</em>
+            <span>{t('留下一条', 'Leave a')}</span>
+            <em>{t('注脚', 'note')}</em>
+            <span className="comments__count mono">{count}</span>
           </h2>
-        </div>
-        <span className="mono comments__note">
-          {t('登录后可以评论与回复', 'Sign in to comment and reply')}
-        </span>
-      </div>
-
-      {user ? (
-        <form className="comment-form" onSubmit={submit}>
-          <div className="comment-form__top">
-            <span className="mono comment-form__as">
-              {t(`以 ${user.displayName} 的身份`, `As ${user.displayName}`)}
-            </span>
-            {replyTo ? (
-              <button type="button" className="comment-form__replying" onClick={() => setReplyTo(null)}>
-                {t(`回复 @${replyTo.authorName} · 取消`, `Replying to @${replyTo.authorName} · cancel`)}
-              </button>
-            ) : null}
-          </div>
-          <textarea
-            ref={composer}
-            className="comment-form__input"
-            value={content}
-            maxLength={800}
-            placeholder={
-              replyTo
-                ? t(`回复 @${replyTo.authorName}…`, `Reply to @${replyTo.authorName}…`)
-                : t('写下你的想法…', 'Write what you think…')
-            }
-            onChange={(event) => setContent(event.target.value)}
-            onKeyDown={onComposerKeyDown}
-            rows={4}
-          />
-          <div className="comment-form__foot">
-            <span className="mono comment-form__count">
-              {content.length} / 800
-              <span className="comment-form__hint">
-                {t('Enter 发布 · Shift + Enter 换行', 'Enter to post · Shift + Enter for a new line')}
-              </span>
-            </span>
-            <button type="submit" className="comment-form__submit" disabled={submitting}>
-              {submitting ? t('发布中…', 'Posting…') : t('发布评论', 'Post comment')}
-            </button>
-          </div>
-        </form>
-      ) : (
-        <div className="comment-gate">
-          <p>
+          <p className="comments__lede">
             {t(
-              '评论需要登录。登录后可以回复、收到楼中楼通知。',
-              'Sign in to comment, reply, and receive reply notifications.'
+              '补充、质疑，或者只是打个招呼。登录后可以评论，也能收到楼中楼回复提醒。',
+              'Add context, push back, or just say hello. Sign in to comment and get notified when someone replies.'
             )}
           </p>
-          <Link to={loginHref} className="comment-gate__link" data-cursor="Login">
-            {t('去登录', 'Sign in')} <span aria-hidden="true">↗</span>
-          </Link>
         </div>
-      )}
+        <span className="comments__mark" aria-hidden="true">
+          ?
+        </span>
+      </header>
 
-      {notice ? (
-        <p className="mono comments__notice" role="status">
-          {notice}
-        </p>
-      ) : null}
+      <div className="comments__body">
+        <aside className="comments__aside">
+          {user ? (
+            <form className="comment-form" onSubmit={submit}>
+              <div className="comment-form__head">
+                <span className="mono comment-form__label">{t('新注脚', 'New note')}</span>
+                {replyTo ? (
+                  <button type="button" className="comment-form__replying" onClick={() => setReplyTo(null)}>
+                    {t(`回复 @${replyTo.authorName} · 取消`, `Replying to @${replyTo.authorName} · cancel`)}
+                  </button>
+                ) : (
+                  <span className="mono comment-form__as">
+                    {t(`以 ${user.displayName} 的身份`, `As ${user.displayName}`)}
+                  </span>
+                )}
+              </div>
+              <textarea
+                ref={composer}
+                className="comment-form__input"
+                value={content}
+                maxLength={800}
+                aria-label={t('评论内容', 'Comment')}
+                placeholder={
+                  replyTo
+                    ? t(`回复 @${replyTo.authorName}…`, `Reply to @${replyTo.authorName}…`)
+                    : t('写下你的想法…', 'Write what you think…')
+                }
+                onChange={(event) => setContent(event.target.value)}
+                onKeyDown={onComposerKeyDown}
+                rows={5}
+              />
+              <div className="comment-form__foot">
+                <span className="mono comment-form__count">
+                  {content.length} / 800
+                  <span className="comment-form__hint">
+                    {t('Enter 发布 · Shift + Enter 换行', 'Enter to post · Shift + Enter for a new line')}
+                  </span>
+                </span>
+                <button type="submit" className="comment-form__submit" disabled={submitting}>
+                  <span>{submitting ? t('发布中…', 'Posting…') : t('发布评论', 'Post comment')}</span>
+                  <span aria-hidden="true">→</span>
+                </button>
+              </div>
+            </form>
+          ) : (
+            <div className="comment-gate">
+              <span className="mono comment-gate__label">{t('需要登录', 'Members only')}</span>
+              <p>
+                {t(
+                  '评论需要登录。登录后可以回复、收到楼中楼通知。',
+                  'Sign in to comment, reply, and receive reply notifications.'
+                )}
+              </p>
+              <Link to={loginHref} className="comment-gate__link" data-cursor="Login">
+                {t('去登录', 'Sign in')} <span aria-hidden="true">↗</span>
+              </Link>
+            </div>
+          )}
 
-      <div className="comments__list">
-        {loading ? <p className="mono comments__empty">{t('正在加载评论…', 'Loading comments…')}</p> : null}
-        {!loading && error ? <p className="mono comments__empty">{error}</p> : null}
-        {!loading && !error && data && data.items.length === 0 ? (
-          <p className="comments__empty">
-            {t('还没有评论，来写下第一条。', 'No comments yet — write the first one.')}
-          </p>
-        ) : null}
-        {data?.items.map((comment) => renderComment(comment))}
+          {notice ? (
+            <p className="mono comments__notice" role="status">
+              {notice}
+            </p>
+          ) : null}
+        </aside>
+
+        <div className="comments__stream">
+          <div className="comments__stream-head">
+            <span className="mono">{t('全部评论', 'All comments')}</span>
+            <span className="mono comments__stream-count">{count}</span>
+          </div>
+
+          <div className="comments__list">
+            {loading ? <p className="mono comments__state">{t('正在加载评论…', 'Loading comments…')}</p> : null}
+            {!loading && error ? <p className="mono comments__state">{error}</p> : null}
+            {!loading && !error && data && data.items.length === 0 ? (
+              <div className="comments__empty">
+                <span className="comments__empty-no" aria-hidden="true">
+                  00
+                </span>
+                <p>{t('还没有评论，来写下第一条。', 'No comments yet — write the first one.')}</p>
+              </div>
+            ) : null}
+            {data?.items.map((comment) => renderComment(comment))}
+          </div>
+        </div>
       </div>
     </section>
   )
