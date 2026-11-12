@@ -198,7 +198,7 @@ export default function CommentSection({ slug }: { slug: string }) {
             <span className="eyebrow">Discussion / {t('讨论', 'Discussion')}</span>
             <h2 className="comments__title">
               <span>{t('留下一条', 'Leave a')}</span>
-              <em>{t('注脚', 'note')}</em>
+              <em>{t('评论', 'comment')}</em>
               <span className="comments__count mono">{count}</span>
             </h2>
             <p className="comments__lede">
@@ -214,7 +214,7 @@ export default function CommentSection({ slug }: { slug: string }) {
           {user ? (
             <form className="comment-form" onSubmit={submit}>
               <div className="comment-form__head">
-                <span className="mono comment-form__label">{t('新注脚', 'New note')}</span>
+                <span className="mono comment-form__label">{t('新评论', 'New comment')}</span>
                 {replyTo ? (
                   <button type="button" className="comment-form__replying" onClick={() => setReplyTo(null)}>
                     {t(`回复 @${replyTo.authorName} · 取消`, `Replying to @${replyTo.authorName} · cancel`)}
