@@ -818,9 +818,21 @@ export default function Lanyard({
     const container = containerRef.current
     if (!container) return undefined
 
+    /* 低配机判定：核心数与内存是唯一能提前拿到的信号。
+       命中后关抗锯齿、降到 1x 像素比、去掉两层法线贴图、贴图尺寸减半，
+       把一次性的显存上传和每帧的填充率一起压下来 */
+    const cores = navigator.hardwareConcurrency ?? 4
+    const memory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8
+    const lite = cores <= 4 || memory <= 4
+    const faceWidth = lite ? 640 : FACE_WIDTH
+
     let renderer: THREE.WebGLRenderer
     try {
-      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' })
+      renderer = new THREE.WebGLRenderer({
+        antialias: !lite,
+        alpha: true,
+        powerPreference: 'high-performance'
+      })
     } catch {
       return undefined
     }
@@ -833,7 +845,7 @@ export default function Lanyard({
     canvas.setAttribute('aria-hidden', 'true')
     container.appendChild(canvas)
 
-    const anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy())
+    const anisotropy = lite ? 1 : Math.min(8, renderer.capabilities.getMaxAnisotropy())
     const scene = new THREE.Scene()
     const environment = buildEnvironment(renderer)
     scene.environment = environment.texture
@@ -858,8 +870,8 @@ export default function Lanyard({
     const strapTexture = makeCanvasTexture(strapCanvas, anisotropy)
     strapTexture.wrapS = THREE.ClampToEdgeWrapping
     strapTexture.wrapT = THREE.RepeatWrapping
-    const grain = buildGrainTexture()
-    const weave = buildWeaveTexture()
+    const grain = lite ? null : buildGrainTexture()
+    const weave = lite ? null : buildWeaveTexture()
     const foilUniforms = {
       foilStrength: { value: 0 },
       foilAspect: { value: 1.4 },
@@ -879,13 +891,11 @@ export default function Lanyard({
 
     const frontMaterial = new THREE.MeshPhysicalMaterial({
       map: frontTexture,
-      normalMap: grain,
-      normalScale: new THREE.Vector2(0.06, 0.06)
+      ...(grain ? { normalMap: grain, normalScale: new THREE.Vector2(0.06, 0.06) } : {})
     })
     const backMaterial = new THREE.MeshPhysicalMaterial({
       map: backTexture,
-      normalMap: grain,
-      normalScale: new THREE.Vector2(0.06, 0.06)
+      ...(grain ? { normalMap: grain, normalScale: new THREE.Vector2(0.06, 0.06) } : {})
     })
     frontMaterial.onBeforeCompile = injectFoil
     backMaterial.onBeforeCompile = injectFoil
@@ -893,8 +903,7 @@ export default function Lanyard({
     const metalMaterial = new THREE.MeshStandardMaterial({ metalness: 1 })
     const bandMaterial = new THREE.MeshPhysicalMaterial({
       map: strapTexture,
-      normalMap: weave,
-      normalScale: new THREE.Vector2(0.7, 0.7),
+      ...(weave ? { normalMap: weave, normalScale: new THREE.Vector2(0.7, 0.7) } : {}),
       roughness: 0.68,
       sheen: 1,
       sheenRoughness: 0.42,
@@ -947,8 +956,8 @@ export default function Lanyard({
     const paintFaces = () => {
       const s = settingsRef.current
       const color = parseColor(s.cardColor, [1, 1, 1])
-      const width = FACE_WIDTH
-      const height = Math.round((FACE_WIDTH * layout.height) / layout.width)
+      const width = faceWidth
+      const height = Math.round((faceWidth * layout.height) / layout.width)
       if (frontCanvas.width !== width || frontCanvas.height !== height) {
         frontCanvas.width = width
         frontCanvas.height = height
@@ -1317,7 +1326,7 @@ export default function Lanyard({
     const resize = () => {
       view.width = Math.max(1, container.clientWidth)
       view.height = Math.max(1, container.clientHeight)
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
+      renderer.setPixelRatio(lite ? 1 : Math.min(window.devicePixelRatio || 1, 2))
       renderer.setSize(view.width, view.height, false)
       apply()
       render()
@@ -1353,7 +1362,7 @@ export default function Lanyard({
       canvas.removeEventListener('touchstart', onTouchStart)
       ;[bodyMesh, frontMesh, backMesh, ring, clampMesh, eyelet, band].forEach(mesh => mesh.geometry?.dispose())
       ;[frontMaterial, backMaterial, edgeMaterial, metalMaterial, bandMaterial].forEach(material => material.dispose())
-      ;[frontTexture, backTexture, strapTexture, grain, weave].forEach(texture => texture.dispose())
+      ;[frontTexture, backTexture, strapTexture, grain, weave].forEach(texture => texture?.dispose())
       environment.dispose()
       renderer.dispose()
       if (canvas.parentNode) canvas.parentNode.removeChild(canvas)

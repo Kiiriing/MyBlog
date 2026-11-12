@@ -31,6 +31,9 @@ export default function AboutSection() {
   /* 吊牌在第三屏，首屏看不到：等滚到附近再建 three 场景，避免返回首页时卡顿 */
   const [lanyardHost, lanyardNear] = useNearViewport<HTMLDivElement>('500px')
 
+  /* 触屏没有 hover，点条目手动展开；桌面悬停仍然生效 */
+  const [openCap, setOpenCap] = useState<string | null>(null)
+
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 1100px)')
     const sync = () => setCompactLanyard(mq.matches)
@@ -192,7 +195,11 @@ export default function AboutSection() {
               </div>
               <ul>
                 {capabilities.map((cap) => (
-                  <li key={cap.no} className="about__cap">
+                  <li
+                    key={cap.no}
+                    className={`about__cap${openCap === cap.no ? ' is-open' : ''}`}
+                    onClick={() => setOpenCap((prev) => (prev === cap.no ? null : cap.no))}
+                  >
                     <span className="about__cap-no">{cap.no}</span>
                     <span className="about__cap-main">
                       <span className="about__cap-en">{cap.en}</span>
