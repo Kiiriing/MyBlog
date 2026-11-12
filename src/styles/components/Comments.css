@@ -438,14 +438,26 @@
   border-color: var(--line-strong);
 }
 
-/* 自己的评论：气泡淡橙底 */
+/* 自己的评论：暖橙纸感气泡，四周留足留白，文字不贴边 */
 .comment.is-mine .comment__main {
-  border-color: color-mix(in srgb, var(--accent) 32%, var(--line));
-  background: color-mix(in srgb, var(--accent) 5%, var(--card));
+  padding: clamp(17px, 2vw, 21px) clamp(20px, 2.5vw, 26px) clamp(15px, 1.7vw, 19px);
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--line));
+  border-radius: 3px 18px 18px 18px;
+  background: linear-gradient(
+    152deg,
+    color-mix(in srgb, var(--accent) 9%, var(--card)),
+    color-mix(in srgb, var(--accent) 3%, var(--card)) 68%
+  );
+  box-shadow: 0 16px 34px -30px color-mix(in srgb, var(--accent) 60%, transparent);
 }
 
 .comment.is-mine .comment__avatar {
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--line-strong));
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--line-strong));
+}
+
+.comment.is-mine .comment__badge {
+  background: var(--accent);
+  color: #fff;
 }
 
 .comment__head {
@@ -638,6 +650,15 @@
   padding: 0;
   border: 0;
   background: transparent;
+}
+
+/* 楼中楼里自己的回复：仍保留橙色气泡，留白收窄但文字不贴边 */
+.comment--reply.is-mine .comment__main {
+  padding: 12px 16px 10px;
+  border: 1px solid color-mix(in srgb, var(--accent) 26%, var(--line));
+  border-radius: 3px 13px 13px 13px;
+  background: color-mix(in srgb, var(--accent) 6%, var(--card));
+  box-shadow: none;
 }
 
 .comment--reply .comment__author {
@@ -893,6 +914,15 @@
   .comment__main {
     padding: 13px 14px 12px;
     border-radius: 2px 13px 13px 13px;
+  }
+
+  .comment.is-mine .comment__main {
+    padding: 15px 16px 13px;
+    border-radius: 3px 15px 15px 15px;
+  }
+
+  .comment--reply.is-mine .comment__main {
+    padding: 10px 13px 9px;
   }
 
   .comment--reply {
