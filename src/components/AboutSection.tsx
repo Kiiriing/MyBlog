@@ -64,16 +64,17 @@ export default function AboutSection() {
        都是同步长任务，叠在动画上就是肉眼可见的卡顿 */
     if (!ui.introDone) return
 
-    /* 首屏标题动画约 2.5 秒，再等 3 秒才放开挂载 */
+    /* 入场动画结束后 0.6 秒就预热：这段还在入场幕布收尾、用户没开始下滑，
+       把建场景的长任务压在这里，滚到吊牌时已经建好，不会看到空白画布 */
     const timer = window.setTimeout(() => {
       setIntroSettled(true)
 
       const conn = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection
       /* 省流模式不做预热，仍等接近视口再加载 */
       if (conn?.saveData) return
-      /* 用户已经往下走了就不在视野里建场景，交给接近视口的挂载逻辑 */
+      /* 已经在往下看了就不在视野里建场景，交给接近视口的挂载逻辑 */
       if (window.scrollY < window.innerHeight * 0.6) setLanyardWarm(true)
-    }, 3000)
+    }, 600)
     return () => window.clearTimeout(timer)
   }, [ui.introDone])
 
