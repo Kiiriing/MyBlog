@@ -1,10 +1,19 @@
--- 更新页历史版本：由 src/data/changelog.ts 导出，外加本次 git 更新补记的两条
+-- 更新页历史版本：由 src/data/changelog.ts 导出，外加后续 git 更新补记的版本
+
+insert into changelog_entries (id, version, date_label, occurred_at, title) values (gen_random_uuid(), 'v3.3.0', '2026.11.12 22:35 – 23:10', '2026-11-12T22:35:00+08:00', '评论区虚拟滚动与细节修补');
+insert into changelog_items (entry_id, position, item) values ((select id from changelog_entries where version = 'v3.3.0'), 0, '评论区改为按屏幕范围加载：只渲染视口附近的评论，未看到的直接卸载 DOM，评论展开到 800 条以上浏览器也不再卡顿。');
+insert into changelog_items (entry_id, position, item) values ((select id from changelog_entries where version = 'v3.3.0'), 1, '移除「加载更多评论」按钮：数据按页预取，未到达的评论用等高占位撑住滚动条，滚动位置与真实内容一致。');
+insert into changelog_items (entry_id, position, item) values ((select id from changelog_entries where version = 'v3.3.0'), 2, '带 `#comment-xxx` 的深链适配虚拟滚动：先渲染目标行，再连续校正位置，最终停在视口 40% 处并闪烁提示。');
+insert into changelog_items (entry_id, position, item) values ((select id from changelog_entries where version = 'v3.3.0'), 3, '搜索面板展开动画结束前的点击不再生效，避免动画没放完就被误触到结果。');
+insert into changelog_items (entry_id, position, item) values ((select id from changelog_entries where version = 'v3.3.0'), 4, '修复路由转场幕布上巨大箭头的尾巴溢出橙色区域：箭头现在裁在幕布边缘。');
+insert into changelog_items (entry_id, position, item) values ((select id from changelog_entries where version = 'v3.3.0'), 5, '评论输入框内容过长时的滚动条换成主题细线样式，不再出现系统默认的粗滚动条。');
 
 insert into changelog_entries (id, version, date_label, occurred_at, title) values (gen_random_uuid(), 'v3.2.0', '2026.11.12 22:10 – 22:35', '2026-11-12T22:10:00+08:00', '评论分页与千条评论压测');
 insert into changelog_items (entry_id, position, item) values ((select id from changelog_entries where version = 'v3.2.0'), 0, '一级评论改为分页返回（每页 20 条），楼中楼只带 3 条预览并新增独立的回复分页接口，不再一次性把整篇文章的评论塞给浏览器。');
 insert into changelog_items (entry_id, position, item) values ((select id from changelog_entries where version = 'v3.2.0'), 1, '带 `#comment-xxx` 进入时由后端直接返回目标所在页，跳转不再需要逐页翻找。');
 insert into changelog_items (entry_id, position, item) values ((select id from changelog_entries where version = 'v3.2.0'), 2, '用 1000 条评论 + 1500 条回复压测：首屏 44ms / 30KB，第 50 页 26ms / 7.9KB，展开 30 条楼中楼 12–15ms。');
 insert into changelog_items (entry_id, position, item) values ((select id from changelog_entries where version = 'v3.2.0'), 3, '空库首次启动会自动导入干净的种子数据，换机器部署不用再手动灌数据。');
+insert into changelog_items (entry_id, position, item) values ((select id from changelog_entries where version = 'v3.2.0'), 4, '更新页的版本记录改为由后端接口从数据库读取，前端不再写死整份版本数组。');
 
 insert into changelog_entries (id, version, date_label, occurred_at, title) values (gen_random_uuid(), 'v3.1.2', '2026.11.12 18:00 – 22:00', '2026-11-12T18:00:00+08:00', '评论区互动完善');
 insert into changelog_items (entry_id, position, item) values ((select id from changelog_entries where version = 'v3.1.2'), 0, '评论支持点赞，新增「最近 / 最多点赞」排序；最多点赞时楼中楼同样按点赞排序，并保持「先被回复者、再回复内容」的顺序。');
