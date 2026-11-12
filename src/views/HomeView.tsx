@@ -4,6 +4,7 @@ import { ScrollTrigger } from '../lib/gsap'
 import { scrollToSection } from '../composables/useSmoothScroll'
 import { site } from '../data/site'
 import { useUi } from '../store/ui'
+import { useI18n } from '../store/i18n'
 import Seo, { SITE_URL } from '../components/Seo'
 import HeroSection from '../components/HeroSection'
 import MarqueeBand from '../components/MarqueeBand'
@@ -19,6 +20,7 @@ import '../styles/components/HomeView.css'
 export default function HomeView() {
   const location = useLocation()
   const ui = useUi()
+  const { t, isZh } = useI18n()
 
   const personLd = {
     '@context': 'https://schema.org',
@@ -29,7 +31,10 @@ export default function HomeView() {
     image: `${SITE_URL}/art/avatar-kiiriing.png`,
     email: `mailto:${site.email}`,
     jobTitle: site.role,
-    description: '全栈网页开发者，构建从界面、动效到 API 与数据库的完整产品。',
+    description: t(
+      '全栈网页开发者，构建从界面、动效到 API 与数据库的完整产品。',
+      'Full-stack web developer building complete products from interface and motion to APIs and databases.'
+    ),
     address: {
       '@type': 'PostalAddress',
       addressLocality: 'Beijing',
@@ -45,7 +50,7 @@ export default function HomeView() {
     name: `${site.cn} ${site.name}`,
     alternateName: 'LU YU Blog',
     url: SITE_URL,
-    inLanguage: 'zh-CN',
+    inLanguage: isZh ? 'zh-CN' : 'en',
     author: { '@type': 'Person', name: site.cn, url: SITE_URL }
   }
 
@@ -65,9 +70,12 @@ export default function HomeView() {
   return (
     <div className="home">
       <Seo
-        title="陆屿 LU YU — Full-stack Web Developer"
+        title={t('陆屿 LU YU — Full-stack Web Developer', 'LU YU — Full-stack Web Developer')}
         path="/"
-        description="陆屿 LU YU — 全栈网页开发者。构建从界面、动效到 API 与数据库的完整产品。"
+        description={t(
+          '陆屿 LU YU — 全栈网页开发者。构建从界面、动效到 API 与数据库的完整产品。',
+          'LU YU — full-stack web developer building complete products from interface and motion to APIs and databases.'
+        )}
         image="/art/avatar-kiiriing.png"
         jsonLd={[personLd, websiteLd]}
       />

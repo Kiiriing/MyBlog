@@ -8,11 +8,13 @@ import LogoLoop from './LogoLoop'
 import { useNearViewport } from '../hooks/useNearViewport'
 import { useIdleReady } from '../hooks/useIdleReady'
 import { useReveal } from '../hooks/useReveal'
+import { useI18n } from '../store/i18n'
 import '../styles/components/AboutSection.css'
 
 const Lanyard = lazy(() => import('./Lanyard'))
 
 export default function AboutSection() {
+  const { t } = useI18n()
   const statsEl = useRef<HTMLDivElement>(null)
 
   const titleLine1 = useReveal<HTMLSpanElement>()
@@ -149,7 +151,7 @@ export default function AboutSection() {
 
       <div className="shell">
         <div className="about__head">
-          <span className="eyebrow">03 / About · 关于</span>
+          <span className="eyebrow">03 / About · {t('关于', 'About')}</span>
           <div className="about__head-note mono">
             <span>Beijing, CN</span>
             <span>Working everywhere</span>
@@ -196,16 +198,21 @@ export default function AboutSection() {
             </h2>
 
             <p ref={cnRef} className="about__cn">
-              从界面，到基础设施。
+              {t('从界面，到基础设施。', 'From interface to infrastructure.')}
             </p>
 
             <div className="about__copy">
               <p ref={copy1}>
-                我是Kiiriing，一名在读的全栈开发者。2024 年起在校内工作室和校企项目里写接口，2025 年成为合作企业管理系统的技术负责人（CTO），带团队把 NestJS + PostgreSQL 的服务推进到可以对外合作的状态。
+                {t(
+                  '我是Kiiriing，一名在读的全栈开发者。2024 年起在校内工作室和校企项目里写接口，2025 年成为合作企业管理系统的技术负责人（CTO），带团队把 NestJS + PostgreSQL 的服务推进到可以对外合作的状态。',
+                  'I am Kiiriing, a full-stack developer still studying. Since 2024 I have been writing APIs at a campus studio and on university–industry projects. In 2025 I became CTO of a partner enterprise management system, leading a team that took a NestJS + PostgreSQL service to the point where it could be offered externally.'
+                )}
               </p>
               <p ref={copy2}>
-                写过 Vue 3 也写过 React 19，从 Flask 到 NestJS，从 MySQL 到 PostgreSQL。关注接口设计、数据库索引与性能，
-                也关注界面上的每一次反馈：让边界条件有答案，让每一次点击都有明确的下一步。
+                {t(
+                  '写过 Vue 3 也写过 React 19，从 Flask 到 NestJS，从 MySQL 到 PostgreSQL。关注接口设计、数据库索引与性能，也关注界面上的每一次反馈：让边界条件有答案，让每一次点击都有明确的下一步。',
+                  'I have written Vue 3 and React 19, worked from Flask to NestJS and from MySQL to PostgreSQL. I care about API design, database indexes and performance — and about every piece of feedback in the interface: giving edge cases an answer and every click a clear next step.'
+                )}
               </p>
             </div>
 
@@ -251,13 +258,18 @@ export default function AboutSection() {
 
             <div ref={availability} className="about__availability">
               <span className="dot" />
-              <p>现在开放 2026 年的实习与全栈岗位机会，也接可以一起推进的小项目。</p>
+              <p>
+                {t(
+                  '现在开放 2026 年的实习与全栈岗位机会，也接可以一起推进的小项目。',
+                  'Open to internships and full-stack roles in 2026, and to small projects we can move forward together.'
+                )}
+              </p>
               <a
                 href={`mailto:${site.email}`}
                 className="about__mail link-underline"
                 data-cursor="Write"
               >
-                Start a conversation ↗
+                {t('开始一段对话', 'Start a conversation')} ↗
               </a>
             </div>
           </div>
@@ -266,8 +278,8 @@ export default function AboutSection() {
 
       <div className="about__stack">
         <div className="about__stack-head mono">
-          <span>Stack / 技术栈</span>
-          <span>{techStack.length} icons · 拖动可回看</span>
+          <span>Stack / {t('技术栈', 'Stack')}</span>
+          <span>{techStack.length} icons · {t('拖动可回看', 'drag to revisit')}</span>
         </div>
         <LogoLoop
           logos={stackLogos}

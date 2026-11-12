@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { useI18n } from '../store/i18n'
 import { gsap } from '../lib/gsap'
 import { prefersReducedMotion } from '../composables/useSmoothScroll'
 import '../styles/components/MarqueeBand.css'
@@ -19,6 +20,7 @@ const items = [
 ]
 
 export default function MarqueeBand() {
+  const { t } = useI18n()
   const band = useRef<HTMLDivElement>(null)
   const track = useRef<HTMLDivElement>(null)
 
@@ -106,7 +108,7 @@ export default function MarqueeBand() {
           </span>
         ))}
       </div>
-      <span className="marquee__label mono">Capabilities / 能力</span>
+      <span className="marquee__label mono">Capabilities / {t('能力', 'Capabilities')}</span>
     </div>
   )
 }

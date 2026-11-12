@@ -7,12 +7,14 @@ import { site } from '../data/site'
 import { findBannedWord } from '../data/moderation'
 import { api, ApiError } from '../lib/api'
 import { useAuth } from '../store/auth'
+import { useI18n } from '../store/i18n'
 import CircleButton from './CircleButton'
 import '../styles/components/SiteFooter.css'
 
 export default function SiteFooter() {
   const clock = useClock()
   const auth = useAuth()
+  const { t } = useI18n()
   const footer = useRef<HTMLElement>(null)
   const glow = useRef<HTMLDivElement>(null)
   const quick = useRef<{ x: (v: number) => void; y: (v: number) => void } | null>(null)
@@ -26,10 +28,13 @@ export default function SiteFooter() {
   const status = error
     ? error
     : !auth.user
-      ? '登录后可以提交反馈与建议。'
+      ? t('登录后可以提交反馈与建议。', 'Sign in to send feedback and suggestions.')
       : sent
-        ? '已收到反馈 — 回复会出现在站内信里。'
-        : '关于站点或项目的想法都可以写在这里，每天最多 3 条。'
+        ? t('已收到反馈 — 回复会出现在站内信里。', 'Feedback received — replies arrive in your inbox.')
+        : t(
+            '关于站点或项目的想法都可以写在这里，每天最多 3 条。',
+            'Anything about the site or the projects. Up to 3 messages per day.'
+          )
 
   useEffect(() => {
     if (!footer.current || !glow.current) return
@@ -69,13 +74,13 @@ export default function SiteFooter() {
 
     if (value.length < 2) {
       setSent(false)
-      setError('再多写一点吧，至少 2 个字。')
+      setError(t('再多写一点吧，至少 2 个字。', 'A little more, please — at least 2 characters.'))
       return
     }
 
     if (findBannedWord(value)) {
       setSent(false)
-      setError('内容里包含不合适的词汇，请修改后再提交。')
+      setError(t('内容里包含不合适的词汇，请修改后再提交。', 'The content contains inappropriate language. Please revise it.'))
       return
     }
 
@@ -88,7 +93,11 @@ export default function SiteFooter() {
       resetTimer.current = window.setTimeout(() => setSent(false), 5600)
     } catch (err) {
       setSent(false)
-      setError(err instanceof ApiError ? err.message : '提交失败，请稍后再试。')
+      setError(
+        err instanceof ApiError
+          ? err.message
+          : t('提交失败，请稍后再试。', 'Could not send. Please try again later.')
+      )
     } finally {
       setSending(false)
     }
@@ -118,10 +127,10 @@ export default function SiteFooter() {
 
       <div className="shell site-footer__inner">
         <header className="site-footer__head">
-          <span className="eyebrow">08 / Contact · 联系</span>
+          <span className="eyebrow">{t('08 / Contact · 联系', '08 / Contact · 联系')}</span>
           <span className="site-footer__status mono">
             <span className="dot" />
-            {site.availability}
+            {t('2026 开放实习与全栈岗位', site.availability)}
           </span>
         </header>
 
@@ -135,9 +144,14 @@ export default function SiteFooter() {
 
           <div className="site-footer__hero-side">
             <p className="site-footer__cn">
-              如果你有一个想认真做的产品，或者需要有人把前后端 一起推进，欢迎写信给我。
+              {t(
+                '如果你有一个想认真做的产品，或者需要有人把前后端 一起推进，欢迎写信给我。',
+                'If you have a product worth building carefully, or need someone to move the front end and back end forward together, write to me.'
+              )}
             </p>
-            <span className="site-footer__reply mono">Usually replies within 48 hours</span>
+            <span className="site-footer__reply mono">
+              {t('通常 48 小时内回复', 'Usually replies within 48 hours')}
+            </span>
           </div>
         </div>
 
@@ -151,19 +165,21 @@ export default function SiteFooter() {
         <div className="site-footer__columns">
           <div className="site-footer__col site-footer__col--feedback">
             <div className="site-footer__label-row">
-              <span className="site-footer__label mono">Feedback / 用户反馈</span>
+              <span className="site-footer__label mono">
+                {t('Feedback / 用户反馈', 'Feedback / 用户反馈')}
+              </span>
               {auth.user ? (
                 <span className="site-footer__who mono">{auth.user.displayName}</span>
               ) : (
                 <Link to="/login" className="site-footer__login mono" data-cursor="Sign in">
-                  登录 <span aria-hidden="true">↗</span>
+                  {t('登录', 'Sign in')} <span aria-hidden="true">↗</span>
                 </Link>
               )}
             </div>
 
             <form className="site-footer__form" noValidate onSubmit={submitFeedback}>
               <label className="sr-only" htmlFor="feedback-content">
-                反馈内容
+                {t('反馈内容', 'Feedback content')}
               </label>
               <div className="field site-footer__field site-footer__field--area">
                 <textarea
@@ -171,7 +187,11 @@ export default function SiteFooter() {
                   name="feedback"
                   rows={3}
                   maxLength={1000}
-                  placeholder={auth.user ? '写下你的建议…' : '登录后即可提交反馈'}
+                  placeholder={
+                    auth.user
+                      ? t('写下你的建议…', 'Write your suggestion…')
+                      : t('登录后即可提交反馈', 'Sign in to send feedback')
+                  }
                   aria-invalid={!!error}
                   aria-describedby="feedback-status"
                   value={content}
@@ -184,7 +204,7 @@ export default function SiteFooter() {
                 <button
                   className="site-footer__submit"
                   type="submit"
-                  aria-label="发送反馈"
+                  aria-label={t('发送反馈', 'Send feedback')}
                   data-cursor="Send"
                   disabled={!auth.user || sending}
                 >
@@ -210,7 +230,7 @@ export default function SiteFooter() {
           </div>
 
           <div className="site-footer__col">
-            <span className="site-footer__label mono">Elsewhere / 别处</span>
+            <span className="site-footer__label mono">{t('Elsewhere / 别处', 'Elsewhere / 别处')}</span>
             <ul className="site-footer__socials">
               {site.socials.map((social) => (
                 <li key={social.label}>
@@ -231,7 +251,9 @@ export default function SiteFooter() {
           </div>
 
           <div className="site-footer__col site-footer__col--clock">
-            <span className="site-footer__label mono">Local time / 此刻</span>
+            <span className="site-footer__label mono">
+              {t('Local time / 此刻', 'Local time / 此刻')}
+            </span>
             <p className="site-footer__clock">{clock}</p>
             <div className="site-footer__place mono">
               <span>{site.location}</span>
@@ -241,10 +263,12 @@ export default function SiteFooter() {
         </div>
 
         <div className="site-footer__bottom">
-          <p className="mono">© 2026 LU YU — All systems operational</p>
-          <p className="mono site-footer__built">Designed &amp; coded with React, GSAP &amp; Vite</p>
+          <p className="mono">© 2026 LU YU — {t('所有系统运行正常', 'All systems operational')}</p>
+          <p className="mono site-footer__built">
+            {t('由 React、GSAP 与 Vite 设计并编写', 'Designed & coded with React, GSAP & Vite')}
+          </p>
           <CircleButton
-            label="Back to top"
+            label={t('回到顶部', 'Back to top')}
             direction="up"
             size={52}
             cursor="Top"

@@ -2,9 +2,10 @@ import { useEffect, useRef } from 'react'
 import { gsap, ScrollTrigger } from '../lib/gsap'
 import { prefersReducedMotion } from '../composables/useSmoothScroll'
 import { useReveal } from '../hooks/useReveal'
+import { useI18n } from '../store/i18n'
 import '../styles/components/ManifestoSection.css'
 
-const statement = [
+const statementZh = [
   { text: '我相信' },
   { text: '好的网页不是' },
   { text: '把所有东西都加上去，' },
@@ -22,9 +23,29 @@ const statement = [
   { text: '重新变得简单、可信。', accent: true }
 ]
 
-const statementText = statement.map((word) => word.text).join('')
+const statementEn = [
+  { text: 'I believe' },
+  { text: 'a good website is not about' },
+  { text: 'adding everything,' },
+  { text: 'but about' },
+  { text: 'finding the clearest' },
+  { text: 'path' },
+  { text: 'through complexity.', accent: true },
+  { text: 'I work between' },
+  { text: 'the interface, the API' },
+  { text: 'and the database —' },
+  { text: 'caring about one load,' },
+  { text: 'one edge case,' },
+  { text: 'and every place' },
+  { text: 'a user should never have to wait.' },
+  { text: 'Those details make complex systems' },
+  { text: 'feel simple and trustworthy again.', accent: true }
+]
 
 export default function ManifestoSection() {
+  const { t, isZh } = useI18n()
+  const statement = isZh ? statementZh : statementEn
+  const statementText = statement.map((word) => word.text).join(' ')
   const textEl = useRef<HTMLHeadingElement>(null)
   const section = useRef<HTMLElement>(null)
   const ghost = useRef<HTMLDivElement>(null)
@@ -75,7 +96,7 @@ export default function ManifestoSection() {
       ghostTween.scrollTrigger?.kill()
       ghostTween.kill()
     }
-  }, [])
+  }, [isZh])
 
   return (
     <section
@@ -92,7 +113,7 @@ export default function ManifestoSection() {
       <div className="shell">
         <div className="manifesto__grid">
           <aside className="manifesto__aside">
-            <span className="eyebrow">02 / Manifesto · 自述</span>
+            <span className="eyebrow">02 / Manifesto · {t('自述', 'Manifesto')}</span>
 
             <div className="manifesto__aside-bottom">
               <span className="manifesto__seal" aria-hidden="true">
@@ -103,7 +124,7 @@ export default function ManifestoSection() {
                 <br />
                 and the space between.
               </p>
-              <span className="manifesto__aside-cn">我 / 2026</span>
+              <span className="manifesto__aside-cn">{t('我 / 2026', 'Me / 2026')}</span>
             </div>
           </aside>
 
@@ -121,14 +142,16 @@ export default function ManifestoSection() {
             </h2>
 
             <div ref={footRef} className="manifesto__foot">
-              <p className="manifesto__translation">
-                A good website is not about adding everything. It is about finding the clearest
-                path through complexity. I work between the interface, the API and the database —
-                caring about one load, one edge case, and every place a user should never have to
-                wait.
-              </p>
+              {isZh ? (
+                <p className="manifesto__translation">
+                  A good website is not about adding everything. It is about finding the clearest
+                  path through complexity. I work between the interface, the API and the database —
+                  caring about one load, one edge case, and every place a user should never have to
+                  wait.
+                </p>
+              ) : null}
               <div className="manifesto__signoff">
-                <span className="mono">A note to self</span>
+                <span className="mono">{t('写给自己的注记', 'A note to self')}</span>
                 <span className="manifesto__line" />
                 <span className="mono">Beijing · 2026</span>
               </div>

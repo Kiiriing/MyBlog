@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { chapters } from '../data/chapters'
 import { useReveal } from '../hooks/useReveal'
+import { useI18n } from '../store/i18n'
 import '../styles/components/ChapterNext.css'
 
 type ChapterNextProps = {
@@ -12,6 +13,7 @@ type ChapterNextProps = {
 /* 「下一章」：每页结尾的一次翻页。
    悬停时整块反相（深色底 → 米色底），像把书翻过去一页。 */
 export default function ChapterNext({ index, className }: ChapterNextProps) {
+  const { t } = useI18n()
   const chapter = chapters.find((item) => item.index === index) || chapters[chapters.length - 1]
   const ref = useReveal<HTMLElement>({ y: 30 })
 
@@ -19,7 +21,7 @@ export default function ChapterNext({ index, className }: ChapterNextProps) {
     <section
       ref={ref}
       className={`chapter-next${className ? ` ${className}` : ''}`}
-      aria-label={`下一章：${chapter.label}`}
+      aria-label={t(`下一章：${chapter.label}`, `Next chapter: ${chapter.label}`)}
     >
       <Link to={chapter.path} className="chapter-next__link" data-cursor="Next">
         <span className="chapter-next__ghost" aria-hidden="true">
@@ -28,7 +30,7 @@ export default function ChapterNext({ index, className }: ChapterNextProps) {
 
         <div className="chapter-next__inner shell">
           <div className="chapter-next__head mono">
-            <span>Next chapter / 下一章</span>
+            <span>Next chapter / {t('下一章', 'Next chapter')}</span>
             <span>
               {chapter.act} · {chapter.actName} {chapter.actCn}
             </span>

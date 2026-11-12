@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { gsap } from '../lib/gsap'
 import { posts, projectOf } from '../data/posts'
+import { useI18n } from '../store/i18n'
 import '../styles/components/JournalList.css'
 
 type Post = (typeof posts)[number]
@@ -14,6 +15,7 @@ type JournalListProps = {
 export default function JournalList({ posts: items }: JournalListProps) {
   const preview = useRef<HTMLDivElement>(null)
   const [active, setActive] = useState<Post | null>(null)
+  const { t } = useI18n()
 
   const canPreview = useRef(false)
   const quick = useRef<{ x: (v: number) => void; y: (v: number) => void } | null>(null)
@@ -84,12 +86,12 @@ export default function JournalList({ posts: items }: JournalListProps) {
           <img key={active.slug} src={active.art} alt={active.title} draggable="false" />
         ) : null}
         <span className="journal-preview__tag mono">
-          {active ? (projectOf(active)?.cn ?? active.category) : 'Journal'}
+          {active ? (projectOf(active)?.cn ?? active.category) : t('手记', 'Journal')}
         </span>
       </div>
       <div className="journal-preview__foot mono">
         <span>{active ? active.index : '—'}</span>
-        <span>{active?.reading || 'Read'}</span>
+        <span>{active?.reading || t('阅读', 'Read')}</span>
       </div>
     </div>
   )

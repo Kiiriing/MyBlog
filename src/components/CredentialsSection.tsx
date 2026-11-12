@@ -7,6 +7,7 @@ import { useNearViewport } from '../hooks/useNearViewport'
 import { useReveal } from '../hooks/useReveal'
 import Magnetic from './Magnetic'
 import PassageGallery, { type PassageItem } from './PassageGallery'
+import { useI18n } from '../store/i18n'
 import '../styles/components/CredentialsSection.css'
 
 /* 荣誉通道：先用 public/art/mywork 里的临时照片，换真图时同名替换即可 */
@@ -63,6 +64,7 @@ function CertificateCard({
 }
 
 export default function CredentialsSection() {
+  const { t } = useI18n()
   const section = useRef<HTMLElement>(null)
   const glow = useRef<HTMLDivElement>(null)
 
@@ -111,7 +113,7 @@ export default function CredentialsSection() {
 
       <div className="shell credentials__inner">
         <header ref={headReveal} className="credentials__head">
-          <span className="eyebrow">06 / Credentials · 荣誉</span>
+          <span className="eyebrow">06 / Credentials · {t('荣誉', 'Credentials')}</span>
           <div className="credentials__head-meta mono">
             <span>2024 — 2026</span>
             <span>
@@ -128,11 +130,13 @@ export default function CredentialsSection() {
 
           <div ref={ledeReveal} className="credentials__lede">
             <p>
-              八项竞赛与荣誉，四张技能证书，以及超过 20 小时的志愿服务。
-              它们不是装饰，而是每一次把想法做成可运行东西的证据。
+              {t(
+                '八项竞赛与荣誉，四张技能证书，以及超过 20 小时的志愿服务。 它们不是装饰，而是每一次把想法做成可运行东西的证据。',
+                'Eight competitions and honours, four skill certificates, and more than 20 hours of volunteering. They are not decoration — they are evidence of turning ideas into things that run.'
+              )}
             </p>
             <div className="credentials__lede-meta mono">
-              <span>Competitions / certificates</span>
+              <span>{t('竞赛与证书', 'Competitions / certificates')}</span>
               <span>Beijing, CN</span>
             </div>
           </div>
@@ -166,7 +170,7 @@ export default function CredentialsSection() {
 
             <div className="credentials__service">
               <div className="credentials__service-head mono">
-                <span>Volunteer / 志愿</span>
+                <span>Volunteer / {t('志愿', 'Volunteer')}</span>
                 <span>20+ hours</span>
               </div>
               <div className="credentials__service-body">
@@ -198,7 +202,7 @@ export default function CredentialsSection() {
 
         <div className="credentials__passage">
           <div className="credentials__passage-head mono">
-            <span>Passage · 荣誉通道</span>
+            <span>Passage · {t('荣誉通道', 'Honours passage')}</span>
             <span>Hold to boost · Click a photo to open</span>
           </div>
           <div ref={passageHost} className="credentials__passage-frame">
@@ -223,7 +227,10 @@ export default function CredentialsSection() {
                 seed={0}
                 /* 页面滚动交给 Lenis，隧道自动穿行，按住画布可加速 */
                 wheel={false}
-                ariaLabel="荣誉通道：一条由照片自动穿行的隧道，按住可加速，点击照片放大。"
+                ariaLabel={t(
+                  '荣誉通道：一条由照片自动穿行的隧道，按住可加速，点击照片放大。',
+                  'Honours passage: a photo tunnel that moves automatically. Hold to speed up, click a photo to enlarge.'
+                )}
               />
             ) : null}
           </div>

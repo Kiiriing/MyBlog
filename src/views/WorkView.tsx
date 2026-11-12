@@ -7,6 +7,7 @@ import ChapterTag from '../components/ChapterTag'
 import ChapterNext from '../components/ChapterNext'
 import Seo, { SITE_URL } from '../components/Seo'
 import { useReveal } from '../hooks/useReveal'
+import { useI18n } from '../store/i18n'
 import '../styles/components/WorkView.css'
 
 function RevealIntro({ delay, children }: { delay?: number; children: React.ReactNode }) {
@@ -69,11 +70,16 @@ export default function WorkView() {
   const nextWork = work ? getWork(work.next) : null
   const journalPosts = work ? postsByProject(work.slug) : []
   const total = String(works.length).padStart(2, '0')
+  const { t } = useI18n()
 
   if (!work) {
     return (
       <div className="work-missing">
-        <Seo title="未找到这个项目 — 陆屿 LU YU" path={`/work/${slug}`} noindex />
+        <Seo
+          title={t('未找到这个项目 — 陆屿 LU YU', 'Project not found — LU YU')}
+          path={`/work/${slug}`}
+          noindex
+        />
         <div className="shell work-missing__inner">
           <span className="eyebrow">404 / Work</span>
           <h1 className="work-missing__title">
@@ -81,9 +87,9 @@ export default function WorkView() {
             <br />
             <em>is out of frame.</em>
           </h1>
-          <p>这个项目可能暂时不在展出中。</p>
+          <p>{t('这个项目可能暂时不在展出中。', 'This project may not be on display right now.')}</p>
           <Link to="/work" className="work-missing__link" data-cursor="Index">
-            返回作品索引 ↗
+            {t('返回作品索引', 'Back to work index')} ↗
           </Link>
         </div>
         <SiteFooter />
@@ -97,7 +103,7 @@ export default function WorkView() {
       style={{ '--project-accent': work.accent } as React.CSSProperties}
     >
       <Seo
-        title={`${work.title} ${work.cn} — 陆屿 LU YU`}
+        title={t(`${work.title} ${work.cn} — 陆屿 LU YU`, `${work.title} — LU YU`)}
         path={`/work/${work.slug}`}
         description={work.summary}
         image={work.art}
@@ -120,7 +126,7 @@ export default function WorkView() {
           <div className="work-hero__top">
             <Link to="/work" className="work-hero__back mono" data-cursor="Index">
               <span aria-hidden="true">←</span>
-              <span>All projects</span>
+              <span>{t('全部项目', 'All projects')}</span>
             </Link>
             <span className="mono work-hero__index">
               {work.index} / {total} — {work.year}
@@ -147,7 +153,7 @@ export default function WorkView() {
         <div className="shell work-hero__cover">
           <ArtworkFrame
             src={work.art}
-            alt={`${work.title} 项目视觉`}
+            alt={t(`${work.title} 项目视觉`, `${work.title} project visual`)}
             ratio="16 / 9"
             parallax={6}
             eager
@@ -162,7 +168,7 @@ export default function WorkView() {
 
       <section className="work-content shell">
         <aside className="work-content__side">
-          <span className="eyebrow">The build / 构建</span>
+          <span className="eyebrow">The build / {t('构建', 'Build')}</span>
           <dl className="work-content__details">
             {work.details.map((detail) => (
               <div key={detail.label}>
@@ -173,7 +179,7 @@ export default function WorkView() {
           </dl>
 
           <div className="work-content__stack">
-            <span className="mono work-content__label">Stack / 技术栈</span>
+            <span className="mono work-content__label">Stack / {t('技术栈', 'Stack')}</span>
             <ul>
               {work.stack.map((tech) => (
                 <li key={tech} className="mono">
@@ -185,7 +191,7 @@ export default function WorkView() {
 
           {work.links?.length ? (
             <div className="work-content__links">
-              <span className="mono work-content__label">Links / 链接</span>
+              <span className="mono work-content__label">Links / {t('链接', 'Links')}</span>
               {work.links.map((link) =>
                 link.href.startsWith('/') ? (
                   <Link key={link.label} to={link.href} className="work-content__link mono">
@@ -233,8 +239,8 @@ export default function WorkView() {
 
           <div className="work-notes">
             <div className="work-notes__head">
-              <span className="eyebrow">Build notes / 实现</span>
-              <span className="mono">Three decisions</span>
+              <span className="eyebrow">Build notes / {t('实现', 'Build notes')}</span>
+              <span className="mono">{t('三个决定', 'Three decisions')}</span>
             </div>
             <div className="work-notes__grid">
               {work.notes.map((note, index) => (
@@ -259,14 +265,14 @@ export default function WorkView() {
       </section>
 
       {journalPosts.length ? (
-        <section className="work-journal shell" aria-label="该项目手记">
+        <section className="work-journal shell" aria-label={t('该项目手记', 'Project journal')}>
           <div className="work-journal__head">
             <div>
-              <span className="eyebrow">Journal / 项目手记</span>
-              <p className="mono work-journal__note">Written while building it</p>
+              <span className="eyebrow">Journal / {t('项目手记', 'Project journal')}</span>
+              <p className="mono work-journal__note">{t('写于构建过程中', 'Written while building it')}</p>
             </div>
             <Link to={`/journal?project=${work.slug}`} className="work-journal__all mono">
-              全部 {String(journalPosts.length).padStart(2, '0')} 篇
+              {t('全部', 'All')} {String(journalPosts.length).padStart(2, '0')} {t('篇', 'entries')}
               <span aria-hidden="true">↗</span>
             </Link>
           </div>
@@ -300,14 +306,14 @@ export default function WorkView() {
         <section className="work-next">
           <Link to={`/work/${nextWork.slug}`} className="work-next__link shell" data-cursor="Next">
             <div className="work-next__copy">
-              <span className="eyebrow">Next project</span>
+              <span className="eyebrow">{t('下一个项目', 'Next project')}</span>
               <h2 className="work-next__title">
                 <span>{nextWork.title}</span>
                 <em>{nextWork.cn}</em>
               </h2>
               <p className="work-next__summary">{nextWork.tagline}</p>
               <span className="work-next__more mono">
-                View project
+                {t('查看项目', 'View project')}
                 <span aria-hidden="true">↗</span>
               </span>
             </div>

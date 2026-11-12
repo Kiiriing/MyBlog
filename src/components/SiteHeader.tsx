@@ -6,8 +6,10 @@ import { closePanel, useNotifications } from '../store/notifications'
 import { signOut, useAuth } from '../store/auth'
 import { lockScroll, scrollTo, unlockScroll } from '../composables/useSmoothScroll'
 import { site } from '../data/site'
+import { useI18n } from '../store/i18n'
 import NotificationBell from './NotificationBell'
 import SiteSearch from './SiteSearch'
+import LangToggle from './LangToggle'
 import WarmTooltip from './WarmTooltip'
 import '../styles/components/SiteHeader.css'
 import '../styles/components/Notifications.css'
@@ -17,6 +19,7 @@ export default function SiteHeader() {
   const inbox = useNotifications()
   const auth = useAuth()
   const location = useLocation()
+  const { t } = useI18n()
 
   /* 退出登录前先确认，避免误点把登录状态清掉 */
   const [signOutOpen, setSignOutOpen] = useState(false)
@@ -72,16 +75,23 @@ export default function SiteHeader() {
         .filter(Boolean)
         .join(' ')}
     >
-      <Link to="/" className="brand" aria-label="LU YU — 返回首页" onClick={onBrandClick}>
+      <Link
+        to="/"
+        className="brand"
+        aria-label={t('LU YU — 返回首页', 'LU YU — back to home')}
+        onClick={onBrandClick}
+      >
         <span className="brand__name">
           LU YU<span className="brand__reg">®</span>
         </span>
-        <span className="brand__meta">陆屿 / {site.role}</span>
+        <span className="brand__meta">
+          {site.cn} / {t('全栈开发者', site.role)}
+        </span>
       </Link>
 
       <div className="header-note">
         <span className="header-note__dot" />
-        <span>{site.availability}</span>
+        <span>{t('2026 开放实习与全栈岗位', site.availability)}</span>
       </div>
 
       <div className="header-actions">
@@ -90,7 +100,7 @@ export default function SiteHeader() {
 
         {auth.user ? (
           <WarmTooltip
-            content="退出登录 · 下次需要重新验证邮箱"
+            content={t('退出登录 · 下次需要重新验证邮箱', 'Sign out · email verification required next time')}
             side="bottom"
             disabled={signOutOpen}
           >
@@ -99,30 +109,35 @@ export default function SiteHeader() {
               className="header-login is-user"
               type="button"
               aria-haspopup="dialog"
-              aria-label={`${auth.user.displayName}，退出登录`}
+              aria-label={t(`${auth.user.displayName}，退出登录`, `${auth.user.displayName}, sign out`)}
               onClick={() => setSignOutOpen(true)}
             >
               <span className="header-login__name">{auth.user.displayName}</span>
             </button>
           </WarmTooltip>
         ) : (
-          <Link to="/login" className="header-login" aria-label="登录">
-            <span>登录</span>
+          <Link to="/login" className="header-login" aria-label={t('登录', 'Sign in')}>
+            <span>{t('登录', 'Sign in')}</span>
             <span className="header-login__arrow" aria-hidden="true">
               ↗
             </span>
           </Link>
         )}
 
+        {/* 语言切换固定在登录与 MENU 之间 */}
+        <LangToggle />
+
         <button
           className="menu-btn"
           type="button"
           aria-expanded={ui.menuOpen}
           aria-controls="site-menu"
-          aria-label={ui.menuOpen ? '关闭菜单' : '打开菜单'}
+          aria-label={ui.menuOpen ? t('关闭菜单', 'Close menu') : t('打开菜单', 'Open menu')}
           onClick={onMenuClick}
         >
-          <span className="menu-btn__label">{ui.menuOpen ? 'Close' : 'Menu'}</span>
+          <span className="menu-btn__label">
+            {ui.menuOpen ? t('Close', 'Close') : t('Menu', 'Menu')}
+          </span>
           <span className="menu-btn__icon" aria-hidden="true">
             <i />
             <i />
@@ -142,16 +157,19 @@ export default function SiteHeader() {
                   type="button"
                   className="signout__backdrop"
                   tabIndex={-1}
-                  aria-label="取消退出登录"
+                  aria-label={t('取消退出登录', 'Cancel sign out')}
                   onClick={closeSignOut}
                 />
                 <div className="signout__card">
-                  <span className="signout__kicker">Session / 登录状态</span>
+                  <span className="signout__kicker">Session / {t('登录状态', 'Sign in state')}</span>
                   <h2 className="signout__title" id="signout-title">
-                    确定要退出登录吗？
+                    {t('确定要退出登录吗？', 'Sign out of this session?')}
                   </h2>
                   <p className="signout__note" id="signout-note">
-                    退出后本机保存的登录令牌会立即清除，站内信与个人状态将暂不可用，下次访问需要重新验证邮箱。
+                    {t(
+                      '退出后本机保存的登录令牌会立即清除，站内信与个人状态将暂不可用，下次访问需要重新验证邮箱。',
+                      'The token stored on this device will be cleared immediately. Inbox and account features will be unavailable until you verify your email again.'
+                    )}
                   </p>
                   <div className="signout__actions">
                     <button
@@ -160,10 +178,10 @@ export default function SiteHeader() {
                       className="signout__ghost"
                       onClick={closeSignOut}
                     >
-                      再待一会儿
+                      {t('再待一会儿', 'Stay a while')}
                     </button>
                     <button type="button" className="signout__primary" onClick={confirmSignOut}>
-                      确认退出
+                      {t('确认退出', 'Sign out')}
                     </button>
                   </div>
                 </div>

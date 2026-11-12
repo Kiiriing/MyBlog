@@ -5,11 +5,13 @@ import { experience } from '../data/profile'
 import { site } from '../data/site'
 import Magnetic from './Magnetic'
 import { useReveal } from '../hooks/useReveal'
+import { useI18n } from '../store/i18n'
 import '../styles/components/ExperienceSection.css'
 
 const total = String(experience.length).padStart(2, '0')
 
 export default function ExperienceSection() {
+  const { t } = useI18n()
   const section = useRef<HTMLElement>(null)
   const list = useRef<HTMLDivElement>(null)
   const ghost = useRef<HTMLDivElement>(null)
@@ -102,7 +104,7 @@ export default function ExperienceSection() {
 
       <div className="shell experience__inner">
         <header ref={headReveal} className="experience__head">
-          <span className="eyebrow">05 / Experience · 经历</span>
+          <span className="eyebrow">05 / Experience · {t('经历', 'Experience')}</span>
           <div className="experience__head-meta mono">
             <span>2024 — now</span>
             <span>{total} chapters</span>
@@ -138,8 +140,10 @@ export default function ExperienceSection() {
             </h2>
 
             <p ref={ledeReveal} className="experience__lede">
-              从校内工作室的接口，到合作企业管理系统的架构与排期。三段经历，一条从「把功能写完」
-              到「让团队与产品都能跑起来」的路径。
+              {t(
+                '从校内工作室的接口，到合作企业管理系统的架构与排期。三段经历，一条从「把功能写完」 到「让团队与产品都能跑起来」的路径。',
+                'From APIs at a campus studio to the architecture and scheduling of a partner enterprise system. Three chapters along one path — from finishing features to making both the team and the product run.'
+              )}
             </p>
 
             <div ref={list} className="experience__list">
@@ -155,7 +159,7 @@ export default function ExperienceSection() {
                     {item.highlight ? (
                       <span className="experience__badge mono">
                         <span className="dot" />
-                        Current
+                        {t('当前', 'Current')}
                       </span>
                     ) : null}
                   </div>
@@ -187,8 +191,10 @@ export default function ExperienceSection() {
                 <div className="experience__outro-copy">
                   <span className="mono">Full CV / references</span>
                   <p>
-                    想看更完整的项目清单、接口文档或竞赛证书，写信给我。通常 48
-                    小时内回复，也乐于聊聊正在做的系统。
+                    {t(
+                      '想看更完整的项目清单、接口文档或竞赛证书，写信给我。通常 48 小时内回复，也乐于聊聊正在做的系统。',
+                      'For a fuller project list, API documentation or competition certificates, write to me. I usually reply within 48 hours and am always happy to talk about systems in progress.'
+                    )}
                   </p>
                 </div>
 
@@ -198,7 +204,7 @@ export default function ExperienceSection() {
                     className="experience__cta"
                     data-cursor="Write"
                   >
-                    <span>Ask for the full CV</span>
+                    <span>{t('索取完整简历', 'Ask for the full CV')}</span>
                     <span aria-hidden="true">↗</span>
                   </a>
                 </Magnetic>

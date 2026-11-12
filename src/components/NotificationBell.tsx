@@ -2,13 +2,18 @@ import WarmTooltip from './WarmTooltip'
 import { useAuth } from '../store/auth'
 import { togglePanel, useNotifications } from '../store/notifications'
 import { setMenuOpen, useUi } from '../store/ui'
+import { useI18n } from '../store/i18n'
 
 export default function NotificationBell() {
   const ui = useUi()
   const auth = useAuth()
   const inbox = useNotifications()
+  const { t } = useI18n()
   const unread = auth.user ? inbox.unread : 0
-  const label = unread > 0 ? `站内信，${unread} 条未读` : '站内信'
+  const label =
+    unread > 0
+      ? t(`站内信，${unread} 条未读`, `Inbox, ${unread} unread`)
+      : t('站内信', 'Inbox')
 
   function onClick() {
     if (ui.menuOpen) setMenuOpen(false)
@@ -16,7 +21,7 @@ export default function NotificationBell() {
   }
 
   return (
-    <WarmTooltip content="消息" side="bottom">
+    <WarmTooltip content={t('消息', 'Messages')} side="bottom">
       <button
         className={`bell${unread > 0 ? ' has-unread' : ''}${inbox.open ? ' is-open' : ''}`}
         type="button"

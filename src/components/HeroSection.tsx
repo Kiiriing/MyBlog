@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { gsap } from '../lib/gsap'
 import { prefersReducedMotion, scrollToSection } from '../composables/useSmoothScroll'
 import { useUi } from '../store/ui'
+import { useI18n } from '../store/i18n'
 import { site } from '../data/site'
 import StrokeText from './StrokeText'
 import TextType from './TextType'
@@ -11,6 +12,9 @@ import '../styles/components/HeroSection.css'
 /* 自述段落：改用打字机逐字出现，文案由站点主人自述 */
 const HERO_INTRO =
   '我相信好的网页不是把所有东西都加上去，而是在复杂度里找到最清晰的那条路径。我从前端、API 与数据库之间工作，关心一次加载、一个边界条件、和每一处不该让用户等待的地方。它们让复杂系统重新变得简单、可信。'
+
+const HERO_INTRO_EN =
+  'I believe a good website is not about adding everything, but finding the clearest path through complexity. I work between the front end, APIs and databases, caring about each load, each edge case, and every place a user should not have to wait. Those details make complex systems feel simple and trustworthy again.'
 
 /* WebGL 抖动之幕按需加载：首屏不进入主包，所有断点都渲染（窄屏改为下方居中展示） */
 const DitherVeil = lazy(() => import('./DitherVeil'))
@@ -22,6 +26,8 @@ let heroIntroPlayed = false
 
 export default function HeroSection() {
   const ui = useUi()
+  const { t, isZh } = useI18n()
+  const intro = isZh ? HERO_INTRO : HERO_INTRO_EN
   const hero = useRef<HTMLElement>(null)
 
   const playIntro = useRef(!heroIntroPlayed).current
@@ -241,16 +247,21 @@ export default function HeroSection() {
           </h1>
 
           <div className="hero__sub">
-            <p className="hero__cn hero-fade">{site.intro}</p>
+            <p className="hero__cn hero-fade">
+              {t(
+                site.intro,
+                'Full-stack developer in Beijing. Building interfaces, APIs and the systems behind them.'
+              )}
+            </p>
             <p className="hero__desc hero-fade">
               {/* ghost 预留整段文字的高度，打字过程中段落与下方技术栈不跳动 */}
               <span className="hero__desc-ghost" aria-hidden="true">
-                {HERO_INTRO}
+                {intro}
               </span>
               <TextType
                 as="span"
                 className="hero__desc-type"
-                text={HERO_INTRO}
+                text={intro}
                 start={ready}
                 instant={!playIntro}
                 loop={false}
@@ -287,7 +298,7 @@ export default function HeroSection() {
         <button
           className="scroll-badge hero-fade"
           type="button"
-          aria-label="向下滚动至自述"
+          aria-label={t('向下滚动至自述', 'Scroll down to the introduction')}
           data-cursor="Scroll"
           onClick={() => scrollToSection('manifesto')}
         >

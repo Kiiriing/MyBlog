@@ -2,22 +2,38 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { api, ApiError, type CommentList, type PostComment } from '../lib/api'
 import { useAuth } from '../store/auth'
+import { getLang, useI18n } from '../store/i18n'
 import '../styles/components/Comments.css'
 
 function formatTime(iso: string) {
   const time = new Date(iso).getTime()
   if (Number.isNaN(time)) return ''
+  const en = getLang() === 'en'
   const diff = Date.now() - time
-  if (diff < 60_000) return '刚刚'
-  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)} 分钟前`
-  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)} 小时前`
-  if (diff < 2_592_000_000) return `${Math.floor(diff / 86_400_000)} 天前`
-  return new Date(time).toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' })
+  if (diff < 60_000) return en ? 'just now' : '刚刚'
+  if (diff < 3_600_000) {
+    const value = Math.floor(diff / 60_000)
+    return en ? `${value} min ago` : `${value} 分钟前`
+  }
+  if (diff < 86_400_000) {
+    const value = Math.floor(diff / 3_600_000)
+    return en ? `${value} hr ago` : `${value} 小时前`
+  }
+  if (diff < 2_592_000_000) {
+    const value = Math.floor(diff / 86_400_000)
+    return en ? `${value} d ago` : `${value} 天前`
+  }
+  return new Date(time).toLocaleDateString(en ? 'en-GB' : 'zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  })
 }
 
 export default function CommentSection({ slug }: { slug: string }) {
   const { user } = useAuth()
   const location = useLocation()
+  const { t } = useI18n()
   const [data, setData] = useState<CommentList | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -37,7 +53,7 @@ export default function CommentSection({ slug }: { slug: string }) {
         if (alive) setData(result)
       })
       .catch(() => {
-        if (alive) setError('评论加载失败，请稍后再试。')
+        if (alive) setError(t('评论加载失败，请稍后再试。', 'Could not load comments. Please try again later.'))
       })
       .finally(() => {
         if (alive) setLoading(false)
@@ -61,7 +77,7 @@ export default function CommentSection({ slug }: { slug: string }) {
     if (!user || submitting) return
     const text = content.trim()
     if (text.length < 2) {
-      setNotice('多写两个字再发吧。')
+      setNotice(t('多写两个字再发吧。', 'A few more characters, please.'))
       return
     }
 
@@ -71,24 +87,24 @@ export default function CommentSection({ slug }: { slug: string }) {
       await api.addComment(slug, text, replyTo?.id)
       setContent('')
       setReplyTo(null)
-      setNotice('评论已发布。')
+      setNotice(t('评论已发布。', 'Comment posted.'))
       const result = await api.comments(slug)
       setData(result)
     } catch (err) {
-      setNotice(err instanceof ApiError ? err.message : '发布失败，请稍后再试。')
+      setNotice(err instanceof ApiError ? err.message : t('发布失败，请稍后再试。', 'Could not post. Please try again later.'))
     } finally {
       setSubmitting(false)
     }
   }
 
   async function remove(id: string) {
-    if (!window.confirm('删除这条评论？')) return
+    if (!window.confirm(t('删除这条评论？', 'Delete this comment?'))) return
     try {
       await api.deleteComment(id)
       const result = await api.comments(slug)
       setData(result)
     } catch (err) {
-      setNotice(err instanceof ApiError ? err.message : '删除失败，请稍后再试。')
+      setNotice(err instanceof ApiError ? err.message : t('删除失败，请稍后再试。', 'Could not delete. Please try again later.'))
     }
   }
 
@@ -107,7 +123,7 @@ export default function CommentSection({ slug }: { slug: string }) {
           </time>
           {comment.mine && !comment.deleted ? (
             <button type="button" className="comment__action" onClick={() => remove(comment.id)}>
-              删除
+               {t('删除', 'Delete')}
             </button>
           ) : null}
         </header>
@@ -119,7 +135,7 @@ export default function CommentSection({ slug }: { slug: string }) {
               className="comment__reply"
               onClick={() => setReplyTo(replyTo?.id === comment.id ? null : comment)}
             >
-              {replyTo?.id === comment.id ? '取消回复' : '回复'}
+              {replyTo?.id === comment.id ? t('取消回复', 'Cancel reply') : t('回复', 'Reply')}
             </button>
           </div>
         ) : null}
@@ -134,25 +150,29 @@ export default function CommentSection({ slug }: { slug: string }) {
   }
 
   return (
-    <section className="comments shell" id="comments" aria-label="评论区">
+    <section className="comments shell" id="comments" aria-label={t('评论区', 'Comments')}>
       <div className="comments__head">
         <div>
-          <span className="eyebrow">Comments / 评论</span>
+          <span className="eyebrow">Comments / {t('评论', 'Comments')}</span>
           <h2 className="comments__title">
-            说点什么
+            {t('说点什么', 'Say something')}
             <em>{data ? String(data.total).padStart(2, '0') : '00'}</em>
           </h2>
         </div>
-        <span className="mono comments__note">登录后可以评论与回复</span>
+        <span className="mono comments__note">
+          {t('登录后可以评论与回复', 'Sign in to comment and reply')}
+        </span>
       </div>
 
       {user ? (
         <form className="comment-form" onSubmit={submit}>
           <div className="comment-form__top">
-            <span className="mono comment-form__as">以 {user.displayName} 的身份</span>
+            <span className="mono comment-form__as">
+              {t(`以 ${user.displayName} 的身份`, `As ${user.displayName}`)}
+            </span>
             {replyTo ? (
               <button type="button" className="comment-form__replying" onClick={() => setReplyTo(null)}>
-                回复 @{replyTo.authorName} · 取消
+                {t(`回复 @${replyTo.authorName} · 取消`, `Replying to @${replyTo.authorName} · cancel`)}
               </button>
             ) : null}
           </div>
@@ -161,22 +181,31 @@ export default function CommentSection({ slug }: { slug: string }) {
             className="comment-form__input"
             value={content}
             maxLength={800}
-            placeholder={replyTo ? `回复 @${replyTo.authorName}…` : '写下你的想法…'}
+            placeholder={
+              replyTo
+                ? t(`回复 @${replyTo.authorName}…`, `Reply to @${replyTo.authorName}…`)
+                : t('写下你的想法…', 'Write what you think…')
+            }
             onChange={(event) => setContent(event.target.value)}
             rows={4}
           />
           <div className="comment-form__foot">
             <span className="mono comment-form__count">{content.length} / 800</span>
             <button type="submit" className="comment-form__submit" disabled={submitting}>
-              {submitting ? '发布中…' : '发布评论'}
+              {submitting ? t('发布中…', 'Posting…') : t('发布评论', 'Post comment')}
             </button>
           </div>
         </form>
       ) : (
         <div className="comment-gate">
-          <p>评论需要登录。登录后可以回复、收到楼中楼通知。</p>
+          <p>
+            {t(
+              '评论需要登录。登录后可以回复、收到楼中楼通知。',
+              'Sign in to comment, reply, and receive reply notifications.'
+            )}
+          </p>
           <Link to={loginHref} className="comment-gate__link" data-cursor="Login">
-            去登录 <span aria-hidden="true">↗</span>
+            {t('去登录', 'Sign in')} <span aria-hidden="true">↗</span>
           </Link>
         </div>
       )}
@@ -188,10 +217,12 @@ export default function CommentSection({ slug }: { slug: string }) {
       ) : null}
 
       <div className="comments__list">
-        {loading ? <p className="mono comments__empty">正在加载评论…</p> : null}
+        {loading ? <p className="mono comments__empty">{t('正在加载评论…', 'Loading comments…')}</p> : null}
         {!loading && error ? <p className="mono comments__empty">{error}</p> : null}
         {!loading && !error && data && data.items.length === 0 ? (
-          <p className="comments__empty">还没有评论，来写下第一条。</p>
+          <p className="comments__empty">
+            {t('还没有评论，来写下第一条。', 'No comments yet — write the first one.')}
+          </p>
         ) : null}
         {data?.items.map((comment) => renderComment(comment))}
       </div>

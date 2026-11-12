@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { chapters } from '../data/chapters'
 import { scrollToSection } from '../composables/useSmoothScroll'
+import { useI18n } from '../store/i18n'
 import '../styles/components/ScrollProgress.css'
 
 type Section = { id: string; el: Element; index: string; label: string }
 
 export default function ScrollProgress() {
+  const { t } = useI18n()
   const fillRef = useRef<HTMLSpanElement>(null)
 
   const [sections, setSections] = useState<Section[]>([])
@@ -88,7 +90,7 @@ export default function ScrollProgress() {
   return (
     <aside
       className={`scroll-rail${atEnd ? ' is-at-end' : ''}${preview ? ' is-previewing' : ''}`}
-      aria-label="章节导航"
+      aria-label={t('章节导航', 'Chapter navigation')}
       onPointerLeave={() => setHovered(null)}
     >
       <div className="scroll-rail__count">
@@ -110,7 +112,7 @@ export default function ScrollProgress() {
                 top: `${(index / Math.max(1, sections.length - 1)) * 100}%`
               } as React.CSSProperties
             }
-            aria-label={`前往第 ${section.index} 章：${section.label}`}
+            aria-label={t(`前往第 ${section.index} 章：${section.label}`, `Go to chapter ${section.index}: ${section.label}`)}
             aria-current={section.index === activeKey ? 'true' : undefined}
             data-cursor="Jump"
             onPointerEnter={() => setHovered(section.index)}

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api, type PostStats } from '../lib/api'
 import { useAuth } from '../store/auth'
+import { useI18n } from '../store/i18n'
 
 function HeartIcon() {
   return (
@@ -34,6 +35,7 @@ function EyeIcon() {
 
 export default function EngagementBar({ slug }: { slug: string }) {
   const { user } = useAuth()
+  const { t } = useI18n()
   const navigate = useNavigate()
   const [stats, setStats] = useState<PostStats | null>(null)
   const [pending, setPending] = useState<'like' | 'favorite' | null>(null)
@@ -93,7 +95,7 @@ export default function EngagementBar({ slug }: { slug: string }) {
           : { ...prev, favorites: result.count, favorited: result.active }
       })
     } catch {
-      setError('操作失败')
+      setError(t('操作失败', 'Action failed'))
     } finally {
       setPending(null)
     }
@@ -101,35 +103,35 @@ export default function EngagementBar({ slug }: { slug: string }) {
 
   return (
     <div className="post-engage">
-      <span className="post-engage__views mono" title="阅读量">
+      <span className="post-engage__views mono" title={t('阅读量', 'Views')}>
         <EyeIcon />
-        {stats ? stats.views : '—'} views
+        {stats ? stats.views : '—'} {t('次阅读', 'views')}
       </span>
 
       <button
         type="button"
         className={`post-engage__btn${stats?.liked ? ' is-active' : ''}`}
         aria-pressed={Boolean(stats?.liked)}
-        title={user ? '点赞' : '登录后可点赞'}
+        title={user ? t('点赞', 'Like') : t('登录后可点赞', 'Sign in to like')}
         onClick={() => toggle('like')}
         disabled={pending === 'like'}
       >
         <HeartIcon />
         <span>{stats ? stats.likes : 0}</span>
-        <span className="post-engage__label">Like</span>
+        <span className="post-engage__label">{t('点赞', 'Like')}</span>
       </button>
 
       <button
         type="button"
         className={`post-engage__btn${stats?.favorited ? ' is-active' : ''}`}
         aria-pressed={Boolean(stats?.favorited)}
-        title={user ? '收藏' : '登录后可收藏'}
+        title={user ? t('收藏', 'Save') : t('登录后可收藏', 'Sign in to save')}
         onClick={() => toggle('favorite')}
         disabled={pending === 'favorite'}
       >
         <BookmarkIcon />
         <span>{stats ? stats.favorites : 0}</span>
-        <span className="post-engage__label">Save</span>
+        <span className="post-engage__label">{t('收藏', 'Save')}</span>
       </button>
 
       {error ? <span className="post-engage__error mono">{error}</span> : null}

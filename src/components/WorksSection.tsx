@@ -10,6 +10,7 @@ import {
 import { works } from '../data/works'
 import ArtworkFrame from './ArtworkFrame'
 import { useReveal } from '../hooks/useReveal'
+import { useI18n } from '../store/i18n'
 import '../styles/components/WorksSection.css'
 
 function RevealCard({
@@ -30,6 +31,7 @@ function RevealCard({
 }
 
 export default function WorksSection() {
+  const { t } = useI18n()
   const section = useRef<HTMLElement>(null)
   const track = useRef<HTMLDivElement>(null)
   const viewport = useRef<HTMLDivElement>(null)
@@ -245,8 +247,10 @@ export default function WorksSection() {
 
           <div className="works__head-right">
             <p className="works__intro">
-              四个真正交付过的项目：企业管理系统、签到考勤、20 余张数据大屏与校企协作。
-              界面、接口、数据库与部署，都是同一条链路。
+              {t(
+                '四个真正交付过的项目：企业管理系统、签到考勤、20 余张数据大屏与校企协作。 界面、接口、数据库与部署，都是同一条链路。',
+                'Four projects that actually shipped: enterprise management, attendance tracking, 20+ data walls and university collaboration. Interface, API, database and deployment are all one chain.'
+              )}
             </p>
 
             <div className="works__controls">
@@ -255,7 +259,7 @@ export default function WorksSection() {
                 <span className="works__counter-total">/ 0{works.length}</span>
               </div>
               <Link to="/work" className="works__all mono" data-cursor="Index">
-                <span>All projects</span>
+                <span>{t('全部项目', 'All projects')}</span>
                 <span className="works__all-arrow" aria-hidden="true">
                   ↗
                 </span>
@@ -265,7 +269,7 @@ export default function WorksSection() {
                   ref={prevBtn}
                   className="works__arrow"
                   type="button"
-                  aria-label="上一个项目"
+                  aria-label={t('上一个项目', 'Previous project')}
                   disabled
                   onClick={() => step(-1)}
                 >
@@ -277,7 +281,7 @@ export default function WorksSection() {
                   ref={nextBtn}
                   className="works__arrow"
                   type="button"
-                  aria-label="下一个项目"
+                  aria-label={t('下一个项目', 'Next project')}
                   onClick={() => step(1)}
                 >
                   <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -305,13 +309,13 @@ export default function WorksSection() {
                 <Link
                   to={`/work/${work.slug}`}
                   className="work-card__link"
-                  aria-label={`查看项目 ${work.title}`}
+                  aria-label={t(`查看项目 ${work.title}`, `View project ${work.title}`)}
                   data-cursor="View"
                   onPointerMove={onCardMove}
                   onPointerLeave={onCardLeave}
                 >
                   <div className="work-card__visual">
-                    <ArtworkFrame src={work.art} alt={`${work.title} 项目视觉`} ratio="4 / 5" parallax={4} />
+                    <ArtworkFrame src={work.art} alt={t(`${work.title} 项目视觉`, `${work.title} project visual`)} ratio="4 / 5" parallax={4} />
                     <div className="work-card__top mono">
                       <span>
                         #{work.index} / {totalCount}
@@ -319,7 +323,7 @@ export default function WorksSection() {
                       <span>{work.year}</span>
                     </div>
                     <span className="work-card__view">
-                      <span className="mono">View project</span>
+                      <span className="mono">{t('查看项目', 'View project')}</span>
                       <span className="work-card__view-icon" aria-hidden="true">
                         ↗
                       </span>
@@ -354,8 +358,10 @@ export default function WorksSection() {
                   <em>in mind?</em>
                 </h3>
                 <p className="work-end__copy">
-                  现在开放 2026 年的实习与全栈岗位机会。无论是从零开始的产品，
-                  还是需要有人把前后端一起推进的项目，都可以聊聊。
+                  {t(
+                    '现在开放 2026 年的实习与全栈岗位机会。无论是从零开始的产品， 还是需要有人把前后端一起推进的项目，都可以聊聊。',
+                    'Open to internships and full-stack roles in 2026. Whether it is a product starting from zero or a project that needs someone to push the front end and back end together, let’s talk.'
+                  )}
                 </p>
                 <button
                   className="work-end__cta"
@@ -363,7 +369,7 @@ export default function WorksSection() {
                   data-cursor="Talk"
                   onClick={() => scrollToSection('contact')}
                 >
-                  <span>Start a conversation</span>
+                  <span>{t('开始一段对话', 'Start a conversation')}</span>
                   <span aria-hidden="true">↗</span>
                 </button>
               </div>

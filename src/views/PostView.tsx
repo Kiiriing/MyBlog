@@ -8,6 +8,7 @@ import ChapterNext from '../components/ChapterNext'
 import EngagementBar from '../components/EngagementBar'
 import CommentSection from '../components/CommentSection'
 import Seo, { SITE_URL } from '../components/Seo'
+import { useI18n } from '../store/i18n'
 import '../styles/components/PostView.css'
 
 function copyText(text: string) {
@@ -44,6 +45,7 @@ function legacyCopy(text: string) {
 function CodeBlock({ code }: { code: string }) {
   const [copied, setCopied] = useState(false)
   const timer = useRef(0)
+  const { t } = useI18n()
 
   useEffect(() => () => window.clearTimeout(timer.current), [])
 
@@ -64,9 +66,9 @@ function CodeBlock({ code }: { code: string }) {
         type="button"
         className={`post-code__copy mono${copied ? ' is-copied' : ''}`}
         onClick={copy}
-        aria-label={copied ? '已复制代码' : '复制代码'}
+        aria-label={copied ? t('已复制代码', 'Code copied') : t('复制代码', 'Copy code')}
       >
-        {copied ? 'Copied ✓' : 'Copy'}
+        {copied ? t('已复制 ✓', 'Copied ✓') : t('复制', 'Copy')}
       </button>
     </div>
   )
@@ -84,6 +86,7 @@ export default function PostView() {
   const progressEl = useRef<HTMLSpanElement>(null)
   const [activeHeading, setActiveHeading] = useState('')
   const [lightbox, setLightbox] = useState<{ src: string; caption: string } | null>(null)
+  const { t } = useI18n()
 
   const titleParts = String(post?.title || '')
     .split(/(?<=[：:、，,。—])/)
@@ -180,7 +183,7 @@ export default function PostView() {
   if (!post) {
     return (
       <div className="post-missing theme-paper">
-        <Seo title="未找到这篇手记 — 陆屿 LU YU" path={`/journal/${slug}`} noindex />
+        <Seo title={t('未找到这篇手记 — 陆屿 LU YU', 'Note not found — LU YU')} path={`/journal/${slug}`} noindex />
         <div className="shell post-missing__inner">
           <span className="eyebrow">404 / Journal</span>
           <h1 className="post-missing__title">
@@ -188,9 +191,9 @@ export default function PostView() {
             <br />
             <em>got lost.</em>
           </h1>
-          <p>这篇手记可能被移动了，或者还没有写完。</p>
+          <p>{t('这篇手记可能被移动了，或者还没有写完。', 'This note may have been moved, or it is not finished yet.')}</p>
           <Link to="/journal" className="post-missing__link" data-cursor="Back">
-            返回手记索引 ↗
+            {t('返回手记索引', 'Back to journal index')} ↗
           </Link>
         </div>
         <SiteFooter />
@@ -218,7 +221,7 @@ export default function PostView() {
   return (
     <div className="post-page theme-paper">
       <Seo
-        title={`${post.title} — 陆屿 LU YU`}
+        title={t(`${post.title} — 陆屿 LU YU`, `${post.en} — LU YU`)}
         path={`/journal/${post.slug}`}
         description={post.excerpt}
         image={post.art}
@@ -234,7 +237,7 @@ export default function PostView() {
           <div className="post-head__top">
             <Link to="/journal" className="post-back mono" data-cursor="Back">
               <span aria-hidden="true">←</span>
-              <span>Journal / 手记</span>
+              <span>Journal / {t('手记', 'Journal')}</span>
             </Link>
             <span className="mono post-head__no">
               {post.index} / {total}
@@ -249,7 +252,7 @@ export default function PostView() {
               </Link>
             ) : null}
             <span className="mono">{post.date}</span>
-            <span className="mono">{post.reading} read</span>
+            <span className="mono">{post.reading} {t('阅读', 'read')}</span>
           </div>
 
           <h1 className="post-head__title">
@@ -282,7 +285,7 @@ export default function PostView() {
       <div className="post-cover shell">
         <ArtworkFrame
           src={post.art}
-          alt={`${post.title} — 文章配图`}
+          alt={t(`${post.title} — 文章配图`, `${post.en} — article image`)}
           ratio="16 / 9"
           parallax={8}
           eager
@@ -302,7 +305,7 @@ export default function PostView() {
           <div className="post-aside__inner">
             {headings.length ? (
               <div className="post-aside__toc">
-                <span className="post-aside__label mono">On this page</span>
+                <span className="post-aside__label mono">{t('本页目录', 'On this page')}</span>
                 <ol>
                   {headings.map((heading, index) => (
                     <li key={heading.id}>
@@ -320,7 +323,7 @@ export default function PostView() {
               </div>
             ) : null}
 
-            <span className="post-aside__label mono">Filed under</span>
+            <span className="post-aside__label mono">{t('归入', 'Filed under')}</span>
             <ul className="post-aside__tags">
               {post.tags.map((tag) => (
                 <li key={tag}>
@@ -330,8 +333,8 @@ export default function PostView() {
             </ul>
             <div className="post-aside__rule" />
             <div className="post-aside__meta mono">
-              <span>Words — 我</span>
-              <span>Images — 我</span>
+              <span>Words — {t('我', 'me')}</span>
+              <span>Images — {t('我', 'me')}</span>
               <span>Beijing, CN</span>
             </div>
           </div>
@@ -381,7 +384,7 @@ export default function PostView() {
                     type="button"
                     className="post-body__figure-frame"
                     onClick={() => setLightbox({ src: block.src, caption: block.caption })}
-                    aria-label={`放大图片：${block.caption}`}
+                    aria-label={t(`放大图片：${block.caption}`, `Enlarge image: ${block.caption}`)}
                   >
                     <img
                       src={block.src}
@@ -406,10 +409,10 @@ export default function PostView() {
       </div>
 
       {related.length ? (
-        <section className="post-related shell" aria-label="相关手记">
+        <section className="post-related shell" aria-label={t('相关手记', 'Related notes')}>
           <div className="post-related__head">
-            <span className="eyebrow">Related / 相关手记</span>
-            <span className="mono">Same project or tags</span>
+            <span className="eyebrow">Related / {t('相关手记', 'Related')}</span>
+            <span className="mono">{t('同项目或同标签', 'Same project or tags')}</span>
           </div>
           <div className="post-related__grid">
             {related.map((item) => (
@@ -435,10 +438,10 @@ export default function PostView() {
 
       <CommentSection slug={post.slug} />
 
-      <nav className="post-adjacent shell" aria-label="文章导航">
+      <nav className="post-adjacent shell" aria-label={t('文章导航', 'Post navigation')}>
         {adjacent.prev ? (
           <Link to={`/journal/${adjacent.prev.slug}`} className="post-adjacent__item" data-cursor="Read">
-            <span className="mono">Newer / 更新一篇</span>
+            <span className="mono">{t('更新一篇', 'Newer')}</span>
             <span className="post-adjacent__title">{adjacent.prev.title}</span>
             <span className="post-adjacent__en">{adjacent.prev.en}</span>
           </Link>
@@ -452,7 +455,7 @@ export default function PostView() {
             className="post-adjacent__item post-adjacent__item--right"
             data-cursor="Read"
           >
-            <span className="mono">Older / 更早一篇</span>
+            <span className="mono">{t('更早一篇', 'Older')}</span>
             <span className="post-adjacent__title">{adjacent.next.title}</span>
             <span className="post-adjacent__en">{adjacent.next.en}</span>
           </Link>
@@ -461,7 +464,7 @@ export default function PostView() {
 
       <div className="post-return shell">
         <Link to="/journal" className="post-return__link" data-cursor="Index">
-          <span>Back to all entries</span>
+          <span>{t('返回全部手记', 'Back to all entries')}</span>
           <span aria-hidden="true">↖</span>
         </Link>
       </div>
@@ -483,7 +486,7 @@ export default function PostView() {
             className="post-lightbox__close mono"
             onClick={() => setLightbox(null)}
           >
-            Close ✕
+            {t('关闭', 'Close')} ✕
           </button>
           <figure className="post-lightbox__figure" onClick={(event) => event.stopPropagation()}>
             <img src={lightbox.src} alt={lightbox.caption} />

@@ -8,6 +8,7 @@ import SiteFooter from '../components/SiteFooter'
 import ChapterTag from '../components/ChapterTag'
 import ChapterNext from '../components/ChapterNext'
 import Seo from '../components/Seo'
+import { useI18n } from '../store/i18n'
 import '../styles/components/WorkIndexView.css'
 
 const filters = [
@@ -24,6 +25,7 @@ export default function WorkIndexView() {
   const preview = useRef<HTMLDivElement>(null)
   const [active, setActive] = useState('all')
   const [hovered, setHovered] = useState<Work | null>(null)
+  const { t } = useI18n()
 
   const canPreview = useRef(false)
   const quick = useRef<{ x: (v: number) => void; y: (v: number) => void } | null>(null)
@@ -131,9 +133,12 @@ export default function WorkIndexView() {
   return (
     <div className="work-index">
       <Seo
-        title="作品 Work — Full-stack Projects · 陆屿 LU YU"
+        title={t('作品 Work — Full-stack Projects · 陆屿 LU YU', 'Work — Full-stack Projects · LU YU')}
         path="/work"
-        description="陆屿的作品索引：企业管理系统、签到考勤、数据大屏与校企协作项目。"
+        description={t(
+          '陆屿的作品索引：企业管理系统、签到考勤、数据大屏与校企协作项目。',
+          'LU YU’s project index: enterprise systems, attendance, data walls and university collaboration.'
+        )}
       />
       <header className="work-index__hero">
         <div className="work-index__ambient" aria-hidden="true" />
@@ -143,7 +148,7 @@ export default function WorkIndexView() {
 
         <div className="shell work-index__hero-inner">
           <div className="work-index__hero-top mono">
-            <span>Work index / 项目索引</span>
+            <span>Work index / {t('项目索引', 'Work index')}</span>
             <span>{total} projects — 2024 / 2026</span>
           </div>
 
@@ -155,13 +160,20 @@ export default function WorkIndexView() {
                 <span>All</span>
                 <em>projects.</em>
               </h1>
-              <p className="work-index__cn">从界面到数据库，四个真正交付过的项目。</p>
+              <p className="work-index__cn">
+                {t(
+                  '从界面到数据库，四个真正交付过的项目。',
+                  'From interface to database — four projects that actually shipped.'
+                )}
+              </p>
             </div>
 
             <aside className="work-index__aside">
               <p className="work-index__lede">
-                这里收录 2024 年以来的四个项目：企业管理系统、签到考勤、数据可视化大屏
-                与校企协作。每一个都从一条需求开始，最后跑到真实用户手里。
+                {t(
+                  '这里收录 2024 年以来的四个项目：企业管理系统、签到考勤、数据可视化大屏 与校企协作。每一个都从一条需求开始，最后跑到真实用户手里。',
+                  'Four projects since 2024: an enterprise management system, attendance tracking, a data visualisation wall and university collaboration. Each started as a single requirement and ended up in real users’ hands.'
+                )}
               </p>
 
               <span className="work-index__stamp" aria-hidden="true">
@@ -186,15 +198,19 @@ export default function WorkIndexView() {
           </div>
 
           <div className="work-index__hero-meta mono">
-            <span>Based in Beijing</span>
+            <span>{t('基于北京', 'Based in Beijing')}</span>
             <span>Enterprise / Full-stack / Data / Collaboration</span>
-            <span>Scroll to browse ↓</span>
+            <span>{t('向下滚动浏览', 'Scroll to browse')} ↓</span>
           </div>
         </div>
       </header>
 
       <div className="shell work-index__filters">
-        <div className="work-index__filter-list" role="group" aria-label="按类别筛选项目">
+        <div
+          className="work-index__filter-list"
+          role="group"
+          aria-label={t('按类别筛选项目', 'Filter projects by category')}
+        >
           {filters.map((filter) => (
             <button
               key={filter.key}
@@ -256,13 +272,15 @@ export default function WorkIndexView() {
         </div>
 
         {!filtered.length ? (
-          <p className="work-index__empty mono">这一类暂时没有项目，换一个筛选看看。</p>
+          <p className="work-index__empty mono">
+            {t('这一类暂时没有项目，换一个筛选看看。', 'No projects in this category yet. Try another filter.')}
+          </p>
         ) : null}
 
         <div className="work-index__end">
           <span className="mono">End of index — {total} projects</span>
           <a href={`mailto:${site.email}`} className="work-index__end-link mono" data-cursor="Write">
-            Start a project ↗
+            {t('开始一个项目', 'Start a project')} ↗
           </a>
         </div>
       </div>

@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { api, ApiError, type CodeScene } from '../lib/api'
 import { signIn, signOut, useAuth } from '../store/auth'
+import { useI18n } from '../store/i18n'
 import { refreshNotifications } from '../store/notifications'
 import CodeSlots from '../components/CodeSlots'
 import RubberSegment, { type SegmentItem } from '../components/RubberSegment'
@@ -12,34 +13,44 @@ import '../styles/components/LoginView.css'
 
 type Mode = 'login' | 'register' | 'reset'
 
-const MODES: SegmentItem[] = [
-  { value: 'login', label: '登录' },
-  { value: 'register', label: '注册' },
-  { value: 'reset', label: '找回密码' }
+const MODES: (SegmentItem & { en: string })[] = [
+  { value: 'login', label: '登录', en: 'Sign in' },
+  { value: 'register', label: '注册', en: 'Register' },
+  { value: 'reset', label: '找回密码', en: 'Reset' }
 ]
 
-const COPY: Record<Mode, { kicker: string; title: string; emph: string; lead: string }> = {
+const COPY: Record<
+  Mode,
+  { kicker: string; title: string; emph: string; lead: string; leadEn: string }
+> = {
   login: {
     kicker: 'Account / 登录',
     title: 'Sign',
     emph: 'in.',
-    lead: '用用户名或邮箱登录，接收站内公告、反馈回执与私信。登录状态保留 3 天，换网络会要求重新登录。'
+    lead: '用用户名或邮箱登录，接收站内公告、反馈回执与私信。登录状态保留 3 天，换网络会要求重新登录。',
+    leadEn:
+      'Sign in with your username or email to receive announcements, feedback replies and direct messages. Sessions last three days; changing networks asks you to verify again.'
   },
   register: {
     kicker: 'Register / 注册',
     title: 'Join',
     emph: 'us.',
-    lead: '先取一个用户名，再绑定邮箱。获取验证码前需要完成人机验证，验证码由邮件发送，10 分钟内有效。'
+    lead: '先取一个用户名，再绑定邮箱。获取验证码前需要完成人机验证，验证码由邮件发送，10 分钟内有效。',
+    leadEn:
+      'Pick a username, then bind an email. Complete the human check before requesting a code; the code is sent by email and valid for ten minutes.'
   },
   reset: {
     kicker: 'Recovery / 找回密码',
     title: 'Reset',
     emph: 'key.',
-    lead: '填写用户名或注册邮箱并完成人机验证，验证码会发送到注册邮箱，验证后即可设置新密码。'
+    lead: '填写用户名或注册邮箱并完成人机验证，验证码会发送到注册邮箱，验证后即可设置新密码。',
+    leadEn:
+      'Enter your username or registered email and complete the human check. A code will be sent to the registered email, then you can set a new password.'
   }
 }
 
 const STRENGTH_LABEL = ['未设置', '弱', '较弱', '较强', '强']
+const STRENGTH_LABEL_EN = ['Not set', 'Weak', 'Fair', 'Strong', 'Very strong']
 const USERNAME_PATTERN = /^[\w\u4e00-\u9fa5]{2,20}$/
 
 function messageOf(error: unknown) {
@@ -65,6 +76,11 @@ export default function LoginView() {
   const navigate = useNavigate()
   const location = useLocation()
   const auth = useAuth()
+  const { t, lang, isZh } = useI18n()
+  const modes = MODES.map((item) => ({
+    value: item.value,
+    label: isZh ? item.label : item.en
+  }))
 
   /* 登录后回到来源页（只接受站内路径），评论登录门槛会带上 ?next= */
   const nextParam = new URLSearchParams(location.search).get('next')
@@ -115,7 +131,7 @@ export default function LoginView() {
 
   useEffect(() => {
     document.title = `${copy.kicker.split(' / ')[1]} — 陆屿 LU YU`
-  }, [copy.kicker])
+  }, [copy.kicker, lang])
 
   useEffect(() => {
     if (cooldown <= 0) return
@@ -289,13 +305,16 @@ export default function LoginView() {
       <Seo
         title={`${copy.kicker.split(' / ')[1]} — 陆屿 LU YU`}
         path="/login"
-        description="登录、注册或找回密码，接收站内公告与反馈回执。"
+        description={t(
+          '登录、注册或找回密码，接收站内公告与反馈回执。',
+          'Sign in, register or reset your password to receive announcements and feedback replies.'
+        )}
         noindex
       />
       <div className="login__ambient" aria-hidden="true" />
       <div className="login__grid-lines" aria-hidden="true" />
 
-      <button type="button" className="login__back" aria-label="返回上一页" onClick={goBack}>
+      <button type="button" className="login__back" aria-label={t('返回上一页', 'Go back')} onClick={goBack}>
         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path
             d="M14.5 5.5 8 12l6.5 6.5"
@@ -314,17 +333,17 @@ export default function LoginView() {
             <h1 className="login__title">
               {copy.title} <em>{copy.emph}</em>
             </h1>
-            <p className="login__text">{copy.lead}</p>
+            <p className="login__text">{isZh ? copy.lead : copy.leadEn}</p>
 
             <ul className="login__marks">
               <li>
-                <span>01</span>3 天免密登录
+                <span>01</span>{t('3 天免密登录', 'Three-day sessions')}
               </li>
               <li>
-                <span>02</span>登录 IP 变化需重新验证
+                <span>02</span>{t('登录 IP 变化需重新验证', 'Re-verify when the network changes')}
               </li>
               <li>
-                <span>03</span>邮件验证码 + 人机校验
+                <span>03</span>{t('邮件验证码 + 人机校验', 'Email code + human check')}
               </li>
             </ul>
           </aside>
@@ -332,12 +351,12 @@ export default function LoginView() {
           <section className="login__panel">
             {signedIn ? (
               <div className="login__signed">
-                <span className="login__kicker">Signed in / 已登录</span>
+                <span className="login__kicker">Signed in / {t('已登录', 'Signed in')}</span>
                 <h2 className="login__signed-name">{auth.user?.username}</h2>
                 <p className="login__signed-mail">{auth.user?.email}</p>
                 <div className="login__signed-actions">
                   <button type="button" className="login__submit" onClick={() => navigate('/')}>
-                    <span>回到首页</span>
+                    <span>{t('回到首页', 'Back to home')}</span>
                     <span aria-hidden="true">↗</span>
                   </button>
                   <button
@@ -345,34 +364,34 @@ export default function LoginView() {
                     className="login__ghost"
                     onClick={() => {
                       signOut()
-                      setNotice('已退出登录')
+                      setNotice(t('已退出登录', 'Signed out'))
                     }}
                   >
-                    退出登录
+                    {t('退出登录', 'Sign out')}
                   </button>
                 </div>
               </div>
             ) : (
               <>
                 <RubberSegment
-                  items={MODES}
+                  items={modes}
                   value={mode}
                   onChange={switchMode}
-                  ariaLabel="账号操作"
+                  ariaLabel={t('账号操作', 'Account actions')}
                 />
 
                 <div key={mode} className="login__body">
                   <form className="login__form" onSubmit={onSubmit} noValidate>
                     {mode === 'login' ? (
                       <label className="login__field">
-                        <span className="login__label">用户名 / 邮箱</span>
+                        <span className="login__label">{t('用户名 / 邮箱', 'Username / email')}</span>
                         <input
                           type="text"
                           name="account"
                           value={account}
                           autoComplete="username"
                           spellCheck={false}
-                          placeholder="yourname 或 you@example.com"
+                          placeholder={t('yourname 或 you@example.com', 'yourname or you@example.com')}
                           onChange={(event) => setAccount(event.target.value)}
                           required
                         />
@@ -382,14 +401,14 @@ export default function LoginView() {
                     {mode === 'register' ? (
                       <div className="login__row">
                         <label className="login__field">
-                          <span className="login__label">用户名</span>
+                          <span className="login__label">{t('用户名', 'Username')}</span>
                           <input
                             type="text"
                             name="username"
                             value={username}
                             autoComplete="username"
                             spellCheck={false}
-                            placeholder="2-20 位中英文数字"
+                            placeholder={t('2-20 位中英文数字', '2–20 letters or numbers')}
                             maxLength={20}
                             onChange={(event) => setUsername(event.target.value)}
                             required
@@ -397,7 +416,7 @@ export default function LoginView() {
                         </label>
 
                         <label className="login__field">
-                          <span className="login__label">邮箱</span>
+                          <span className="login__label">{t('邮箱', 'Email')}</span>
                           <input
                             type="email"
                             name="email"
@@ -413,14 +432,14 @@ export default function LoginView() {
 
                     {mode === 'reset' ? (
                       <label className="login__field">
-                        <span className="login__label">用户名 / 邮箱</span>
+                        <span className="login__label">{t('用户名 / 邮箱', 'Username / email')}</span>
                         <input
                           type="text"
                           name="account"
                           value={account}
                           autoComplete="username"
                           spellCheck={false}
-                          placeholder="yourname 或 you@example.com"
+                          placeholder={t('yourname 或 you@example.com', 'yourname or you@example.com')}
                           onChange={(event) => setAccount(event.target.value)}
                           required
                         />
@@ -430,10 +449,10 @@ export default function LoginView() {
                     {needsCaptcha ? (
                       <div className="login__pair">
                         <div className="login__field">
-                          <span className="login__label">人机验证</span>
+                          <span className="login__label">{t('人机验证', 'Human check')}</span>
                           {captchaPassed ? (
                             <div className="login__captcha-done">
-                              <StatusMark label="已通过人机验证" size={18} />
+                              <StatusMark label={t('已通过人机验证', 'Human check passed')} size={18} />
                             </div>
                           ) : (
                             <div className="login__captcha">
@@ -443,21 +462,21 @@ export default function LoginView() {
                                 value={captchaCode}
                                 autoComplete="off"
                                 spellCheck={false}
-                                placeholder="输入图片中的字符"
+                                placeholder={t('输入图片中的字符', 'Enter the characters shown')}
                                 maxLength={4}
                                 onChange={(event) => setCaptchaCode(event.target.value)}
                               />
                               <button
                                 type="button"
                                 className="login__captcha-img"
-                                title="看不清？换一张"
-                                aria-label="换一张验证码"
+                                title={t('看不清？换一张', 'Can’t read it? Try another')}
+                                aria-label={t('换一张验证码', 'Refresh captcha')}
                                 onClick={() => void loadCaptcha()}
                               >
                                 {captchaImage ? (
-                                  <img src={captchaImage} alt="人机验证码" />
+                                  <img src={captchaImage} alt={t('人机验证码', 'Human verification code')} />
                                 ) : (
-                                  <span>加载中…</span>
+                                  <span>{t('加载中…', 'Loading…')}</span>
                                 )}
                               </button>
                             </div>
@@ -466,8 +485,8 @@ export default function LoginView() {
 
                         <div className="login__field">
                           <span className="login__label">
-                            邮箱验证码
-                            {mode === 'reset' ? '（发送至注册邮箱）' : ''}
+                            {t('邮箱验证码', 'Email code')}
+                            {mode === 'reset' ? t('（发送至注册邮箱）', ' (sent to the registered email)') : ''}
                           </span>
                           <div className="login__code-row">
                             <CodeSlots
@@ -490,10 +509,10 @@ export default function LoginView() {
                               onClick={() => void onSendCode()}
                             >
                               {cooldown > 0
-                                ? `${cooldown}s 后重发`
+                                ? t(`${cooldown}s 后重发`, `Resend in ${cooldown}s`)
                                 : sending
-                                  ? '发送中…'
-                                  : '获取验证码'}
+                                  ? t('发送中…', 'Sending…')
+                                  : t('获取验证码', 'Get code')}
                             </button>
                           </div>
                         </div>
@@ -502,13 +521,13 @@ export default function LoginView() {
 
                     {mode === 'login' ? (
                       <label className="login__field">
-                        <span className="login__label">密码</span>
+                        <span className="login__label">{t('密码', 'Password')}</span>
                         <input
                           type="password"
                           name="password"
                           value={password}
                           autoComplete="current-password"
-                          placeholder="输入登录密码"
+                          placeholder={t('输入登录密码', 'Enter your password')}
                           onChange={(event) => setPassword(event.target.value)}
                           required
                         />
@@ -518,26 +537,26 @@ export default function LoginView() {
                     {mode === 'register' ? (
                       <div className="login__row">
                         <label className="login__field">
-                          <span className="login__label">密码</span>
+                          <span className="login__label">{t('密码', 'Password')}</span>
                           <input
                             type="password"
                             name="password"
                             value={password}
                             autoComplete="new-password"
-                            placeholder="至少 8 位"
+                            placeholder={t('至少 8 位', 'At least 8 characters')}
                             onChange={(event) => setPassword(event.target.value)}
                             required
                           />
                         </label>
 
                         <label className="login__field">
-                          <span className="login__label">确认密码</span>
+                          <span className="login__label">{t('确认密码', 'Confirm password')}</span>
                           <input
                             type="password"
                             name="confirm"
                             value={confirm}
                             autoComplete="new-password"
-                            placeholder="再输入一次"
+                            placeholder={t('再输入一次', 'Enter it again')}
                             onChange={(event) => setConfirm(event.target.value)}
                             required
                           />
@@ -547,13 +566,13 @@ export default function LoginView() {
 
                     {mode === 'reset' ? (
                       <label className="login__field">
-                        <span className="login__label">新密码</span>
+                        <span className="login__label">{t('新密码', 'New password')}</span>
                         <input
                           type="password"
                           name="password"
                           value={password}
                           autoComplete="new-password"
-                          placeholder="至少 8 位"
+                          placeholder={t('至少 8 位', 'At least 8 characters')}
                           onChange={(event) => setPassword(event.target.value)}
                           required
                         />
@@ -568,9 +587,9 @@ export default function LoginView() {
                           ))}
                         </span>
                         <span className="login__strength-label">
-                          {STRENGTH_LABEL[strength]}
+                          {(isZh ? STRENGTH_LABEL : STRENGTH_LABEL_EN)[strength]}
                           {mode === 'register' && password && strength < 3
-                            ? ` · 还差 ${3 - strength} 类字符`
+                            ? t(` · 还差 ${3 - strength} 类字符`, ` · ${3 - strength} more character types`)
                             : ''}
                         </span>
                       </div>
@@ -578,7 +597,11 @@ export default function LoginView() {
 
                     <button type="submit" className="login__submit" disabled={submitting}>
                       <span>
-                        {mode === 'login' ? '登录' : mode === 'register' ? '注册并登录' : '重置密码'}
+                        {mode === 'login'
+                          ? t('登录', 'Sign in')
+                          : mode === 'register'
+                            ? t('注册并登录', 'Register & sign in')
+                            : t('重置密码', 'Reset password')}
                       </span>
                       <span aria-hidden="true">{submitting ? '…' : '↗'}</span>
                     </button>
@@ -593,15 +616,15 @@ export default function LoginView() {
                   {mode === 'login' ? (
                     <>
                       <button type="button" onClick={() => switchMode('reset')}>
-                        忘记密码？
+                        {t('忘记密码？', 'Forgot password?')}
                       </button>
                       <button type="button" onClick={() => switchMode('register')}>
-                        还没有账号，去注册
+                        {t('还没有账号，去注册', 'No account yet? Register')}
                       </button>
                     </>
                   ) : (
                     <button type="button" onClick={() => switchMode('login')}>
-                      已有账号，去登录
+                      {t('已有账号，去登录', 'Already have an account? Sign in')}
                     </button>
                   )}
                 </footer>

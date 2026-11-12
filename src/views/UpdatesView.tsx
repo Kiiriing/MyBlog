@@ -5,6 +5,7 @@ import { scrollTo } from '../composables/useSmoothScroll'
 import { changelog } from '../data/changelog'
 import SiteFooter from '../components/SiteFooter'
 import Seo from '../components/Seo'
+import { useI18n } from '../store/i18n'
 import '../styles/components/UpdatesView.css'
 
 /** 版本层级：只影响时间线圆点的样式，不改内容 */
@@ -23,6 +24,7 @@ function renderText(text: string) {
 }
 
 export default function UpdatesView() {
+  const { t, lang } = useI18n()
   const [active, setActive] = useState(changelog[0].version)
   const listRef = useRef<HTMLOListElement>(null)
   const navListRef = useRef<HTMLOListElement>(null)
@@ -32,8 +34,8 @@ export default function UpdatesView() {
   const lockUntil = useRef(0)
 
   useEffect(() => {
-    document.title = '更新记录 Changelog — 陆屿 LU YU'
-  }, [])
+    document.title = lang === 'zh' ? '更新记录 Changelog — 陆屿 LU YU' : 'Changelog — LU YU'
+  }, [lang])
 
   /* 滚动时把左侧目录同步到当前正在读的那条：
      取「顶部已越过视口 32% 线」的最后一条，比 IntersectionObserver 在窄检测带内更稳，
@@ -130,17 +132,22 @@ export default function UpdatesView() {
   return (
     <div className="updates-page theme-paper">
       <Seo
-        title="更新记录 Changelog — 陆屿 LU YU"
+        title={t('更新记录 Changelog — 陆屿 LU YU', 'Changelog — LU YU')}
         path="/updates"
-        description="陆屿博客的更新记录：每一次发布、修复与重构，按版本记录在一条时间线上。"
+        description={t(
+          '陆屿博客的更新记录：每一次发布、修复与重构，按版本记录在一条时间线上。',
+          'The changelog of LU YU’s blog: every release, fix and refactor on a single timeline.'
+        )}
       />
       <div className="updates-page__grid" aria-hidden="true" />
 
       <header className="updates-page__head">
         <div className="shell">
           <div className="updates-page__meta">
-            <span className="eyebrow">Changelog / 更新</span>
-            <span className="mono updates-page__meta-note">{total} milestones · 2026</span>
+            <span className="eyebrow">Changelog / {t('更新', 'Changelog')}</span>
+            <span className="mono updates-page__meta-note">
+              {total} {t('个里程碑', 'milestones')} · 2026
+            </span>
           </div>
 
           <h1 className="updates-page__title">
@@ -150,11 +157,13 @@ export default function UpdatesView() {
 
           <div className="updates-page__intro">
             <p>
-              从第一行代码到现在，每一次修复、重构和深夜的调整都记在这里。
-              按时间倒序排列，最近的一次在最上面。
+              {t(
+                '从第一行代码到现在，每一次修复、重构和深夜的调整都记在这里。 按时间倒序排列，最近的一次在最上面。',
+                'From the first line of code to now, every fix, refactor and late-night adjustment is recorded here. Newest first.'
+              )}
             </p>
             <div className="updates-page__index mono">
-              <span>Latest {latest.version}</span>
+              <span>{t('最新', 'Latest')} {latest.version}</span>
               <span>{latest.date}</span>
               <span>Beijing</span>
             </div>
@@ -165,9 +174,9 @@ export default function UpdatesView() {
       <main className="updates-page__body">
         <div className="shell">
           <div className="updates-layout">
-            <aside className="updates-nav" aria-label="版本目录">
+            <aside className="updates-nav" aria-label={t('版本目录', 'Version index')}>
               <div className="updates-nav__head">
-                <span className="updates-nav__label mono">Milestones</span>
+                <span className="updates-nav__label mono">{t('里程碑', 'Milestones')}</span>
                 <span className="updates-nav__total mono">{total}</span>
               </div>
               <ol
@@ -214,7 +223,7 @@ export default function UpdatesView() {
 
                   <div className="timeline__meta">
                     <span className="timeline__version mono">{entry.version}</span>
-                    {i === 0 ? <span className="timeline__latest mono">Latest</span> : null}
+                    {i === 0 ? <span className="timeline__latest mono">{t('最新', 'Latest')}</span> : null}
                     <time className="timeline__date mono" dateTime={entry.dateTime}>
                       {entry.date}
                     </time>
@@ -233,9 +242,11 @@ export default function UpdatesView() {
           </div>
 
           <div className="updates-page__foot">
-            <p className="mono">End of log — 共 {changelog.length} 个里程碑。</p>
+            <p className="mono">
+              {t(`日志结束 — 共 ${changelog.length} 个里程碑。`, `End of log — ${changelog.length} milestones.`)}
+            </p>
             <Link to="/" className="updates-page__home" data-cursor="Index">
-              <span>Back to index</span>
+              <span>{t('回到首页', 'Back to index')}</span>
               <span aria-hidden="true">↖</span>
             </Link>
           </div>

@@ -11,6 +11,7 @@ import {
   postsByYear
 } from '../data/posts'
 import { api } from '../lib/api'
+import { useI18n } from '../store/i18n'
 import JournalList from '../components/JournalList'
 import SiteFooter from '../components/SiteFooter'
 import ChapterTag from '../components/ChapterTag'
@@ -20,12 +21,13 @@ import '../styles/components/JournalView.css'
 
 export default function JournalView() {
   const [params, setParams] = useSearchParams()
+  const { t } = useI18n()
   const projectSlug = params.get('project') || ''
   const year = params.get('year') || ''
   const project = getProject(projectSlug)
   const pageTitle = project
-    ? `${project.title} ${project.cn} · 手记 — 陆屿 LU YU`
-    : '手记 Journal — 陆屿 LU YU'
+    ? `${project.title} ${project.cn} · ${t('手记', 'Journal')} — LU YU`
+    : t('手记 Journal — 陆屿 LU YU', 'Journal — LU YU')
   const [sort, setSort] = useState<'latest' | 'hot'>('latest')
   const [heat, setHeat] = useState<Record<string, number>>({})
 
@@ -72,7 +74,10 @@ export default function JournalView() {
       <Seo
         title={pageTitle}
         path="/journal"
-        description="陆屿的手记：工程、产品与设计之间的构建笔记，按项目、年份与标签整理。"
+        description={t(
+          '陆屿的手记：工程、产品与设计之间的构建笔记，按项目、年份与标签整理。',
+          'LU YU’s journal: build notes between engineering, product and design, organised by project, year and tag.'
+        )}
       />
       <div className="journal-page__grid" aria-hidden="true" />
 
@@ -81,9 +86,9 @@ export default function JournalView() {
           <ChapterTag index="07" meta={`${total} entries`} className="journal-page__chapter" />
 
           <div className="journal-page__meta">
-            <span className="eyebrow">Journal / 手记</span>
+            <span className="eyebrow">Journal / {t('手记', 'Journal')}</span>
             <span className="mono journal-page__meta-note">
-              Essays, build notes &amp; 一些未完成的想法
+              {t('Essays, build notes & 一些未完成的想法', 'Essays, build notes & some unfinished thoughts')}
             </span>
           </div>
 
@@ -94,8 +99,10 @@ export default function JournalView() {
 
           <div className="journal-page__intro">
             <p>
-              这里收集我在工程、产品与设计之间留下的笔记。 有些是关于实现的，有些只是某个下午的调试记录。
-              它们被写下来，是因为不想让那些判断太快消失。
+              {t(
+                '这里收集我在工程、产品与设计之间留下的笔记。 有些是关于实现的，有些只是某个下午的调试记录。 它们被写下来，是因为不想让那些判断太快消失。',
+                'Notes left between engineering, product and design. Some are about implementation, others are just a debugging session from a certain afternoon. They are written down so those judgements do not disappear too quickly.'
+              )}
             </p>
             <div className="journal-page__index mono">
               <span>{total} entries</span>
@@ -109,15 +116,21 @@ export default function JournalView() {
       <main className="journal-page__body">
         <div className="shell">
           <div className="journal-page__filters">
-            <span className="mono journal-page__filter-label">Project / 项目</span>
-            <div className="journal-page__filter-group" role="group" aria-label="按项目筛选文章">
+            <span className="mono journal-page__filter-label">
+              {t('Project / 项目', 'Project / 项目')}
+            </span>
+            <div
+              className="journal-page__filter-group"
+              role="group"
+              aria-label={t('按项目筛选文章', 'Filter posts by project')}
+            >
               <button
                 className={`journal-page__filter${!project ? ' is-active' : ''}`}
                 type="button"
                 aria-pressed={!project}
                 onClick={() => setFilter('project', '')}
               >
-                <span>全部</span>
+                <span>{t('全部', 'All')}</span>
                 <span className="journal-page__filter-count">{posts.length}</span>
               </button>
               {journalProjects.map((item) => {
@@ -137,12 +150,16 @@ export default function JournalView() {
               })}
             </div>
             <span className="mono journal-page__result" aria-live="polite">
-              {String(filtered.length).padStart(2, '0')} shown
+              {String(filtered.length).padStart(2, '0')} {t('篇', 'shown')}
             </span>
           </div>
 
-          <div className="journal-page__years" role="group" aria-label="按年份筛选文章">
-            <span className="mono journal-page__filter-label">Year / 年份</span>
+          <div
+            className="journal-page__years"
+            role="group"
+            aria-label={t('按年份筛选文章', 'Filter posts by year')}
+          >
+            <span className="mono journal-page__filter-label">{t('Year / 年份', 'Year / 年份')}</span>
             <div className="journal-page__year-group">
               <button
                 className={`journal-page__year${!year ? ' is-active' : ''}`}
@@ -150,7 +167,7 @@ export default function JournalView() {
                 aria-pressed={!year}
                 onClick={() => setFilter('year', '')}
               >
-                All
+                {t('All', 'All')}
               </button>
               {years.map((item) => (
                 <button
@@ -165,14 +182,18 @@ export default function JournalView() {
                 </button>
               ))}
             </div>
-            <div className="journal-page__sort" role="group" aria-label="排序方式">
+            <div
+              className="journal-page__sort"
+              role="group"
+              aria-label={t('排序方式', 'Sort order')}
+            >
               <button
                 type="button"
                 className={`mono${sort === 'latest' ? ' is-active' : ''}`}
                 aria-pressed={sort === 'latest'}
                 onClick={() => setSort('latest')}
               >
-                最新
+                {t('最新', 'Latest')}
               </button>
               <button
                 type="button"
@@ -180,7 +201,7 @@ export default function JournalView() {
                 aria-pressed={sort === 'hot'}
                 onClick={() => setSort('hot')}
               >
-                热度
+                {t('热度', 'Popular')}
               </button>
             </div>
           </div>
@@ -189,10 +210,10 @@ export default function JournalView() {
             <section
               className="journal-project"
               style={{ '--project-accent': project.accent } as React.CSSProperties}
-              aria-label={`${project.title} 项目手记`}
+              aria-label={t(`${project.title} 项目手记`, `${project.title} project journal`)}
             >
               <div className="journal-project__main">
-                <span className="mono journal-project__kicker">Project / 项目</span>
+                <span className="mono journal-project__kicker">{t('Project / 项目', 'Project / 项目')}</span>
                 <h2 className="journal-project__title">
                   <span>{project.title}</span>
                   <em>{project.cn}</em>
@@ -210,7 +231,7 @@ export default function JournalView() {
                       className="journal-project__link"
                       data-cursor="Project"
                     >
-                      查看项目 <span aria-hidden="true">↗</span>
+                      {t('查看项目', 'View project')} <span aria-hidden="true">↗</span>
                     </Link>
                   ) : null}
                   <button
@@ -218,7 +239,7 @@ export default function JournalView() {
                     type="button"
                     onClick={() => setFilter('project', '')}
                   >
-                    清除筛选
+                    {t('清除筛选', 'Clear filter')}
                   </button>
                 </div>
               </div>
@@ -230,15 +251,18 @@ export default function JournalView() {
               <JournalList posts={ordered} />
             ) : (
               <p className="journal-page__empty">
-                这个筛选下还没有手记，换一个项目或年份看看。
+                {t(
+                  '这个筛选下还没有手记，换一个项目或年份看看。',
+                  'No notes under this filter yet. Try another project or year.'
+                )}
               </p>
             )}
           </div>
 
           <div className="journal-page__archive">
             <div className="journal-page__archive-head">
-              <span className="eyebrow">Archive / 归档</span>
-              <span className="mono">By year &amp; tag</span>
+              <span className="eyebrow">{t('Archive / 归档', 'Archive / 归档')}</span>
+              <span className="mono">{t('按年份与标签', 'By year & tag')}</span>
             </div>
             <div className="journal-page__archive-grid">
               <div>
@@ -267,9 +291,11 @@ export default function JournalView() {
           </div>
 
           <div className="journal-page__foot">
-            <p className="mono">End of index — more notes are being written.</p>
+            <p className="mono">
+              {t('索引结束 — 还有更多手记正在写。', 'End of index — more notes are being written.')}
+            </p>
             <Link to="/" className="journal-page__home" data-cursor="Index">
-              <span>Back to index</span>
+              <span>{t('回到首页', 'Back to index')}</span>
               <span aria-hidden="true">↖</span>
             </Link>
           </div>

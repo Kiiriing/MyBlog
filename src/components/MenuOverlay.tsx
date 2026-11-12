@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { menuItems, site } from '../data/site'
 import { isMenuAnimating, useUi, setMenuOpen } from '../store/ui'
+import { useI18n } from '../store/i18n'
 import { useClock } from '../hooks/useClock'
 import { scrollTo, scrollToSection } from '../composables/useSmoothScroll'
 import ProfileCard from './ProfileCard'
@@ -22,6 +23,7 @@ export default function MenuOverlay() {
   const location = useLocation()
   const navigate = useNavigate()
   const time = useClock()
+  const { t } = useI18n()
 
   const [hovered, setHovered] = useState(0)
   const contactItem = menuItems[menuItems.length - 1]
@@ -74,7 +76,7 @@ export default function MenuOverlay() {
       inert={!ui.menuOpen}
       role="dialog"
       aria-modal="true"
-      aria-label="站点菜单"
+      aria-label={t('站点菜单', 'Site menu')}
       data-lenis-prevent
     >
       <div className="menu__ambient" aria-hidden="true">
@@ -86,8 +88,10 @@ export default function MenuOverlay() {
       <div className="menu__body">
         <div className="menu__inner shell">
           <div className="menu__nav-wrap">
-            <div className="menu__eyebrow eyebrow">Navigation / 导航</div>
-            <nav className="menu__nav" aria-label="主要导航" onMouseLeave={() => setHovered(4)}>
+            <div className="menu__eyebrow eyebrow">
+              {t('Navigation / 导航', 'Navigation / 导航')}
+            </div>
+            <nav className="menu__nav" aria-label={t('主要导航', 'Main navigation')} onMouseLeave={() => setHovered(4)}>
               {menuItems.map((item, i) => (
                 <button
                   key={item.index}
@@ -119,10 +123,10 @@ export default function MenuOverlay() {
               avatarUrl="/art/avatar-kiiriing.png"
               miniAvatarUrl="/art/avatar-kiiriing-sm.png"
               name="Kiiriing"
-              title="Full-stack Web Developer"
+              title={t('全栈网页开发者', 'Full-stack Web Developer')}
               handle="Kiiriing"
-              status="Open for 2026"
-              contactText="Contact"
+              status={t('2026 开放合作', 'Open for 2026')}
+              contactText={t('联系', 'Contact')}
               onContactClick={() => go(contactItem)}
               className="menu__profile"
             />

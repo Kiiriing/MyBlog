@@ -4,6 +4,7 @@ import { useLocation } from 'react-router-dom'
 import { gsap } from '../lib/gsap'
 import { prefersReducedMotion } from '../composables/useSmoothScroll'
 import { useUi } from '../store/ui'
+import { useI18n } from '../store/i18n'
 import { VinylEngine, vinylTracks } from '../lib/vinylAudio'
 import '../styles/components/VinylPlayer.css'
 
@@ -31,6 +32,7 @@ function clockOf(seconds: number) {
    遇到 `.theme-paper` 就换成奶油纸面的深色文字，所以滚动与拖动时颜色会自动跟着变。 */
 export default function VinylPlayer() {
   const ui = useUi()
+  const { t } = useI18n()
   const location = useLocation()
 
   const rootRef = useRef<HTMLDivElement>(null)
@@ -525,7 +527,7 @@ export default function VinylPlayer() {
       data-playing={playing ? 'true' : 'false'}
       style={{ transform: `translate3d(${offset.x}px, ${offset.y}px, 0)` }}
       role="group"
-      aria-label="黑胶音乐播放器"
+      aria-label={t('黑胶音乐播放器', 'Vinyl music player')}
       onPointerDown={(event) => {
         const target = event.target as HTMLElement
         if (volShown && !target.closest('.vinyl-player__vol')) closeVolume()
@@ -589,7 +591,7 @@ export default function VinylPlayer() {
           </div>
 
           <label className="vinyl-player__progress">
-            <span className="sr-only">播放进度</span>
+            <span className="sr-only">{t('播放进度', 'Playback progress')}</span>
             <input
               type="range"
               min={0}
@@ -615,7 +617,7 @@ export default function VinylPlayer() {
             <button
               className="vinyl-player__btn"
               type="button"
-              aria-label="上一首"
+              aria-label={t('上一首', 'Previous track')}
               onClick={() => shiftTrack(-1)}
             >
               <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -645,7 +647,7 @@ export default function VinylPlayer() {
             <button
               className="vinyl-player__btn"
               type="button"
-              aria-label="下一首"
+              aria-label={t('下一首', 'Next track')}
               onClick={() => shiftTrack(1)}
             >
               <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -721,7 +723,7 @@ export default function VinylPlayer() {
                   step={0.01}
                   value={volume}
                   style={{ '--vp-vol': `${Math.round(volume * 100)}%` } as CSSProperties}
-                  aria-label="音量"
+                  aria-label={t('音量', 'Volume')}
                   onChange={(event) => changeVolume(Number(event.target.value))}
                   /* 鼠标拖完音量放开焦点，滑槽收起后不会因为 :focus-within 留一条假影 */
                   onPointerUp={(event) => {

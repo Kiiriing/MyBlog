@@ -3,6 +3,7 @@ import type { CSSProperties } from 'react'
 import { Link } from 'react-router-dom'
 import type { NotificationCategory, NotificationItem } from '../lib/api'
 import { useAuth } from '../store/auth'
+import { getLang, useI18n } from '../store/i18n'
 import WarmTooltip from './WarmTooltip'
 import SwipeRow, { type SwipeAction } from './SwipeRow'
 import FuseButton from './FuseButton'
@@ -18,17 +19,22 @@ import {
 } from '../store/notifications'
 import '../styles/components/Notifications.css'
 
-const CATEGORY_LABEL: Record<NotificationCategory, string> = {
-  SYSTEM: '系统通知',
-  FEEDBACK: '用户反馈',
-  COMMENT: '评论回复',
-  DIRECT: '私信'
+const CATEGORY_LABEL: Record<NotificationCategory, [string, string]> = {
+  SYSTEM: ['系统通知', 'System'],
+  FEEDBACK: ['用户反馈', 'Feedback'],
+  COMMENT: ['评论回复', 'Comment'],
+  DIRECT: ['私信', 'Direct']
 }
 
-const TABS: { id: NotificationFilter; label: string }[] = [
-  { id: 'all', label: '全部' },
-  { id: 'unread', label: '未读' },
-  { id: 'read', label: '已读' }
+function categoryLabel(category: NotificationCategory) {
+  const [zh, en] = CATEGORY_LABEL[category]
+  return getLang() === 'zh' ? zh : en
+}
+
+const TABS: { id: NotificationFilter; zh: string; en: string }[] = [
+  { id: 'all', zh: '全部', en: 'All' },
+  { id: 'unread', zh: '未读', en: 'Unread' },
+  { id: 'read', zh: '已读', en: 'Read' }
 ]
 
 function formatTime(iso: string) {
@@ -37,13 +43,23 @@ function formatTime(iso: string) {
   const minute = 60 * 1000
   const hour = 60 * minute
   const day = 24 * hour
+  const en = getLang() === 'en'
 
-  if (diff < minute) return '刚刚'
-  if (diff < hour) return `${Math.floor(diff / minute)} 分钟前`
-  if (diff < day) return `${Math.floor(diff / hour)} 小时前`
-  if (diff < day * 7) return `${Math.floor(diff / day)} 天前`
+  if (diff < minute) return en ? 'just now' : '刚刚'
+  if (diff < hour) {
+    const value = Math.floor(diff / minute)
+    return en ? `${value} min ago` : `${value} 分钟前`
+  }
+  if (diff < day) {
+    const value = Math.floor(diff / hour)
+    return en ? `${value} hr ago` : `${value} 小时前`
+  }
+  if (diff < day * 7) {
+    const value = Math.floor(diff / day)
+    return en ? `${value} d ago` : `${value} 天前`
+  }
 
-  return date.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' })
+  return date.toLocaleDateString(en ? 'en-GB' : 'zh-CN', { month: '2-digit', day: '2-digit' })
 }
 
 function TrashIcon() {
@@ -76,6 +92,7 @@ function InboxRow({ item, index, onDelete }: InboxRowProps) {
   const [long, setLong] = useState(false)
   const bodyRef = useRef<HTMLSpanElement>(null)
   const shellRef = useRef<HTMLElement>(null)
+  const { t } = useI18n()
 
   const measure = useCallback(() => {
     const el = bodyRef.current
@@ -103,13 +120,13 @@ function InboxRow({ item, index, onDelete }: InboxRowProps) {
   const actions: SwipeAction[] = [
     {
       id: 'delete',
-      label: '删除',
+      label: t('删除', 'Delete'),
       icon: <TrashIcon />,
       onSelect: () => onDelete(shellRef.current?.offsetHeight ?? 0)
     },
     {
       id: 'pin',
-      label: item.pinned ? '取消置顶' : '置顶',
+      label: item.pinned ? t('取消置顶', 'Unpin') : t('置顶', 'Pin'),
       icon: <PinIcon />,
       onSelect: () => togglePin(item.id)
     }
@@ -122,7 +139,7 @@ function InboxRow({ item, index, onDelete }: InboxRowProps) {
       height="auto"
       actions={actions}
       collapseOnCommit={false}
-      label={`${CATEGORY_LABEL[item.category]}：${item.title}`}
+      label={`${categoryLabel(item.category)}: ${item.title}`}
     >
       <article
         ref={shellRef}
@@ -143,11 +160,11 @@ function InboxRow({ item, index, onDelete }: InboxRowProps) {
         >
           <span className="inbox__item-meta">
             <span className={`inbox__tag inbox__tag--${item.category.toLowerCase()}`}>
-              {CATEGORY_LABEL[item.category]}
+              {categoryLabel(item.category)}
             </span>
             <span className="inbox__time mono">{formatTime(item.createdAt)}</span>
             {item.pinned ? <span className="inbox__pin-mark mono">Pinned</span> : null}
-            {!item.read ? <span className="inbox__dot" aria-label="未读" /> : null}
+            {!item.read ? <span className="inbox__dot" aria-label={t('未读', 'Unread')} /> : null}
           </span>
           <span className="inbox__item-title">{item.title}</span>
           <span ref={bodyRef} className="inbox__item-body">
@@ -155,12 +172,14 @@ function InboxRow({ item, index, onDelete }: InboxRowProps) {
             {item.body}
           </span>
           {long || expanded ? (
-            <span className="inbox__more mono">{expanded ? '收起' : '…… 点击查看全文'}</span>
+            <span className="inbox__more mono">
+              {expanded ? t('收起', 'Collapse') : t('…… 点击查看全文', '… show full text')}
+            </span>
           ) : null}
         </button>
         {item.link ? (
           <Link className="inbox__item-link mono" to={item.link} onClick={closePanel}>
-            查看详情 <span aria-hidden="true">↗</span>
+            {t('查看详情', 'View details')} <span aria-hidden="true">↗</span>
           </Link>
         ) : null}
       </article>
@@ -183,6 +202,7 @@ function UndoStrip({ item, index, rowHeight, onUndo, onDone }: UndoStripProps) {
   const [relaxed, setRelaxed] = useState(!rowHeight)
   const [closing, setClosing] = useState(false)
   const timers = useRef<number[]>([])
+  const { t } = useI18n()
 
   useEffect(() => {
     const id = window.setTimeout(() => {
@@ -219,12 +239,14 @@ function UndoStrip({ item, index, rowHeight, onUndo, onDone }: UndoStripProps) {
       }
     >
       <div ref={innerRef} className="inbox__undo-inner">
-        <span className="inbox__undo-label mono">已删除「{item.title}」</span>
+        <span className="inbox__undo-label mono">
+          {t(`已删除「${item.title}」`, `Removed “${item.title}”`)}
+        </span>
         <FuseButton
           className="inbox__undo"
-          label="删除"
-          undoLabel="撤销删除"
-          doneLabel="已删除"
+          label={t('删除', 'Delete')}
+          undoLabel={t('撤销删除', 'Undo')}
+          doneLabel={t('已删除', 'Deleted')}
           size="sm"
           radius={12}
           undoWindow={4000}
@@ -244,6 +266,7 @@ function UndoStrip({ item, index, rowHeight, onUndo, onDone }: UndoStripProps) {
 export default function NotificationPanel() {
   const inbox = useNotifications()
   const auth = useAuth()
+  const { t, lang } = useI18n()
   const [pending, setPending] = useState<Record<string, { item: NotificationItem; height: number }>>({})
 
   const stageDelete = (item: NotificationItem, height: number) => {
@@ -284,20 +307,24 @@ export default function NotificationPanel() {
       <button
         className="inbox__backdrop"
         type="button"
-        aria-label="关闭站内信"
+        aria-label={t('关闭站内信', 'Close inbox')}
         onClick={closePanel}
       />
 
-      <aside className="inbox__panel" role="dialog" aria-modal="true" aria-label="站内信">
+      <aside className="inbox__panel" role="dialog" aria-modal="true" aria-label={t('站内信', 'Inbox')}>
         <header className="inbox__head">
           <div>
-            <span className="eyebrow">Inbox / 站内信</span>
+            <span className="eyebrow">Inbox / {t('站内信', 'Inbox')}</span>
             <p className="inbox__count mono">
-              {auth.user ? (inbox.unread > 0 ? `${inbox.unread} 条未读` : '全部已读') : '未登录'}
+              {auth.user
+                ? inbox.unread > 0
+                  ? t(`${inbox.unread} 条未读`, `${inbox.unread} unread`)
+                  : t('全部已读', 'All read')
+                : t('未登录', 'Not signed in')}
             </p>
           </div>
-          <WarmTooltip content="关闭站内信" shortcut="Esc" side="bottom" disabled={!inbox.open}>
-            <button className="inbox__close" type="button" aria-label="关闭" onClick={closePanel}>
+          <WarmTooltip content={t('关闭站内信', 'Close inbox')} shortcut="Esc" side="bottom" disabled={!inbox.open}>
+            <button className="inbox__close" type="button" aria-label={t('关闭', 'Close')} onClick={closePanel}>
               <span aria-hidden="true">×</span>
             </button>
           </WarmTooltip>
@@ -305,7 +332,7 @@ export default function NotificationPanel() {
 
         {auth.user ? (
           <>
-            <div className="inbox__tabs" role="tablist" aria-label="通知筛选">
+            <div className="inbox__tabs" role="tablist" aria-label={t('通知筛选', 'Notification filters')}>
               {TABS.map((tab) => (
                 <button
                   key={tab.id}
@@ -315,7 +342,7 @@ export default function NotificationPanel() {
                   className={`inbox__tab${inbox.filter === tab.id ? ' is-active' : ''}`}
                   onClick={() => setFilter(tab.id)}
                 >
-                  {tab.label}
+                  {lang === 'zh' ? tab.zh : tab.en}
                 </button>
               ))}
             </div>
@@ -324,7 +351,7 @@ export default function NotificationPanel() {
               {inbox.loading && inbox.items.length === 0 ? (
                 <p className="inbox__hint mono">Loading…</p>
               ) : inbox.items.length === 0 ? (
-                <p className="inbox__hint">这里还没有消息。</p>
+                <p className="inbox__hint">{t('这里还没有消息。', 'No messages here yet.')}</p>
               ) : (
                 inbox.items.map((item, index) => {
                   const staged = pending[item.id]
@@ -357,14 +384,14 @@ export default function NotificationPanel() {
 
             <footer className="inbox__foot">
               <span className="mono">{auth.user.email}</span>
-              <WarmTooltip content="一键全部标为已读" side="top" disabled={!inbox.open}>
+              <WarmTooltip content={t('一键全部标为已读', 'Mark all as read')} side="top" disabled={!inbox.open}>
                 <button
                   className="inbox__read-all"
                   type="button"
                   onClick={() => markAllRead()}
                   disabled={inbox.unread === 0}
                 >
-                  全部已读
+                  {t('全部已读', 'Mark all read')}
                 </button>
               </WarmTooltip>
             </footer>
@@ -377,9 +404,9 @@ export default function NotificationPanel() {
                 <path d="M8.5 10V7.5a3.5 3.5 0 0 1 7 0V10" stroke="currentColor" strokeWidth="1.2" />
               </svg>
             </span>
-            <p>登录后可以接收站点公告、反馈回执与私信。</p>
+            <p>{t('登录后可以接收站点公告、反馈回执与私信。', 'Sign in to receive announcements, feedback replies and direct messages.')}</p>
             <Link className="inbox__login" to="/login" onClick={closePanel}>
-              去登录 <span aria-hidden="true">↗</span>
+              {t('去登录', 'Sign in')} <span aria-hidden="true">↗</span>
             </Link>
           </div>
         )}

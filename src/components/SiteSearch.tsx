@@ -9,6 +9,7 @@ import {
   suggestions,
   type SearchItem
 } from '../data/search'
+import { useI18n } from '../store/i18n'
 import '../styles/components/SiteSearch.css'
 
 const isMac =
@@ -30,6 +31,7 @@ export default function SiteSearch() {
   const [phase, setPhase] = useState<'closed' | 'open' | 'closing'>('closed')
   const [query, setQuery] = useState('')
   const [active, setActive] = useState(0)
+  const { t } = useI18n()
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -147,7 +149,7 @@ export default function SiteSearch() {
         ref={triggerRef}
         className="search-trigger"
         type="button"
-        aria-label={`搜索全站（${shortcut}）`}
+        aria-label={t(`搜索全站（${shortcut}）`, `Search the site (${shortcut})`)}
         aria-haspopup="dialog"
         aria-expanded={mounted}
         onClick={openPanel}
@@ -156,7 +158,7 @@ export default function SiteSearch() {
           <circle cx="10.8" cy="10.8" r="6.3" stroke="currentColor" strokeWidth="1.4" />
           <path d="m15.6 15.6 4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
         </svg>
-        <span className="search-trigger__label">搜索</span>
+        <span className="search-trigger__label">{t('搜索', 'Search')}</span>
         <span className="search-trigger__kbd mono">{shortcut}</span>
       </button>
 
@@ -166,13 +168,13 @@ export default function SiteSearch() {
               className={`search${phase === 'closing' ? ' is-closing' : ' is-open'}`}
               role="dialog"
               aria-modal="true"
-              aria-label="全站搜索"
+              aria-label={t('全站搜索', 'Search the site')}
             >
               <button
                 className="search__backdrop"
                 type="button"
                 tabIndex={-1}
-                aria-label="关闭搜索"
+                aria-label={t('关闭搜索', 'Close search')}
                 onClick={close}
               />
 
@@ -194,8 +196,8 @@ export default function SiteSearch() {
                     value={query}
                     autoComplete="off"
                     spellCheck={false}
-                    placeholder="搜索页面、作品、手记、更新…"
-                    aria-label="搜索关键词"
+                    placeholder={t('搜索页面、作品、手记、更新…', 'Search pages, projects, notes, updates…')}
+                    aria-label={t('搜索关键词', 'Search keywords')}
                     onChange={(event) => {
                       setQuery(event.target.value)
                       setActive(0)
@@ -208,7 +210,7 @@ export default function SiteSearch() {
                 </div>
 
                 <div className="search__body" ref={listRef} data-lenis-prevent>
-                  {!tokens.length ? <p className="search__group mono">快速前往</p> : null}
+                  {!tokens.length ? <p className="search__group mono">{t('快速前往', 'Quick links')}</p> : null}
 
                   {results.length ? (
                     results.map((item, index) => (
@@ -228,9 +230,14 @@ export default function SiteSearch() {
                     ))
                   ) : (
                     <div className="search__empty">
-                      <p className="search__empty-title">没有找到「{query.trim()}」</p>
+                      <p className="search__empty-title">
+                        {t(`没有找到「${query.trim()}」`, `No results for “${query.trim()}”`)}
+                      </p>
                       <p className="search__empty-note">
-                        换个关键词试试，比如「幂等」「企业系统」「更新」「证书」。
+                        {t(
+                          '换个关键词试试，比如「幂等」「企业系统」「更新」「证书」。',
+                          'Try another keyword, such as “idempotency”, “enterprise”, “changelog” or “credentials”.'
+                        )}
                       </p>
                     </div>
                   )}
@@ -238,9 +245,13 @@ export default function SiteSearch() {
 
                 <div className="search__foot mono">
                   <span>
-                    <b>↑↓</b> 选择 · <b>↵</b> 打开 · <b>ESC</b> 关闭
+                    <b>↑↓</b> {t('选择', 'select')} · <b>↵</b> {t('打开', 'open')} · <b>ESC</b> {t('关闭', 'close')}
                   </span>
-                  <span>{tokens.length ? `共 ${results.length} 条` : '输入关键词开始搜索'}</span>
+                  <span>
+                    {tokens.length
+                      ? t(`共 ${results.length} 条`, `${results.length} results`)
+                      : t('输入关键词开始搜索', 'Type to start searching')}
+                  </span>
                 </div>
               </div>
             </div>,
