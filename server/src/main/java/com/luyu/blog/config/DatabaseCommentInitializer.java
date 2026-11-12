@@ -72,7 +72,29 @@ public class DatabaseCommentInitializer implements ApplicationRunner {
 			"COMMENT ON COLUMN captcha_challenges.answer IS '图片中的正确字符'",
 			"COMMENT ON COLUMN captcha_challenges.expires_at IS '过期时间'",
 			"COMMENT ON COLUMN captcha_challenges.used IS '是否已使用（一次性，校验后即作废）'",
-			"COMMENT ON COLUMN captcha_challenges.created_at IS '生成时间'");
+			"COMMENT ON COLUMN captcha_challenges.created_at IS '生成时间'",
+
+			"COMMENT ON TABLE post_comments IS '文章评论表（支持一层楼中楼回复）'",
+			"COMMENT ON COLUMN post_comments.id IS '主键（UUID）'",
+			"COMMENT ON COLUMN post_comments.post_slug IS '所属文章 slug，对应前端 posts 数据'",
+			"COMMENT ON COLUMN post_comments.user_id IS '评论用户 ID'",
+			"COMMENT ON COLUMN post_comments.parent_id IS '父评论 ID：顶层评论为空，回复指向顶层评论'",
+			"COMMENT ON COLUMN post_comments.content IS '评论正文（删除后改写为占位文案）'",
+			"COMMENT ON COLUMN post_comments.created_at IS '评论时间'",
+			"COMMENT ON COLUMN post_comments.deleted IS '是否已软删除，记录保留用于占位'",
+
+			"COMMENT ON TABLE post_stats IS '文章统计表：阅读量、点赞数、收藏数'",
+			"COMMENT ON COLUMN post_stats.post_slug IS '主键，文章 slug'",
+			"COMMENT ON COLUMN post_stats.views IS '累计阅读次数'",
+			"COMMENT ON COLUMN post_stats.likes IS '当前点赞数（取消点赞会扣减）'",
+			"COMMENT ON COLUMN post_stats.favorites IS '当前收藏数（取消收藏会扣减）'",
+
+			"COMMENT ON TABLE post_reactions IS '文章点赞 / 收藏明细表，一个用户对一篇文章的同一种操作只有一条'",
+			"COMMENT ON COLUMN post_reactions.id IS '主键（UUID）'",
+			"COMMENT ON COLUMN post_reactions.post_slug IS '文章 slug'",
+			"COMMENT ON COLUMN post_reactions.user_id IS '操作用户 ID'",
+			"COMMENT ON COLUMN post_reactions.kind IS '操作类型：LIKE 点赞，FAVORITE 收藏'",
+			"COMMENT ON COLUMN post_reactions.created_at IS '操作时间'");
 
 	private final JdbcTemplate jdbc;
 
@@ -93,6 +115,8 @@ public class DatabaseCommentInitializer implements ApplicationRunner {
 		}
 		if (failed > 0) {
 			log.warn("数据库注释有 {} 条未写入", failed);
+		} else {
+			log.info("数据库表 / 字段中文注释已同步，共 {} 条", STATEMENTS.size());
 		}
 	}
 }
