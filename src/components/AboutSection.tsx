@@ -9,7 +9,6 @@ import { useNearViewport } from '../hooks/useNearViewport'
 import { useIdleReady } from '../hooks/useIdleReady'
 import { useReveal } from '../hooks/useReveal'
 import { useI18n } from '../store/i18n'
-import { useUi } from '../store/ui'
 import '../styles/components/AboutSection.css'
 
 const loadLanyard = () => import('./Lanyard')
@@ -33,50 +32,33 @@ export default function AboutSection() {
   /* 宽屏双栏时画布被拉高到与右栏同底，卡片按画布高度取比例会过大，
      因此宽屏单独收一档卡片尺寸；挂绳长度保持原值不动 */
   const [compactLanyard, setCompactLanyard] = useState(false)
-  /* 吊牌在第三屏，首屏看不到：接近视口时再挂载，并等浏览器空闲，
-     让建上下文、编译着色器、上传贴图都发生在滚动停下之后 */
+  /* 吊牌在第三屏，首屏看不到：加载页期间先预热，接近视口再挂载作为兜底 */
   const [lanyardHost, lanyardNear] = useNearViewport<HTMLDivElement>('1400px 0px')
-  /* 入场结束后再预热吊牌场景：把建上下文 / 编译着色器 / 上传贴图的开销
-     放在用户还在看首屏时完成，滚到吊牌时只剩物理启动，低配机也不会在滚动中卡住 */
+  /* 加载页盖住整屏时就把吊牌场景建好：建上下文 / 编译着色器 / 上传贴图
+     都发生在 preloader 后面，用户看不到；等加载页退场时场景已经就绪，
+     滑到吊牌不会再出现空白画布 */
   const [lanyardWarm, setLanyardWarm] = useState(false)
-  const [introSettled, setIntroSettled] = useState(false)
-  const ui = useUi()
-  /* 入场动画 + 首屏标题动画全部落定前不挂载：
-     1400px 预取范围在大窗口下首屏就会命中，必须自己再挡一层，
-     否则建 WebGL 上下文的同步长任务会直接顶掉入场动画的帧 */
-  const lanyardReady = useIdleReady(introSettled && (lanyardNear || lanyardWarm))
+  const lanyardReady = useIdleReady(lanyardNear || lanyardWarm)
 
-  /* 入场动画一开始就把吊牌模块异步取回来：只下载 / 解析，不在动画里建场景。
-     放进空闲回调，动画正在跑时不和它抢主线程；慢一点没关系，不顶帧 */
+  /* 进场空闲时取回吊牌模块并开始预热；Lanyard 内的渲染循环由可见性控制，
+     离屏时不会持续占用主线程 */
   useEffect(() => {
+    const conn = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection
+    const start = () => {
+      void loadLanyard()
+      /* 省流模式不做预热，仍等接近视口再加载 */
+      if (!conn?.saveData) setLanyardWarm(true)
+    }
+
     /* 运行时守卫：Safari 没有 requestIdleCallback */
     const idle = window.requestIdleCallback?.bind(window)
     if (!idle) {
-      const timer = window.setTimeout(() => void loadLanyard(), 400)
+      const timer = window.setTimeout(start, 200)
       return () => window.clearTimeout(timer)
     }
-    const handle = idle(() => void loadLanyard(), { timeout: 4000 })
+    const handle = idle(start, { timeout: 600 })
     return () => window.cancelIdleCallback?.(handle)
   }, [])
-
-  useEffect(() => {
-    /* 入场动画结束前绝不建场景：建上下文、编译着色器、上传贴图
-       都是同步长任务，叠在动画上就是肉眼可见的卡顿 */
-    if (!ui.introDone) return
-
-    /* 入场动画结束后 0.45 秒就预热：这段还在入场幕布收尾、用户没开始下滑，
-       把建场景的长任务压在这里，滚到吊牌时已经建好，不会看到空白画布 */
-    const timer = window.setTimeout(() => {
-      setIntroSettled(true)
-
-      const conn = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection
-      /* 省流模式不做预热，仍等接近视口再加载 */
-      if (conn?.saveData) return
-      /* 已经在往下看了就不在视野里建场景，交给接近视口的挂载逻辑 */
-      if (window.scrollY < window.innerHeight * 0.6) setLanyardWarm(true)
-    }, 450)
-    return () => window.clearTimeout(timer)
-  }, [ui.introDone])
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 1100px)')
