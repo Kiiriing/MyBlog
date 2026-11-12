@@ -29,10 +29,21 @@ export default function AboutSection() {
   /* 宽屏双栏时画布被拉高到与右栏同底，卡片按画布高度取比例会过大，
      因此宽屏单独收一档卡片尺寸；挂绳长度保持原值不动 */
   const [compactLanyard, setCompactLanyard] = useState(false)
-  /* 吊牌在第三屏，首屏看不到：提前 1400px 开始观察，并等浏览器空闲再建场景，
+  /* 吊牌在第三屏，首屏看不到：接近视口时再挂载，并等浏览器空闲，
      让建上下文、编译着色器、上传贴图都发生在滚动停下之后 */
   const [lanyardHost, lanyardNear] = useNearViewport<HTMLDivElement>('1400px 0px')
-  const lanyardReady = useIdleReady(lanyardNear)
+  /* 首屏加载后先预热一次：把建场景 / 编译着色器 / 上传贴图的开销放在
+     用户还在看首屏时完成，滚到吊牌时只剩物理启动，低配机也不会在滚动中卡住 */
+  const [lanyardWarm, setLanyardWarm] = useState(false)
+  const lanyardReady = useIdleReady(lanyardNear || lanyardWarm)
+
+  useEffect(() => {
+    const conn = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection
+    /* 省流模式不做预热，仍等接近视口再加载 */
+    if (conn?.saveData) return
+    const timer = window.setTimeout(() => setLanyardWarm(true), 1200)
+    return () => window.clearTimeout(timer)
+  }, [])
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 1100px)')

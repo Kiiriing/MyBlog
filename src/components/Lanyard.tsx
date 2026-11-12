@@ -970,6 +970,8 @@ export default function Lanyard({
       frontTexture.needsUpdate = true
       backTexture.needsUpdate = true
       start()
+      /* 不可见时也补一帧，把新贴图先传上显存，避免滚到吊牌的第一帧才上传 */
+      if (!visible) render()
     }
 
     const repaintStrap = () => {
