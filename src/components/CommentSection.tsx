@@ -138,7 +138,9 @@ export default function CommentSection({ slug }: { slug: string }) {
     return (
       <article
         key={comment.id}
-        className={`comment${isReply ? ' comment--reply' : ''}${comment.deleted ? ' is-deleted' : ''}`}
+        className={`comment${isReply ? ' comment--reply' : ''}${comment.mine && !comment.deleted ? ' is-mine' : ''}${
+          comment.deleted ? ' is-deleted' : ''
+        }`}
       >
         <span
           className={`comment__avatar comment__avatar--${avatarTone(comment.authorName)}`}
@@ -190,28 +192,25 @@ export default function CommentSection({ slug }: { slug: string }) {
 
   return (
     <section className="comments shell" id="comments" aria-label={t('评论区', 'Comments')}>
-      <header className="comments__head">
-        <div className="comments__intro">
-          <span className="eyebrow">Discussion / {t('讨论', 'Discussion')}</span>
-          <h2 className="comments__title">
-            <span>{t('留下一条', 'Leave a')}</span>
-            <em>{t('注脚', 'note')}</em>
-            <span className="comments__count mono">{count}</span>
-          </h2>
-          <p className="comments__lede">
-            {t(
-              '补充、质疑，或者只是打个招呼。登录后可以评论，也能收到楼中楼回复提醒。',
-              'Add context, push back, or just say hello. Sign in to comment and get notified when someone replies.'
-            )}
-          </p>
-        </div>
-        <span className="comments__mark" aria-hidden="true">
-          ?
-        </span>
-      </header>
+      <div className="comments__inner">
+        <header className="comments__head">
+          <div className="comments__intro">
+            <span className="eyebrow">Discussion / {t('讨论', 'Discussion')}</span>
+            <h2 className="comments__title">
+              <span>{t('留下一条', 'Leave a')}</span>
+              <em>{t('注脚', 'note')}</em>
+              <span className="comments__count mono">{count}</span>
+            </h2>
+            <p className="comments__lede">
+              {t(
+                '补充、质疑，或者只是打个招呼。登录后可以评论，也能收到楼中楼回复提醒。',
+                'Add context, push back, or just say hello. Sign in to comment and get notified when someone replies.'
+              )}
+            </p>
+          </div>
+        </header>
 
-      <div className="comments__body">
-        <aside className="comments__aside">
+        <div className="comments__composer">
           {user ? (
             <form className="comment-form" onSubmit={submit}>
               <div className="comment-form__head">
@@ -274,7 +273,7 @@ export default function CommentSection({ slug }: { slug: string }) {
               {notice}
             </p>
           ) : null}
-        </aside>
+        </div>
 
         <div className="comments__stream">
           <div className="comments__stream-head">
