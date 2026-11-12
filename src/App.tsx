@@ -125,6 +125,17 @@ export default function App() {
     }, prefersReducedMotion() ? 140 : 470)
   }, [location.pathname])
 
+  /* 同页 query 变化（手记筛选）：不换页、不播幕布，但必须把新 location 交给
+     AppRoutes。React Router 在 <Routes location> 会用这个 location 覆盖
+     LocationContext，不同步的话页面里的 useSearchParams 永远读到旧 query。 */
+  useEffect(() => {
+    setRendered((prev) => {
+      if (prev.pathname !== location.pathname) return prev
+      if (prev.search === location.search && prev.hash === location.hash) return prev
+      return location
+    })
+  }, [location])
+
   /* 章节深链：子页面的「下一章」会跳回 /#experience 这类地址。
      等路由落位、页面就绪后再定位，否则会被上一步的 resetScroll 覆盖。 */
   useEffect(() => {
