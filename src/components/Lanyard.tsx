@@ -21,7 +21,6 @@ const RING_RADIUS = 0.095
 const RING_TUBE = 0.0135
 const EYELET_RADIUS = 0.036
 const CLAMP_BODY = 0.15
-const FACE_WIDTH = 1024
 
 const FINISHES = {
   glossy: { roughness: 0.42, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.06, foil: 0, anisotropy: 0 },
@@ -824,7 +823,7 @@ export default function Lanyard({
     const cores = navigator.hardwareConcurrency ?? 4
     const memory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8
     const lite = cores <= 4 || memory <= 4
-    const faceWidth = lite ? 640 : FACE_WIDTH
+    const faceWidth = lite ? 640 : 768
 
     let renderer: THREE.WebGLRenderer
     try {

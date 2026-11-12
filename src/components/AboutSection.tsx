@@ -6,6 +6,7 @@ import { capabilities, stats } from '../data/profile'
 import { techStack } from '../data/stack'
 import LogoLoop from './LogoLoop'
 import { useNearViewport } from '../hooks/useNearViewport'
+import { useIdleReady } from '../hooks/useIdleReady'
 import { useReveal } from '../hooks/useReveal'
 import '../styles/components/AboutSection.css'
 
@@ -28,8 +29,10 @@ export default function AboutSection() {
   /* 宽屏双栏时画布被拉高到与右栏同底，卡片按画布高度取比例会过大，
      因此宽屏单独收一档卡片尺寸；挂绳长度保持原值不动 */
   const [compactLanyard, setCompactLanyard] = useState(false)
-  /* 吊牌在第三屏，首屏看不到：等滚到附近再建 three 场景，避免返回首页时卡顿 */
-  const [lanyardHost, lanyardNear] = useNearViewport<HTMLDivElement>('500px')
+  /* 吊牌在第三屏，首屏看不到：提前 1400px 开始观察，并等浏览器空闲再建场景，
+     让建上下文、编译着色器、上传贴图都发生在滚动停下之后 */
+  const [lanyardHost, lanyardNear] = useNearViewport<HTMLDivElement>('1400px 0px')
+  const lanyardReady = useIdleReady(lanyardNear)
 
   /* 触屏没有 hover，点条目手动展开；桌面悬停仍然生效 */
   const [openCap, setOpenCap] = useState<string | null>(null)
@@ -139,7 +142,7 @@ export default function AboutSection() {
           <div ref={colRef} className="about__visual-col">
             <div className="about__visual">
               <div ref={lanyardHost} className="about__lanyard">
-                {lanyardNear ? (
+                {lanyardReady ? (
                   <Suspense fallback={null}>
                     <Lanyard
                       frontImage="/art/avatar-kiiriing.png"
