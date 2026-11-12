@@ -4,7 +4,6 @@ import { getAdjacentPost, getPost, getRelatedPosts, posts, projectOf } from '../
 import { lockScroll, scrollTo, unlockScroll } from '../composables/useSmoothScroll'
 import ArtworkFrame from '../components/ArtworkFrame'
 import SiteFooter from '../components/SiteFooter'
-import ChapterNext from '../components/ChapterNext'
 import EngagementBar from '../components/EngagementBar'
 import CommentSection from '../components/CommentSection'
 import Seo, { SITE_URL } from '../components/Seo'
@@ -468,8 +467,6 @@ export default function PostView() {
           <span aria-hidden="true">↖</span>
         </Link>
       </div>
-
-      <ChapterNext index="08" />
 
       <SiteFooter />
 
