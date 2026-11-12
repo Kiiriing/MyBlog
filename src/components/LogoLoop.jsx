@@ -730,6 +730,14 @@ const createEngine = (root, track, config, setLayout) => {
   const onUp = e => endDrag(e, false);
   const onCancel = e => endDrag(e, true);
 
+  /* 触摸时浏览器会把指针隐式捕获在 pointerdown 命中的子元素上；
+     拖拽激活后 root.setPointerCapture 接管捕获，子元素随即抛出
+     lostpointercapture 并冒泡到 root，若不区分来源就会被当成拖拽取消，
+     表现为手机上一滑就断、根本拖不动 */
+  const onLostCapture = e => {
+    if (e.target === root) endDrag(e, true);
+  };
+
   const onClick = e => {
     if (performance.now() < st.suppressUntil) {
       e.preventDefault();
@@ -794,7 +802,7 @@ const createEngine = (root, track, config, setLayout) => {
   root.addEventListener('pointermove', onMove);
   root.addEventListener('pointerup', onUp);
   root.addEventListener('pointercancel', onCancel);
-  root.addEventListener('lostpointercapture', onCancel);
+  root.addEventListener('lostpointercapture', onLostCapture);
   root.addEventListener('click', onClick, true);
   root.addEventListener('dragstart', onDragStart);
   root.addEventListener('focusin', onFocusIn);
@@ -860,7 +868,7 @@ const createEngine = (root, track, config, setLayout) => {
     root.removeEventListener('pointermove', onMove);
     root.removeEventListener('pointerup', onUp);
     root.removeEventListener('pointercancel', onCancel);
-    root.removeEventListener('lostpointercapture', onCancel);
+    root.removeEventListener('lostpointercapture', onLostCapture);
     root.removeEventListener('click', onClick, true);
     root.removeEventListener('dragstart', onDragStart);
     root.removeEventListener('focusin', onFocusIn);
