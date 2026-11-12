@@ -5,18 +5,15 @@
   gap: 6px;
   height: 30px;
   padding: 0 9px;
-  border: 1px solid rgba(255, 255, 255, 0.42);
   border-radius: 999px;
   color: inherit;
   background: transparent;
   transition:
-    border-color 0.35s ease,
     background-color 0.35s ease,
     transform 0.4s var(--ease-out);
 }
 
 .lang-btn:hover {
-  border-color: rgba(255, 255, 255, 0.85);
   background: rgba(255, 255, 255, 0.12);
   transform: translateY(-1px);
 }
