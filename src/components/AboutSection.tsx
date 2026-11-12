@@ -9,9 +9,11 @@ import { useNearViewport } from '../hooks/useNearViewport'
 import { useIdleReady } from '../hooks/useIdleReady'
 import { useReveal } from '../hooks/useReveal'
 import { useI18n } from '../store/i18n'
+import { useUi } from '../store/ui'
 import '../styles/components/AboutSection.css'
 
-const Lanyard = lazy(() => import('./Lanyard'))
+const loadLanyard = () => import('./Lanyard')
+const Lanyard = lazy(loadLanyard)
 
 export default function AboutSection() {
   const { t } = useI18n()
@@ -34,18 +36,41 @@ export default function AboutSection() {
   /* 吊牌在第三屏，首屏看不到：接近视口时再挂载，并等浏览器空闲，
      让建上下文、编译着色器、上传贴图都发生在滚动停下之后 */
   const [lanyardHost, lanyardNear] = useNearViewport<HTMLDivElement>('1400px 0px')
-  /* 首屏加载后先预热一次：把建场景 / 编译着色器 / 上传贴图的开销放在
-     用户还在看首屏时完成，滚到吊牌时只剩物理启动，低配机也不会在滚动中卡住 */
+  /* 预热只服务低配机：等入场动画结束、浏览器空闲后再建场景，
+     滚到吊牌时只剩物理启动；高配机现挂现建即可，首屏阶段不抢主线程 */
   const [lanyardWarm, setLanyardWarm] = useState(false)
   const lanyardReady = useIdleReady(lanyardNear || lanyardWarm)
+  const ui = useUi()
+
+  /* 入场动画一开始就异步取回吊牌模块：只做下载与解析，不建场景。
+     放进空闲回调，动画正在跑时不和它抢主线程；慢一点没关系，绝不顶帧 */
+  useEffect(() => {
+    /* 运行时守卫：Safari 没有 requestIdleCallback */
+    const idle = window.requestIdleCallback?.bind(window)
+    if (!idle) {
+      const timer = window.setTimeout(() => void loadLanyard(), 400)
+      return () => window.clearTimeout(timer)
+    }
+    const handle = idle(() => void loadLanyard(), { timeout: 3000 })
+    return () => window.cancelIdleCallback?.(handle)
+  }, [])
 
   useEffect(() => {
+    /* 入场动画没结束前不预热，避免建场景的开销叠在动画上 */
+    if (!ui.introDone) return
+
     const conn = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection
     /* 省流模式不做预热，仍等接近视口再加载 */
     if (conn?.saveData) return
-    const timer = window.setTimeout(() => setLanyardWarm(true), 1200)
+
+    /* 与 Lanyard 内部同一套低配判定：只有会走 lite 档位的机器才预热 */
+    const cores = navigator.hardwareConcurrency ?? 8
+    const memory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8
+    if (cores > 4 && memory > 4) return
+
+    const timer = window.setTimeout(() => setLanyardWarm(true), 2200)
     return () => window.clearTimeout(timer)
-  }, [])
+  }, [ui.introDone])
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 1100px)')
