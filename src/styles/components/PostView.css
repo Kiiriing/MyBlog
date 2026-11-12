@@ -69,6 +69,15 @@
   color: var(--accent);
 }
 
+.post-head__project {
+  color: var(--fg-dim);
+  transition: color 0.3s ease;
+}
+
+.post-head__project:hover {
+  color: var(--accent);
+}
+
 .post-head__title {
   max-width: 22ch;
   margin-top: clamp(20px, 3vw, 36px);
@@ -114,6 +123,14 @@
   color: var(--fg-dim);
   font-size: 8px;
   letter-spacing: 0.08em;
+  transition:
+    border-color 0.3s ease,
+    color 0.3s ease;
+}
+
+.post-head__tag:hover {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .post-cover {
@@ -177,6 +194,59 @@
   color: var(--fg-dim);
   font-size: 12px;
   list-style: none;
+}
+
+.post-aside__tags a {
+  transition: color 0.3s ease;
+}
+
+.post-aside__tags a:hover {
+  color: var(--accent);
+}
+
+/* 目录：与正文 h2 同步高亮 */
+.post-aside__toc {
+  margin-bottom: 22px;
+}
+
+.post-aside__toc ol {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 10px;
+  list-style: none;
+}
+
+.post-aside__toc button {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 6px;
+  width: 100%;
+  margin-left: -9px;
+  padding: 5px 0 5px 8px;
+  border-left: 1px solid transparent;
+  color: var(--fg-faint);
+  font-size: 11px;
+  line-height: 1.45;
+  text-align: left;
+  transition:
+    color 0.3s ease,
+    border-color 0.3s ease;
+}
+
+.post-aside__toc button .mono {
+  padding-top: 2px;
+  font-size: 7px;
+  opacity: 0.6;
+}
+
+.post-aside__toc button:hover {
+  color: var(--fg);
+}
+
+.post-aside__toc button.is-active {
+  border-left-color: var(--accent);
+  color: var(--accent);
 }
 
 .post-aside__rule {
@@ -298,9 +368,13 @@
 
 .post-body__figure-frame {
   position: relative;
+  display: block;
+  width: 100%;
+  padding: 0;
   overflow: hidden;
   aspect-ratio: 4 / 3;
   background: var(--card);
+  cursor: zoom-in;
 }
 
 .post-body__figure-frame img {
@@ -333,6 +407,192 @@
   line-height: 1.9;
   letter-spacing: 0.01em;
   white-space: pre-wrap;
+}
+
+/* 代码块复制：按钮叠在右上角，不改变原代码块的排版 */
+.post-code {
+  position: relative;
+  margin: 2.4em 0;
+}
+
+.post-code .post-body__code {
+  margin: 0;
+  padding-top: clamp(38px, 4vw, 48px);
+}
+
+.post-code__copy {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  padding: 5px 10px;
+  border: 1px solid rgba(239, 232, 219, 0.24);
+  border-radius: 999px;
+  color: rgba(239, 232, 219, 0.7);
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  transition:
+    border-color 0.3s ease,
+    background-color 0.3s ease,
+    color 0.3s ease;
+}
+
+.post-code__copy:hover {
+  border-color: rgba(239, 232, 219, 0.6);
+  color: #efe8db;
+}
+
+.post-code__copy.is-copied {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--paper);
+}
+
+/* 相关手记 */
+.post-related {
+  padding-block: clamp(30px, 4.4vw, 52px);
+  border-top: 1px solid var(--line);
+}
+
+.post-related__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: clamp(18px, 2.6vw, 28px);
+}
+
+.post-related__head .mono {
+  color: var(--fg-faint);
+  font-size: 8px;
+  letter-spacing: 0.1em;
+}
+
+.post-related__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+}
+
+.post-related__item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: clamp(20px, 2.6vw, 30px);
+  background: var(--paper);
+  transition: background-color 0.35s ease;
+}
+
+.post-related__item:hover {
+  background: var(--card);
+}
+
+.post-related__meta {
+  color: var(--fg-faint);
+  font-size: 8px;
+  letter-spacing: 0.08em;
+}
+
+.post-related__title {
+  max-width: 24ch;
+  font-family: var(--font-serif);
+  font-size: clamp(1.25rem, 1.8vw, 1.7rem);
+  font-weight: 400;
+  line-height: 1.16;
+  letter-spacing: -0.02em;
+  transition: color 0.35s ease;
+}
+
+.post-related__item:hover .post-related__title {
+  color: var(--accent);
+}
+
+.post-related__en {
+  color: var(--fg-dim);
+  font-family: var(--font-serif);
+  font-size: 0.95rem;
+  font-style: italic;
+}
+
+.post-related__arrow {
+  position: absolute;
+  top: clamp(20px, 2.6vw, 30px);
+  right: clamp(20px, 2.6vw, 30px);
+  color: var(--fg-faint);
+  font-size: 13px;
+  transition:
+    color 0.35s ease,
+    transform 0.35s ease;
+}
+
+.post-related__item:hover .post-related__arrow {
+  color: var(--accent);
+  transform: translate(3px, -3px);
+}
+
+/* 图片灯箱 */
+.post-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 1400;
+  display: grid;
+  place-items: center;
+  padding: clamp(20px, 4vw, 60px);
+  background: rgba(8, 8, 10, 0.94);
+  animation: post-lightbox-in 0.32s ease both;
+}
+
+.post-lightbox__close {
+  position: absolute;
+  top: clamp(18px, 3vw, 34px);
+  right: clamp(18px, 3vw, 34px);
+  padding: 9px 16px;
+  border: 1px solid rgba(239, 232, 219, 0.28);
+  border-radius: 999px;
+  color: rgba(239, 232, 219, 0.8);
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  transition:
+    border-color 0.3s ease,
+    color 0.3s ease;
+}
+
+.post-lightbox__close:hover {
+  border-color: #efe8db;
+  color: #efe8db;
+}
+
+.post-lightbox__figure {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  max-width: min(1100px, 92vw);
+}
+
+.post-lightbox__figure img {
+  max-width: 100%;
+  max-height: 80vh;
+  object-fit: contain;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+}
+
+.post-lightbox__figure figcaption {
+  color: rgba(239, 232, 219, 0.65);
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  text-align: center;
+}
+
+@keyframes post-lightbox-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .post-adjacent {

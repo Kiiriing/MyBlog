@@ -2,6 +2,7 @@ import type { Location } from 'react-router-dom'
 import { Route, Routes } from 'react-router-dom'
 import HomeView from './views/HomeView'
 import JournalView from './views/JournalView'
+import JournalTagView from './views/JournalTagView'
 import PostView from './views/PostView'
 import WorkIndexView from './views/WorkIndexView'
 import WorkView from './views/WorkView'
@@ -14,6 +15,7 @@ export function AppRoutes({ location }: { location: Location }) {
     <Routes location={location}>
       <Route path="/" element={<HomeView />} />
       <Route path="/journal" element={<JournalView />} />
+      <Route path="/journal/tag/:tag" element={<JournalTagView />} />
       <Route path="/journal/:slug" element={<PostView />} />
       <Route path="/updates" element={<UpdatesView />} />
       <Route path="/work" element={<WorkIndexView />} />
@@ -27,6 +29,7 @@ export function AppRoutes({ location }: { location: Location }) {
 export function routeNameFor(pathname: string) {
   if (pathname === '/') return 'home'
   if (pathname === '/journal') return 'journal'
+  if (pathname.startsWith('/journal/tag/')) return 'journal-tag'
   if (pathname.startsWith('/journal/')) return 'post'
   if (pathname === '/updates') return 'updates'
   if (pathname === '/work') return 'work-index'

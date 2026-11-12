@@ -5,6 +5,7 @@ export const posts = [
     title: '幂等与库存：订单链路里最容易漏掉的两件事',
     en: 'Idempotent Orders',
     category: '工程',
+    project: 'qianverse',
     date: '2026.09.12',
     reading: '9 min',
     excerpt: '重复提交、支付回调重放、并发下单——线上真正会出问题的，往往不是主流程。',
@@ -64,6 +65,7 @@ export const posts = [
     title: '三层反作弊：让签到回到教室',
     en: 'Anti-Cheat in Three Layers',
     category: '工程',
+    project: 'attendance',
     date: '2026.07.30',
     reading: '10 min',
     excerpt: '签到系统真正的对手不是用户，而是那些试图替用户完成签到的脚本。',
@@ -118,6 +120,7 @@ export const posts = [
     title: '做完二十块数据大屏，我留下的五条规则',
     en: 'Rules from Twenty Data Walls',
     category: '设计',
+    project: 'data-walls',
     date: '2026.05.16',
     reading: '7 min',
     excerpt: '会议室里的屏幕不会滚动，它只有一次机会把最重要的数字说清楚。',
@@ -161,6 +164,7 @@ export const posts = [
     title: '从 Vue 3 到 React 19：一次博客重写的迁移笔记',
     en: 'Migrating a Blog to React',
     category: '随笔',
+    project: 'myblog',
     date: '2026.03.08',
     reading: '8 min',
     excerpt: '迁移不是把 v-if 换成三元表达式，而是重新想一遍状态该放在哪里。',
@@ -210,11 +214,113 @@ export const posts = [
 
 export const categories = ['全部', '工程', '设计', '随笔']
 
-export function getPost(slug) {
+export type Post = (typeof posts)[number]
+
+export type JournalProject = {
+  slug: string
+  title: string
+  cn: string
+  work?: string
+  accent: string
+  note: string
+}
+
+/** 手记按项目归类；work 指向作品页，本站没有独立作品页 */
+export const journalProjects: JournalProject[] = [
+  {
+    slug: 'qianverse',
+    title: 'QianVerse',
+    cn: '千域',
+    work: 'qianverse',
+    accent: '#ff5a2f',
+    note: '餐饮零售一体化管理系统 · 订单、库存与权限'
+  },
+  {
+    slug: 'attendance',
+    title: 'Attendance',
+    cn: '签到考勤',
+    work: 'attendance',
+    accent: '#7a67ff',
+    note: '三角色签到系统 · 限时签到与三层反作弊'
+  },
+  {
+    slug: 'data-walls',
+    title: 'Data Walls',
+    cn: '数据大屏',
+    work: 'data-walls',
+    accent: '#b9d400',
+    note: '20+ 张会议室大屏 · 指标口径与数据接口'
+  },
+  {
+    slug: 'myblog',
+    title: 'MyBlog',
+    cn: '本站',
+    accent: '#1b1a17',
+    note: '这个博客本身 · React 19 与 GSAP 的迁移记录'
+  }
+]
+
+export function getPost(slug: string) {
   return posts.find((post) => post.slug === slug)
 }
 
-export function getAdjacentPost(slug) {
+export function getProject(slug: string) {
+  return journalProjects.find((project) => project.slug === slug)
+}
+
+export function projectOf(post: Post) {
+  return getProject(post.project)
+}
+
+export function postsByProject(slug: string) {
+  return posts.filter((post) => post.project === slug)
+}
+
+export function postYear(post: Post) {
+  return post.date.slice(0, 4)
+}
+
+export function getYears() {
+  return [...new Set(posts.map(postYear))].sort((a, b) => b.localeCompare(a))
+}
+
+export function postsByYear(year: string) {
+  return posts.filter((post) => postYear(post) === year)
+}
+
+export function getAllTags() {
+  const map = new Map<string, number>()
+  for (const post of posts) {
+    for (const tag of post.tags) map.set(tag, (map.get(tag) ?? 0) + 1)
+  }
+  return [...map.entries()]
+    .map(([tag, count]) => ({ tag, count }))
+    .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag))
+}
+
+export function getPostsByTag(tag: string) {
+  return posts.filter((post) => post.tags.includes(tag))
+}
+
+/** 相关文章：同项目权重最高，其次是共同标签数 */
+export function getRelatedPosts(slug: string, limit = 3) {
+  const current = getPost(slug)
+  if (!current) return []
+
+  return posts
+    .filter((post) => post.slug !== slug)
+    .map((post) => {
+      const shared = post.tags.filter((tag) => current.tags.includes(tag)).length
+      const score = shared * 2 + (post.project === current.project ? 3 : 0)
+      return { post, score }
+    })
+    .filter((item) => item.score > 0)
+    .sort((a, b) => b.score - a.score || b.post.date.localeCompare(a.post.date))
+    .slice(0, limit)
+    .map((item) => item.post)
+}
+
+export function getAdjacentPost(slug: string) {
   const i = posts.findIndex((post) => post.slug === slug)
   if (i === -1) return { prev: null, next: null }
   return {

@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { toggleMenu } from '../store/ui'
 import SiteFooter from '../components/SiteFooter'
+import Seo from '../components/Seo'
 import '../styles/components/NotFoundView.css'
 
 export default function NotFoundView() {
@@ -11,6 +12,7 @@ export default function NotFoundView() {
 
   return (
     <div className="notfound">
+      <Seo title="Lost signal — 陆屿 LU YU" path="/404" noindex />
       <div className="notfound__ambient" aria-hidden="true" />
 
       <div className="shell notfound__inner">

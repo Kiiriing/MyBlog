@@ -7,6 +7,7 @@ import { site } from '../data/site'
 import SiteFooter from '../components/SiteFooter'
 import ChapterTag from '../components/ChapterTag'
 import ChapterNext from '../components/ChapterNext'
+import Seo from '../components/Seo'
 import '../styles/components/WorkIndexView.css'
 
 const filters = [
@@ -30,10 +31,6 @@ export default function WorkIndexView() {
   const filtered = active === 'all' ? works : works.filter((work) => work.filters?.includes(active))
   const count = String(filtered.length).padStart(2, '0')
   const total = String(works.length).padStart(2, '0')
-
-  useEffect(() => {
-    document.title = 'Work — Full-stack Projects · 陆屿 LU YU'
-  }, [])
 
   useEffect(() => {
     if (!preview.current) return
@@ -133,6 +130,11 @@ export default function WorkIndexView() {
 
   return (
     <div className="work-index">
+      <Seo
+        title="作品 Work — Full-stack Projects · 陆屿 LU YU"
+        path="/work"
+        description="陆屿的作品索引：企业管理系统、签到考勤、数据大屏与校企协作项目。"
+      />
       <header className="work-index__hero">
         <div className="work-index__ambient" aria-hidden="true" />
         <span className="work-index__ghost" aria-hidden="true">

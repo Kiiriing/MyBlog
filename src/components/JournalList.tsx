@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { gsap } from '../lib/gsap'
-import { posts } from '../data/posts'
+import { posts, projectOf } from '../data/posts'
 import '../styles/components/JournalList.css'
 
 type Post = (typeof posts)[number]
@@ -83,7 +83,9 @@ export default function JournalList({ posts: items }: JournalListProps) {
         {active ? (
           <img key={active.slug} src={active.art} alt={active.title} draggable="false" />
         ) : null}
-        <span className="journal-preview__tag mono">{active?.category || 'Journal'}</span>
+        <span className="journal-preview__tag mono">
+          {active ? (projectOf(active)?.cn ?? active.category) : 'Journal'}
+        </span>
       </div>
       <div className="journal-preview__foot mono">
         <span>{active ? active.index : '—'}</span>
@@ -95,32 +97,37 @@ export default function JournalList({ posts: items }: JournalListProps) {
   return (
     <>
       <div className="journal-list" onMouseLeave={hidePreview}>
-        {items.map((post) => (
-          <Link
-            key={post.slug}
-            to={`/journal/${post.slug}`}
-            className="journal-row"
-            data-cursor="Read"
-            onMouseEnter={(event) => showPreview(post, event)}
-            onMouseMove={movePreview}
-          >
-            <span className="journal-row__index mono">{post.index}</span>
+        {items.map((post) => {
+          const project = projectOf(post)
+          return (
+            <Link
+              key={post.slug}
+              to={`/journal/${post.slug}`}
+              className="journal-row"
+              data-cursor="Read"
+              onMouseEnter={(event) => showPreview(post, event)}
+              onMouseMove={movePreview}
+            >
+              <span className="journal-row__index mono">{post.index}</span>
 
-            <span className="journal-row__main">
-              <span className="journal-row__title">{post.title}</span>
-              <span className="journal-row__en">{post.en}</span>
-            </span>
+              <span className="journal-row__main">
+                <span className="journal-row__title">{post.title}</span>
+                <span className="journal-row__en">{post.en}</span>
+              </span>
 
-            <span className="journal-row__cat mono">{post.category}</span>
-            <span className="journal-row__date mono">{post.date}</span>
+              <span className="journal-row__cat mono">
+                {project ? `${project.title} · ${project.cn}` : post.category}
+              </span>
+              <span className="journal-row__date mono">{post.date}</span>
 
-            <span className="journal-row__arrow" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none">
-                <path d="M5 19L19 5M9 5h10v10" stroke="currentColor" strokeWidth="1" />
-              </svg>
-            </span>
-          </Link>
-        ))}
+              <span className="journal-row__arrow" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M5 19L19 5M9 5h10v10" stroke="currentColor" strokeWidth="1" />
+                </svg>
+              </span>
+            </Link>
+          )
+        })}
       </div>
 
       {typeof document !== 'undefined' ? createPortal(previewNode, document.body) : null}

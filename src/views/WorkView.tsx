@@ -1,10 +1,11 @@
-import { useEffect } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { getWork, works } from '../data/works'
+import { postsByProject } from '../data/posts'
 import ArtworkFrame from '../components/ArtworkFrame'
 import SiteFooter from '../components/SiteFooter'
 import ChapterTag from '../components/ChapterTag'
 import ChapterNext from '../components/ChapterNext'
+import Seo, { SITE_URL } from '../components/Seo'
 import { useReveal } from '../hooks/useReveal'
 import '../styles/components/WorkView.css'
 
@@ -66,17 +67,13 @@ export default function WorkView() {
   const { slug = '' } = useParams()
   const work = getWork(slug)
   const nextWork = work ? getWork(work.next) : null
+  const journalPosts = work ? postsByProject(work.slug) : []
   const total = String(works.length).padStart(2, '0')
-
-  useEffect(() => {
-    document.title = work
-      ? `${work.title} ${work.cn} — 陆屿 LU YU`
-      : '未找到这个项目 — 陆屿 LU YU'
-  }, [slug])
 
   if (!work) {
     return (
       <div className="work-missing">
+        <Seo title="未找到这个项目 — 陆屿 LU YU" path={`/work/${slug}`} noindex />
         <div className="shell work-missing__inner">
           <span className="eyebrow">404 / Work</span>
           <h1 className="work-missing__title">
@@ -99,6 +96,23 @@ export default function WorkView() {
       className="work-page"
       style={{ '--project-accent': work.accent } as React.CSSProperties}
     >
+      <Seo
+        title={`${work.title} ${work.cn} — 陆屿 LU YU`}
+        path={`/work/${work.slug}`}
+        description={work.summary}
+        image={work.art}
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'CreativeWork',
+          name: `${work.title} ${work.cn}`,
+          description: work.summary,
+          image: `${SITE_URL}${work.art}`,
+          dateCreated: work.year,
+          keywords: work.stack.join(', '),
+          creator: { '@type': 'Person', name: '陆屿', alternateName: 'LU YU', url: SITE_URL },
+          url: `${SITE_URL}/work/${work.slug}`
+        }}
+      />
       <header className="work-hero">
         <div className="work-hero__ambient" aria-hidden="true" />
 
@@ -243,6 +257,44 @@ export default function WorkView() {
           </div>
         </div>
       </section>
+
+      {journalPosts.length ? (
+        <section className="work-journal shell" aria-label="该项目手记">
+          <div className="work-journal__head">
+            <div>
+              <span className="eyebrow">Journal / 项目手记</span>
+              <p className="mono work-journal__note">Written while building it</p>
+            </div>
+            <Link to={`/journal?project=${work.slug}`} className="work-journal__all mono">
+              全部 {String(journalPosts.length).padStart(2, '0')} 篇
+              <span aria-hidden="true">↗</span>
+            </Link>
+          </div>
+
+          <div className="work-journal__grid">
+            {journalPosts.map((post) => (
+              <Link
+                key={post.slug}
+                to={`/journal/${post.slug}`}
+                className="work-journal__item"
+                data-cursor="Read"
+              >
+                <span className="mono work-journal__meta">
+                  {post.index} — {post.date}
+                </span>
+                <span className="work-journal__title">{post.title}</span>
+                <span className="work-journal__en">{post.en}</span>
+                <span className="mono work-journal__tags">
+                  {post.tags.map((tag) => `#${tag}`).join('  ')}
+                </span>
+                <span className="work-journal__arrow" aria-hidden="true">
+                  →
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       {nextWork ? (
         <section className="work-next">

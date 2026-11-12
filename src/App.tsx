@@ -30,6 +30,7 @@ const WIPE_NAMES: Record<string, string> = {
   'work-index': 'Work',
   work: 'Case',
   journal: 'Journal',
+  'journal-tag': 'Tag',
   post: 'Entry',
   updates: 'Updates',
   login: 'Login',

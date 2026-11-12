@@ -7,6 +7,7 @@ import { refreshNotifications } from '../store/notifications'
 import CodeSlots from '../components/CodeSlots'
 import RubberSegment, { type SegmentItem } from '../components/RubberSegment'
 import StatusMark from '../components/StatusMark'
+import Seo from '../components/Seo'
 import '../styles/components/LoginView.css'
 
 type Mode = 'login' | 'register' | 'reset'
@@ -280,6 +281,12 @@ export default function LoginView() {
 
   return (
     <div className="login">
+      <Seo
+        title={`${copy.kicker.split(' / ')[1]} — 陆屿 LU YU`}
+        path="/login"
+        description="登录、注册或找回密码，接收站内公告与反馈回执。"
+        noindex
+      />
       <div className="login__ambient" aria-hidden="true" />
       <div className="login__grid-lines" aria-hidden="true" />
 

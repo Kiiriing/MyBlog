@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /login
+
+# 站点地图
+Sitemap: https://luyu.me/sitemap.xml

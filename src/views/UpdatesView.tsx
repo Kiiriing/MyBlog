@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { scrollTo } from '../composables/useSmoothScroll'
 import { changelog } from '../data/changelog'
 import SiteFooter from '../components/SiteFooter'
+import Seo from '../components/Seo'
 import '../styles/components/UpdatesView.css'
 
 /** 版本层级：只影响时间线圆点的样式，不改内容 */
@@ -128,6 +129,11 @@ export default function UpdatesView() {
 
   return (
     <div className="updates-page theme-paper">
+      <Seo
+        title="更新记录 Changelog — 陆屿 LU YU"
+        path="/updates"
+        description="陆屿博客的更新记录：每一次发布、修复与重构，按版本记录在一条时间线上。"
+      />
       <div className="updates-page__grid" aria-hidden="true" />
 
       <header className="updates-page__head">
