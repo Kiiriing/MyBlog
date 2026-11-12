@@ -211,15 +211,14 @@
   text-transform: none;
   opacity: 0;
   transition:
-    max-height 0.5s var(--ease-out),
     opacity 0.4s ease,
     margin-top 0.5s var(--ease-out);
 }
 
-/* 触屏点击展开：给足高度，避免多行条目被 40px 的阈值裁掉 */
+/* 展开不限高：内容有多少行就显示多少行 */
 .about__cap:hover .about__cap-items,
 .about__cap.is-open .about__cap-items {
-  max-height: 200px;
+  max-height: none;
   margin-top: 5px;
   opacity: 0.9;
 }
