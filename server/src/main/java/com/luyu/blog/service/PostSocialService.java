@@ -35,6 +35,7 @@ import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -82,63 +83,79 @@ public class PostSocialService {
 	public CommentListDto listComments(String rawSlug, UserPrincipal principal, String sort, int page, int size,
 			UUID anchor) {
 		String slug = normalizeSlug(rawSlug);
-		List<PostComment> all = comments.findByPostSlugOrderByCreatedAtAsc(slug);
 		UUID currentId = principal == null ? null : principal.id();
-
-		List<CommentLike> likes = commentLikes.findByComment_PostSlug(slug);
-		Map<UUID, Long> likeCounts = likes.stream()
-				.collect(Collectors.groupingBy(like -> like.getComment().getId(), Collectors.counting()));
-		Set<UUID> likedByMe = currentId == null ? Set.of()
-				: likes.stream()
-						.filter(like -> like.getUser().getId().equals(currentId))
-						.map(like -> like.getComment().getId())
-						.collect(Collectors.toSet());
-
-		Map<UUID, List<PostComment>> replyMap = all.stream()
-				.filter(comment -> comment.getParent() != null && !comment.isDeleted())
-				.collect(Collectors.groupingBy(comment -> comment.getParent().getId()));
-
-		Comparator<PostComment> replyOrder = replyOrder(sort, likeCounts);
-		List<PostComment> roots = all.stream()
-				/* 已删除的评论不再出现在列表里；父评论被删除时，把仍存在的回复提升为一级，避免内容消失 */
-				.filter(comment -> !comment.isDeleted())
-				.filter(comment -> comment.getParent() == null || comment.getParent().isDeleted())
-				.sorted(rootOrder(sort, likeCounts))
-				.toList();
-
 		int pageSize = clampSize(size);
+		boolean byLikes = "likes".equalsIgnoreCase(sort);
+
+		/* 深链：用 SQL 算出锚点一级评论的下标，直接翻到所在页 */
+		PostComment anchorComment = anchor == null ? null
+				: comments.findById(anchor).filter(comment -> !comment.isDeleted()).orElse(null);
+		PostComment anchorReply = anchorComment == null || anchorComment.getParent() == null ? null : anchorComment;
+		UUID anchorRootId = anchorComment == null ? null : rootIdOf(anchorComment);
 		int pageIndex = Math.max(0, page);
-		UUID anchorRootId = anchorRootId(all, anchor);
 		if (anchorRootId != null) {
-			/* 深链：直接翻到目标评论所在页，不用前端一页页试 */
-			for (int i = 0; i < roots.size(); i++) {
-				if (roots.get(i).getId().equals(anchorRootId)) {
-					pageIndex = i / pageSize;
-					break;
-				}
+			Integer index = byLikes
+					? comments.findRootIndexByLikes(slug, anchorRootId)
+					: comments.findRootIndexByRecent(slug, anchorRootId);
+			if (index != null) {
+				pageIndex = index / pageSize;
 			}
 		}
 
-		int from = Math.min(pageIndex * pageSize, roots.size());
-		int to = Math.min(from + pageSize, roots.size());
+		long rootTotal = comments.countRoots(slug);
+		long total = comments.countByPostSlugAndDeletedFalse(slug);
+		List<UUID> rootIds = byLikes
+				? comments.findRootIdsByLikes(slug, pageSize, pageIndex * pageSize)
+				: comments.findRootIdsByRecent(slug, pageSize, pageIndex * pageSize);
+		if (rootIds.isEmpty()) {
+			return new CommentListDto(List.of(), total, false, pageIndex, rootTotal);
+		}
+
+		/* 只查当前页一级评论的预览回复，楼中楼其余内容等点开后再分页加载 */
+		List<PostComment> previews = byLikes
+				? comments.findReplyPreviewByLikes(rootIds, REPLY_PREVIEW)
+				: comments.findReplyPreviewByRecent(rootIds, REPLY_PREVIEW);
+		Map<UUID, Integer> replyCounts = comments.countRepliesByParent(rootIds).stream()
+				.collect(Collectors.toMap(PostCommentRepository.ReplyCount::getParentId,
+						count -> (int) count.getTotal()));
+
+		Set<UUID> ids = new LinkedHashSet<>(rootIds);
+		previews.forEach(preview -> ids.add(preview.getId()));
+		/* 深链指向楼中楼时，把目标回复补进预览，保证页面上能定位到它 */
+		if (anchorReply != null && rootIds.contains(anchorReply.getParent().getId())
+				&& !ids.contains(anchorReply.getId())) {
+			ids.add(anchorReply.getId());
+		}
+
+		Map<UUID, PostComment> detailed = new HashMap<>();
+		comments.findDetailedByIdIn(ids).forEach(comment -> detailed.put(comment.getId(), comment));
+		Map<UUID, Long> likeCounts = commentLikes.countByCommentIds(ids).stream()
+				.collect(Collectors.toMap(CommentLikeRepository.LikeCount::getCommentId,
+						CommentLikeRepository.LikeCount::getTotal));
+		Set<UUID> likedByMe = currentId == null ? Set.of()
+				: new HashSet<>(commentLikes.findLikedCommentIds(ids, currentId));
+
+		Map<UUID, List<PostComment>> replyMap = new HashMap<>();
+		for (PostComment preview : previews) {
+			replyMap.computeIfAbsent(preview.getParent().getId(), key -> new ArrayList<>()).add(preview);
+		}
+		if (anchorReply != null && detailed.containsKey(anchorReply.getId())
+				&& !previews.stream().anyMatch(preview -> preview.getId().equals(anchorReply.getId()))) {
+			replyMap.computeIfAbsent(anchorReply.getParent().getId(), key -> new ArrayList<>())
+					.add(detailed.get(anchorReply.getId()));
+		}
+
+		Comparator<PostComment> replyOrder = replyOrder(byLikes, likeCounts);
 		List<CommentDto> items = new ArrayList<>();
-		for (PostComment root : roots.subList(from, to)) {
-			List<PostComment> children = orderReplies(replyMap.getOrDefault(root.getId(), List.of()), replyOrder);
-			List<PostComment> preview = new ArrayList<>(children.size() <= REPLY_PREVIEW ? children
-					: children.subList(0, REPLY_PREVIEW));
-			/* 深链指向楼中楼时，把目标回复补进预览，保证页面上能定位到它 */
-			if (anchor != null && children.size() > REPLY_PREVIEW) {
-				children.stream()
-						.filter(child -> child.getId().equals(anchor))
-						.filter(child -> preview.stream().noneMatch(item -> item.getId().equals(child.getId())))
-						.findFirst()
-						.ifPresent(preview::add);
-			}
-			items.add(toDto(root, preview, children.size(), currentId, likeCounts, likedByMe));
+		for (UUID rootId : rootIds) {
+			PostComment root = detailed.get(rootId);
+			if (root == null) continue;
+			List<PostComment> children = orderReplies(replyMap.getOrDefault(rootId, List.of()), replyOrder);
+			items.add(toDto(root, children, replyCounts.getOrDefault(rootId, 0), currentId, likeCounts, likedByMe));
 		}
 
-		long visible = all.stream().filter(comment -> !comment.isDeleted()).count();
-		return new CommentListDto(items, visible, to < roots.size(), pageIndex, roots.size());
+		boolean hasMore = (long) pageIndex * pageSize + rootIds.size() < rootTotal;
+		return new CommentListDto(items, total, hasMore, pageIndex, rootTotal);
 	}
 
 	/** 楼中楼分页加载：点开「查看全部回复」时才请求 */
@@ -162,7 +179,7 @@ public class PostSocialService {
 						.map(like -> like.getComment().getId())
 						.collect(Collectors.toSet());
 
-		List<PostComment> sorted = orderReplies(children, replyOrder(sort, likeCounts));
+		List<PostComment> sorted = orderReplies(children, replyOrder("likes".equalsIgnoreCase(sort), likeCounts));
 		int pageSize = clampSize(size);
 		int from = Math.min(Math.max(0, page) * pageSize, sorted.size());
 		int to = Math.min(from + pageSize, sorted.size());
@@ -172,18 +189,8 @@ public class PostSocialService {
 		return new ReplyListDto(items, sorted.size(), to < sorted.size());
 	}
 
-	private Comparator<PostComment> rootOrder(String sort, Map<UUID, Long> likeCounts) {
-		if ("likes".equalsIgnoreCase(sort)) {
-			return Comparator
-					.comparingLong((PostComment comment) -> likeCounts.getOrDefault(comment.getId(), 0L))
-					.reversed()
-					.thenComparing(Comparator.comparing(PostComment::getCreatedAt).reversed());
-		}
-		return Comparator.comparing(PostComment::getCreatedAt).reversed();
-	}
-
-	private Comparator<PostComment> replyOrder(String sort, Map<UUID, Long> likeCounts) {
-		if ("likes".equalsIgnoreCase(sort)) {
+	private Comparator<PostComment> replyOrder(boolean byLikes, Map<UUID, Long> likeCounts) {
+		if (byLikes) {
 			return Comparator
 					.comparingLong((PostComment comment) -> likeCounts.getOrDefault(comment.getId(), 0L))
 					.reversed()
@@ -192,15 +199,10 @@ public class PostSocialService {
 		return Comparator.comparing(PostComment::getCreatedAt);
 	}
 
-	/** 深链锚点所属的一级评论 id（锚点本身是一级评论时就是它自己） */
-	private UUID anchorRootId(List<PostComment> all, UUID anchor) {
-		if (anchor == null) return null;
-		return all.stream()
-				.filter(comment -> comment.getId().equals(anchor))
-				.map(comment -> comment.getParent() == null || comment.getParent().isDeleted()
-						? comment.getId() : comment.getParent().getId())
-				.findFirst()
-				.orElse(null);
+	/** 评论所属的一级评论 id（父评论已被删除时，它自己就是一级评论） */
+	private UUID rootIdOf(PostComment comment) {
+		PostComment parent = comment.getParent();
+		return parent == null || parent.isDeleted() ? comment.getId() : parent.getId();
 	}
 
 	private int clampSize(int size) {

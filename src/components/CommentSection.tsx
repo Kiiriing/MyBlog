@@ -76,6 +76,9 @@ const ROW_ESTIMATE = 220
 /** 视口上下各多渲染 0.75 屏，滚动时不会露出空白，也不至于挂太多 DOM */
 const OVERSCAN_RATIO = 0.75
 
+/** 首屏只等第一页，空闲时后台往后预取的页数 */
+const PREFETCH_PAGES = 2
+
 /** 从按页缓存里取第 index 条一级评论 */
 function itemAt(pages: Map<number, PostComment[]>, index: number) {
   const page = pages.get(Math.floor(index / PAGE_SIZE))
@@ -320,6 +323,21 @@ export default function CommentSection({ slug }: { slug: string }) {
       void ensurePage(page)
     }
   }, [range, pages, rootTotal, ensurePage])
+
+  /* 首屏只等 20 条；空闲时在后台把后面两页预取进缓存，滚动时不用等网络 */
+  useEffect(() => {
+    if (loading || rootTotal <= PAGE_SIZE) return
+    const gen = generation.current
+    const timer = window.setTimeout(() => {
+      if (gen !== generation.current) return
+      const start = Math.floor(rangeRef.current.end / PAGE_SIZE) + 1
+      for (let page = start; page < start + PREFETCH_PAGES; page += 1) {
+        if (page * PAGE_SIZE >= rootTotal) break
+        void ensurePage(page)
+      }
+    }, 300)
+    return () => window.clearTimeout(timer)
+  }, [loading, rootTotal, ensurePage])
 
   /* 已经在页面上时再点一条通知：目标不在缓存里，就取它所在页并定位 */
   useEffect(() => {

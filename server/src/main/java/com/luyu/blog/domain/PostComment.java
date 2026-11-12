@@ -19,7 +19,8 @@ import java.util.UUID;
  */
 @Entity
 @Table(name = "post_comments", indexes = {
-		@Index(name = "idx_post_comments_slug_created", columnList = "post_slug, created_at")
+		@Index(name = "idx_post_comments_slug_created", columnList = "post_slug, created_at"),
+		@Index(name = "idx_post_comments_parent_created", columnList = "parent_id, created_at")
 })
 public class PostComment {
 
