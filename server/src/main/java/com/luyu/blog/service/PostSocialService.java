@@ -41,6 +41,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Service
@@ -57,10 +58,11 @@ public class PostSocialService {
 	private final UserRepository users;
 	private final NotificationRepository notifications;
 	private final ModerationService moderation;
+	private final ViewCountBuffer viewCounts;
 
 	public PostSocialService(PostCommentRepository comments, PostStatRepository stats,
 			PostReactionRepository reactions, CommentLikeRepository commentLikes, UserRepository users,
-			NotificationRepository notifications, ModerationService moderation) {
+			NotificationRepository notifications, ModerationService moderation, ViewCountBuffer viewCounts) {
 		this.comments = comments;
 		this.stats = stats;
 		this.reactions = reactions;
@@ -68,6 +70,7 @@ public class PostSocialService {
 		this.users = users;
 		this.notifications = notifications;
 		this.moderation = moderation;
+		this.viewCounts = viewCounts;
 	}
 
 	/* 评论 ------------------------------------------------------------------ */
@@ -79,6 +82,16 @@ public class PostSocialService {
 
 	private static final int REPLY_PREVIEW = 3;
 
+	/** 匿名访客的首页评论缓存时长：只为削掉热门文章的重复查询，写操作会立即失效 */
+	private static final long COMMENT_CACHE_TTL_MS = 5_000;
+
+	private static final int COMMENT_CACHE_MAX_KEYS = 200;
+
+	private final Map<String, CachedComments> commentCache = new ConcurrentHashMap<>();
+
+	private record CachedComments(CommentListDto value, long expiresAt) {
+	}
+
 	@Transactional(readOnly = true)
 	public CommentListDto listComments(String rawSlug, UserPrincipal principal, String sort, int page, int size,
 			UUID anchor) {
@@ -86,6 +99,18 @@ public class PostSocialService {
 		UUID currentId = principal == null ? null : principal.id();
 		int pageSize = clampSize(size);
 		boolean byLikes = "likes".equalsIgnoreCase(sort);
+
+		/* 匿名访客的第一页缓存几秒，热门文章不用每次都把同样的查询走一遍 */
+		String cacheKey = anchor == null && principal == null && page <= 0
+				? slug + '|' + (byLikes ? "likes" : "recent") + '|' + pageSize
+				: null;
+		if (cacheKey != null) {
+			CachedComments cached = commentCache.get(cacheKey);
+			if (cached != null) {
+				if (cached.expiresAt() > System.currentTimeMillis()) return cached.value();
+				commentCache.remove(cacheKey);
+			}
+		}
 
 		/* 深链：用 SQL 算出锚点一级评论的下标，直接翻到所在页 */
 		PostComment anchorComment = anchor == null ? null
@@ -155,7 +180,11 @@ public class PostSocialService {
 		}
 
 		boolean hasMore = (long) pageIndex * pageSize + rootIds.size() < rootTotal;
-		return new CommentListDto(items, total, hasMore, pageIndex, rootTotal);
+		CommentListDto result = new CommentListDto(items, total, hasMore, pageIndex, rootTotal);
+		if (cacheKey != null) {
+			cacheComments(cacheKey, result);
+		}
+		return result;
 	}
 
 	/** 楼中楼分页加载：点开「查看全部回复」时才请求 */
@@ -203,6 +232,21 @@ public class PostSocialService {
 	private UUID rootIdOf(PostComment comment) {
 		PostComment parent = comment.getParent();
 		return parent == null || parent.isDeleted() ? comment.getId() : parent.getId();
+	}
+
+	private void cacheComments(String key, CommentListDto value) {
+		long now = System.currentTimeMillis();
+		if (commentCache.size() >= COMMENT_CACHE_MAX_KEYS) {
+			commentCache.entrySet().removeIf(entry -> entry.getValue().expiresAt() <= now);
+			if (commentCache.size() >= COMMENT_CACHE_MAX_KEYS) return;
+		}
+		commentCache.put(key, new CachedComments(value, now + COMMENT_CACHE_TTL_MS));
+	}
+
+	/** 文章有新评论、删除或点赞时让它那篇文章的缓存立即失效 */
+	private void evictCommentCache(String slug) {
+		String prefix = slug + '|';
+		commentCache.keySet().removeIf(key -> key.startsWith(prefix));
 	}
 
 	private int clampSize(int size) {
@@ -271,6 +315,7 @@ public class PostSocialService {
 		PostComment quoted = replyTarget != null && replyTarget.getParent() != null ? replyTarget : null;
 		PostComment saved = comments.save(new PostComment(slug, author, parent, quoted, content));
 		notifyComment(slug, author, saved, replyTarget, parent);
+		evictCommentCache(slug);
 
 		return toDto(saved, List.of(), 0, author.getId(), Map.of(), Set.of());
 	}
@@ -285,6 +330,7 @@ public class PostSocialService {
 		}
 		comment.markDeleted();
 		comments.save(comment);
+		evictCommentCache(comment.getPostSlug());
 	}
 
 	public ReactionDto toggleCommentLike(UserPrincipal principal, UUID id) {
@@ -301,6 +347,7 @@ public class PostSocialService {
 		} else {
 			commentLikes.save(new CommentLike(comment, user));
 		}
+		evictCommentCache(comment.getPostSlug());
 		return new ReactionDto(existing.isEmpty(), commentLikes.countByComment_Id(id));
 	}
 
@@ -339,7 +386,7 @@ public class PostSocialService {
 		String slug = normalizeSlug(rawSlug);
 		PostStat stat = stats.findById(slug).orElse(null);
 		Set<ReactionKind> mine = principal == null ? Set.of() : mineFor(slug, principal.id());
-		return toDto(slug, stat, mine);
+		return toDto(slug, stat, viewCounts.pending(slug), mine);
 	}
 
 	@Transactional(readOnly = true)
@@ -365,15 +412,16 @@ public class PostSocialService {
 		}
 
 		return slugs.stream()
-				.map(slug -> toDto(slug, statMap.get(slug), mine.getOrDefault(slug, Set.of())))
+				.map(slug -> toDto(slug, statMap.get(slug), viewCounts.pending(slug), mine.getOrDefault(slug, Set.of())))
 				.toList();
 	}
 
+	/** 浏览只累加在内存里，定时批量落库；返回值带上还没落库的部分 */
 	public PostStatsDto recordView(String rawSlug) {
 		String slug = normalizeSlug(rawSlug);
-		PostStat stat = statOf(slug);
-		stat.addView();
-		return toDto(slug, stats.save(stat), Set.of());
+		viewCounts.increment(slug);
+		PostStat stat = stats.findById(slug).orElse(null);
+		return toDto(slug, stat, viewCounts.pending(slug), Set.of());
 	}
 
 	public ReactionDto toggleReaction(UserPrincipal principal, String rawSlug, ReactionKind kind) {
@@ -420,10 +468,10 @@ public class PostSocialService {
 		return kinds;
 	}
 
-	private PostStatsDto toDto(String slug, PostStat stat, Set<ReactionKind> mine) {
+	private PostStatsDto toDto(String slug, PostStat stat, long pendingViews, Set<ReactionKind> mine) {
 		return new PostStatsDto(
 				slug,
-				stat == null ? 0 : stat.getViews(),
+				(stat == null ? 0 : stat.getViews()) + pendingViews,
 				stat == null ? 0 : stat.getLikes(),
 				stat == null ? 0 : stat.getFavorites(),
 				mine.contains(ReactionKind.LIKE),

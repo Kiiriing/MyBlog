@@ -17,11 +17,15 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 /**
- * 记录 API 请求的方法、路径、状态码、耗时与用户 id，写入 server/logs/luyu-blog.log。
+ * 记录慢请求与失败请求的方法、路径、状态码、耗时与用户 id，写入 server/logs/luyu-blog.log。
+ * 正常请求只走内存判断，不产生日志，避免高并发时日志把磁盘和 CPU 吃满。
  */
 @Component
 @Order(Ordered.LOWEST_PRECEDENCE)
 public class RequestLoggingFilter extends OncePerRequestFilter {
+
+	/** 超过这个耗时才记一条 */
+	private static final long SLOW_MS = 150;
 
 	private static final Logger log = LoggerFactory.getLogger(RequestLoggingFilter.class);
 
@@ -34,8 +38,10 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
 		} finally {
 			if (request.getRequestURI().startsWith("/api/")) {
 				long elapsed = (System.nanoTime() - started) / 1_000_000;
-				log.info("{} {} -> {} {}ms user={}", request.getMethod(), request.getRequestURI(),
-						response.getStatus(), elapsed, currentUser());
+				if (elapsed >= SLOW_MS || response.getStatus() >= 400) {
+					log.info("{} {} -> {} {}ms user={}", request.getMethod(), request.getRequestURI(),
+							response.getStatus(), elapsed, currentUser());
+				}
 			}
 		}
 	}

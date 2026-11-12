@@ -17,7 +17,8 @@ public class PostStat {
 	@Column(name = "post_slug", length = 190)
 	private String postSlug;
 
-	@Column(nullable = false)
+	/** 阅读量由 ViewCountBuffer 定时用 SQL 自增，实体保存时不要覆盖它 */
+	@Column(nullable = false, updatable = false)
 	private long views = 0;
 
 	@Column(nullable = false)
@@ -47,10 +48,6 @@ public class PostStat {
 
 	public long getFavorites() {
 		return favorites;
-	}
-
-	public void addView() {
-		this.views += 1;
 	}
 
 	public void addLike() {
