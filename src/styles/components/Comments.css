@@ -425,22 +425,17 @@
   color: #3f6b60;
 }
 
+/* 评论气泡只用底色区分层级，不加描边 */
 .comment__main {
   min-width: 0;
   padding: clamp(17px, 2vw, 21px) clamp(20px, 2.5vw, 26px) clamp(15px, 1.7vw, 19px);
-  border: 1px solid var(--line);
+  border: 0;
   border-radius: 2px 16px 16px 16px;
   background: var(--card);
-  transition: border-color 0.35s ease;
-}
-
-.comment__main:hover {
-  border-color: var(--line-strong);
 }
 
 /* 自己的评论：暖橙纸感气泡，与普通评论同样的留白 */
 .comment.is-mine .comment__main {
-  border-color: color-mix(in srgb, var(--accent) 30%, var(--line));
   border-radius: 3px 18px 18px 18px;
   background: linear-gradient(
     152deg,
@@ -677,7 +672,6 @@
 /* 楼中楼里自己的回复：仍保留橙色气泡，留白收窄但文字不贴边 */
 .comment--reply.is-mine .comment__main {
   padding: 12px 16px 10px;
-  border: 1px solid color-mix(in srgb, var(--accent) 26%, var(--line));
   border-radius: 3px 13px 13px 13px;
   background: color-mix(in srgb, var(--accent) 6%, var(--card));
   box-shadow: none;
