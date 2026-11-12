@@ -34,12 +34,12 @@
 
 .comments__note {
   color: var(--fg-faint);
-  font-size: 8px;
-  letter-spacing: 0.1em;
+  font-size: 11px;
+  letter-spacing: 0.06em;
 }
 
 .comment-form {
-  padding: clamp(18px, 2.6vw, 28px);
+  padding: clamp(20px, 2.8vw, 30px);
   border: 1px solid var(--line);
   background: var(--card);
 }
@@ -49,33 +49,53 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .comment-form__as {
-  color: var(--fg-faint);
-  font-size: 8px;
-  letter-spacing: 0.08em;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--fg-dim);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+
+.comment-form__as::before {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  content: '';
 }
 
 .comment-form__replying {
+  padding: 4px 11px;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
   color: var(--accent);
   font-family: var(--font-mono);
-  font-size: 8px;
-  letter-spacing: 0.06em;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  transition: background-color 0.3s ease;
+}
+
+.comment-form__replying:hover {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
 }
 
 .comment-form__input {
   width: 100%;
-  padding: 4px 0 14px;
+  padding: 6px 0 16px;
   border: 0;
   border-bottom: 1px solid var(--line);
   outline: none;
   background: transparent;
   color: var(--fg);
   font-family: var(--font-serif);
-  font-size: clamp(14px, 1.2vw, 17px);
-  line-height: 1.8;
+  font-size: clamp(15px, 1.25vw, 17px);
+  line-height: 1.85;
   resize: vertical;
 }
 
@@ -92,24 +112,28 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-top: 14px;
+  margin-top: 16px;
 }
 
 .comment-form__count {
   color: var(--fg-faint);
-  font-size: 8px;
-  letter-spacing: 0.08em;
+  font-size: 10px;
+  letter-spacing: 0.06em;
 }
 
 .comment-form__submit {
-  padding: 10px 20px;
+  padding: 11px 22px;
   border-radius: 999px;
   background: var(--fg);
   color: var(--paper);
   font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: 0.08em;
+  font-size: 11px;
+  letter-spacing: 0.06em;
   transition: opacity 0.3s ease;
+}
+
+.comment-form__submit:hover:not(:disabled) {
+  opacity: 0.82;
 }
 
 .comment-form__submit:disabled {
@@ -125,8 +149,8 @@
   padding: clamp(18px, 2.6vw, 26px);
   border: 1px dashed var(--line-strong);
   color: var(--fg-dim);
-  font-size: 13px;
-  line-height: 1.7;
+  font-size: 14px;
+  line-height: 1.75;
 }
 
 .comment-gate__link {
@@ -134,13 +158,13 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 9px 16px;
+  padding: 10px 18px;
   border: 1px solid var(--line-strong);
   border-radius: 999px;
   color: var(--fg);
   font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: 0.08em;
+  font-size: 11px;
+  letter-spacing: 0.06em;
   transition:
     background-color 0.3s ease,
     color 0.3s ease;
@@ -154,44 +178,74 @@
 .comments__notice {
   margin-bottom: 18px;
   color: var(--accent);
-  font-size: 9px;
-  letter-spacing: 0.06em;
+  font-size: 10px;
+  letter-spacing: 0.04em;
 }
 
 .comments__list {
   display: flex;
   flex-direction: column;
-  gap: clamp(18px, 2.4vw, 26px);
-  margin-top: clamp(24px, 3.4vw, 38px);
+  gap: clamp(22px, 3vw, 32px);
+  margin-top: clamp(28px, 3.6vw, 42px);
 }
 
 .comment {
-  padding-bottom: clamp(14px, 2vw, 20px);
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding-bottom: clamp(18px, 2.4vw, 24px);
   border-bottom: 1px solid var(--line);
+}
+
+.comment:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+/* 首字母圆章：给每条评论一个稳定的视觉锚点 */
+.comment__avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--fg) 5%, transparent);
+  color: var(--fg-dim);
+  font-family: var(--font-serif);
+  font-size: 16px;
+  line-height: 1;
+}
+
+.comment__main {
+  flex: 1;
+  min-width: 0;
 }
 
 .comment__head {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  align-items: baseline;
+  gap: 10px;
 }
 
 .comment__author {
   font-family: var(--font-serif);
-  font-size: clamp(14px, 1.2vw, 16px);
+  font-size: clamp(15px, 1.2vw, 17px);
+  line-height: 1.25;
 }
 
 .comment__head time {
   color: var(--fg-faint);
-  font-size: 8px;
-  letter-spacing: 0.06em;
+  font-size: 10px;
+  letter-spacing: 0.04em;
 }
 
 .comment__action {
   margin-left: auto;
   color: var(--fg-faint);
   font-family: var(--font-mono);
-  font-size: 8px;
+  font-size: 10px;
   transition: color 0.3s ease;
 }
 
@@ -200,42 +254,69 @@
 }
 
 .comment__body {
-  margin-top: 10px;
+  margin-top: 8px;
   color: var(--fg-dim);
-  font-size: clamp(13px, 1.06vw, 14px);
-  line-height: 1.95;
+  font-size: clamp(14px, 1.08vw, 15px);
+  line-height: 1.9;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
 }
 
 .comment__foot {
-  margin-top: 8px;
+  margin-top: 10px;
 }
 
+/* 回复按钮做成小胶囊，不再是 8px 的灰字 */
 .comment__reply {
-  color: var(--fg-faint);
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--fg-dim);
   font-family: var(--font-mono);
-  font-size: 8px;
-  letter-spacing: 0.06em;
-  transition: color 0.3s ease;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  transition:
+    border-color 0.3s ease,
+    color 0.3s ease;
 }
 
 .comment__reply:hover {
-  color: var(--accent);
+  border-color: var(--fg);
+  color: var(--fg);
 }
 
+/* 楼中楼：加粗的竖线 + 内缩，和主评论形成清楚的两层 */
 .comment__replies {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  margin-top: 16px;
-  padding-left: clamp(14px, 2.4vw, 26px);
-  border-left: 1px solid var(--line);
+  gap: 18px;
+  margin-top: 18px;
+  padding: 2px 0 2px 18px;
+  border-left: 2px solid color-mix(in srgb, var(--fg) 14%, transparent);
 }
 
 .comment--reply {
   padding-bottom: 0;
   border-bottom: 0;
+  gap: 12px;
+}
+
+.comment--reply .comment__avatar {
+  width: 28px;
+  height: 28px;
+  font-size: 13px;
+}
+
+.comment--reply .comment__author {
+  font-size: 14px;
+}
+
+.comment--reply .comment__body {
+  margin-top: 6px;
+  font-size: 14px;
+  line-height: 1.85;
 }
 
 .comment.is-deleted .comment__body {
@@ -256,6 +337,31 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 10px;
+  }
+
+  .comment {
+    gap: 12px;
+  }
+
+  .comment__head {
+    flex-wrap: wrap;
+    gap: 4px 10px;
+  }
+
+  .comment__avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+
+  .comment__replies {
+    padding-left: 14px;
+  }
+
+  .comment--reply .comment__avatar {
+    width: 26px;
+    height: 26px;
+    font-size: 12px;
   }
 
   .comment-gate {

@@ -111,40 +111,47 @@ export default function CommentSection({ slug }: { slug: string }) {
   const loginHref = `/login?next=${encodeURIComponent(location.pathname)}`
 
   function renderComment(comment: PostComment, isReply = false) {
+    const initial = comment.authorName.trim().charAt(0).toUpperCase() || '·'
     return (
       <article
         key={comment.id}
         className={`comment${isReply ? ' comment--reply' : ''}${comment.deleted ? ' is-deleted' : ''}`}
       >
-        <header className="comment__head">
-          <span className="comment__author">{comment.authorName}</span>
-          <time className="mono" dateTime={comment.createdAt}>
-            {formatTime(comment.createdAt)}
-          </time>
-          {comment.mine && !comment.deleted ? (
-            <button type="button" className="comment__action" onClick={() => remove(comment.id)}>
-               {t('删除', 'Delete')}
-            </button>
-          ) : null}
-        </header>
-        <p className="comment__body">{comment.content}</p>
-        {!comment.deleted ? (
-          <div className="comment__foot">
-            <button
-              type="button"
-              className="comment__reply"
-              onClick={() => setReplyTo(replyTo?.id === comment.id ? null : comment)}
-            >
-              {replyTo?.id === comment.id ? t('取消回复', 'Cancel reply') : t('回复', 'Reply')}
-            </button>
-          </div>
-        ) : null}
+        <span className="comment__avatar" aria-hidden="true">
+          {initial}
+        </span>
 
-        {comment.replies.length ? (
-          <div className="comment__replies">
-            {comment.replies.map((reply) => renderComment(reply, true))}
-          </div>
-        ) : null}
+        <div className="comment__main">
+          <header className="comment__head">
+            <span className="comment__author">{comment.authorName}</span>
+            <time className="mono" dateTime={comment.createdAt}>
+              {formatTime(comment.createdAt)}
+            </time>
+            {comment.mine && !comment.deleted ? (
+              <button type="button" className="comment__action" onClick={() => remove(comment.id)}>
+                {t('删除', 'Delete')}
+              </button>
+            ) : null}
+          </header>
+          <p className="comment__body">{comment.content}</p>
+          {!comment.deleted ? (
+            <div className="comment__foot">
+              <button
+                type="button"
+                className="comment__reply"
+                onClick={() => setReplyTo(replyTo?.id === comment.id ? null : comment)}
+              >
+                {replyTo?.id === comment.id ? t('取消回复', 'Cancel reply') : t('回复', 'Reply')}
+              </button>
+            </div>
+          ) : null}
+
+          {comment.replies.length ? (
+            <div className="comment__replies">
+              {comment.replies.map((reply) => renderComment(reply, true))}
+            </div>
+          ) : null}
+        </div>
       </article>
     )
   }
