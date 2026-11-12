@@ -600,39 +600,50 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 10px 16px;
-  margin-top: 22px;
+  gap: 10px;
+  margin-top: 26px;
 }
 
 .post-engage svg {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
+  flex: none;
 }
 
-.post-engage__views {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--fg-faint);
-  font-size: 8px;
-  letter-spacing: 0.08em;
-}
-
+.post-engage__views,
 .post-engage__btn {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 7px 13px;
+  gap: 8px;
+  padding: 10px 16px;
   border: 1px solid var(--line);
   border-radius: 999px;
   color: var(--fg-dim);
   font-family: var(--font-mono);
-  font-size: 8px;
-  letter-spacing: 0.06em;
+  font-size: 12px;
+  letter-spacing: 0.04em;
   transition:
     border-color 0.3s ease,
     color 0.3s ease,
     background-color 0.3s ease;
+}
+
+/* 阅读量不可点，用一层更浅的底和两个按钮区分 */
+.post-engage__views {
+  background: color-mix(in srgb, var(--fg) 4%, transparent);
+}
+
+/* 数字比标签重一档，扫一眼就能读到 */
+.post-engage__count {
+  color: var(--fg);
+  font-size: 13px;
+  letter-spacing: 0.02em;
+}
+
+.post-engage__label {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  opacity: 0.7;
 }
 
 .post-engage__btn:hover {
@@ -650,13 +661,13 @@
   fill: currentColor;
 }
 
-.post-engage__label {
-  letter-spacing: 0.1em;
+.post-engage__btn.is-active .post-engage__count {
+  color: var(--accent);
 }
 
 .post-engage__error {
   color: var(--accent);
-  font-size: 8px;
+  font-size: 9px;
   letter-spacing: 0.06em;
 }
 

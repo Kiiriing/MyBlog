@@ -105,7 +105,8 @@ export default function EngagementBar({ slug }: { slug: string }) {
     <div className="post-engage">
       <span className="post-engage__views mono" title={t('阅读量', 'Views')}>
         <EyeIcon />
-        {stats ? stats.views : '—'} {t('次阅读', 'views')}
+        <span className="post-engage__count">{stats ? stats.views : '—'}</span>
+        <span className="post-engage__label">{t('次阅读', 'views')}</span>
       </span>
 
       <button
@@ -117,7 +118,7 @@ export default function EngagementBar({ slug }: { slug: string }) {
         disabled={pending === 'like'}
       >
         <HeartIcon />
-        <span>{stats ? stats.likes : 0}</span>
+        <span className="post-engage__count">{stats ? stats.likes : 0}</span>
         <span className="post-engage__label">{t('点赞', 'Like')}</span>
       </button>
 
@@ -130,7 +131,7 @@ export default function EngagementBar({ slug }: { slug: string }) {
         disabled={pending === 'favorite'}
       >
         <BookmarkIcon />
-        <span>{stats ? stats.favorites : 0}</span>
+        <span className="post-engage__count">{stats ? stats.favorites : 0}</span>
         <span className="post-engage__label">{t('收藏', 'Save')}</span>
       </button>
 
