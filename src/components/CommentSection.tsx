@@ -103,6 +103,27 @@ export default function CommentSection({ slug }: { slug: string }) {
     }
   }, [slug, sort])
 
+  /* 别人删了评论后，停在页面上的人不刷新也能同步：切回标签页时静默拉一次，可见期间每 30 秒一次 */
+  useEffect(() => {
+    let alive = true
+    const sync = () => {
+      if (document.visibilityState !== 'visible') return
+      api
+        .comments(slug, sort)
+        .then((result) => {
+          if (alive) setData(result)
+        })
+        .catch(() => {})
+    }
+    const timer = window.setInterval(sync, 30_000)
+    document.addEventListener('visibilitychange', sync)
+    return () => {
+      alive = false
+      window.clearInterval(timer)
+      document.removeEventListener('visibilitychange', sync)
+    }
+  }, [slug, sort])
+
   useEffect(() => {
     if (!replyTo) return
     const frame = requestAnimationFrame(() => {

@@ -86,7 +86,7 @@ public class PostSocialService {
 						.collect(Collectors.toSet());
 
 		Map<UUID, List<PostComment>> replies = all.stream()
-				.filter(comment -> comment.getParent() != null)
+				.filter(comment -> comment.getParent() != null && !comment.isDeleted())
 				.collect(Collectors.groupingBy(comment -> comment.getParent().getId()));
 
 		Comparator<PostComment> topOrder = Comparator.comparing(PostComment::getCreatedAt).reversed();
@@ -100,7 +100,9 @@ public class PostSocialService {
 		List<CommentDto> items = new ArrayList<>();
 		Comparator<PostComment> order = topOrder;
 		all.stream()
-				.filter(comment -> comment.getParent() == null)
+				/* 已删除的评论不再出现在列表里；父评论被删除时，把仍存在的回复提升为一级，避免内容消失 */
+				.filter(comment -> !comment.isDeleted())
+				.filter(comment -> comment.getParent() == null || comment.getParent().isDeleted())
 				.sorted(order)
 				.forEach(comment -> {
 					List<PostComment> children = replies.getOrDefault(comment.getId(), List.of()).stream()
@@ -109,7 +111,8 @@ public class PostSocialService {
 					items.add(toDto(comment, children, currentId, likeCounts, likedByMe));
 				});
 
-		return new CommentListDto(items, all.size());
+		long visible = all.stream().filter(comment -> !comment.isDeleted()).count();
+		return new CommentListDto(items, (int) visible);
 	}
 
 	public CommentDto addComment(UserPrincipal principal, String rawSlug, CommentRequest request) {
@@ -132,6 +135,9 @@ public class PostSocialService {
 					.orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "要回复的评论不存在"));
 			if (!replyTarget.getPostSlug().equals(slug)) {
 				throw new ApiException(HttpStatus.BAD_REQUEST, "评论不属于这篇文章");
+			}
+			if (replyTarget.isDeleted()) {
+				throw new ApiException(HttpStatus.BAD_REQUEST, "这条评论已经删除了");
 			}
 			parent = replyTarget.getParent() == null ? replyTarget : replyTarget.getParent();
 		}
