@@ -97,6 +97,14 @@ export default function CommentSection({ slug }: { slug: string }) {
     }
   }
 
+  /* Enter 发送，Shift + Enter 换行；中文输入法组字时 Enter 只用于选词 */
+  function onComposerKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key !== 'Enter' || event.shiftKey) return
+    if (event.nativeEvent.isComposing) return
+    event.preventDefault()
+    event.currentTarget.form?.requestSubmit()
+  }
+
   async function remove(id: string) {
     if (!window.confirm(t('删除这条评论？', 'Delete this comment?'))) return
     try {
@@ -194,10 +202,16 @@ export default function CommentSection({ slug }: { slug: string }) {
                 : t('写下你的想法…', 'Write what you think…')
             }
             onChange={(event) => setContent(event.target.value)}
+            onKeyDown={onComposerKeyDown}
             rows={4}
           />
           <div className="comment-form__foot">
-            <span className="mono comment-form__count">{content.length} / 800</span>
+            <span className="mono comment-form__count">
+              {content.length} / 800
+              <span className="comment-form__hint">
+                {t('Enter 发布 · Shift + Enter 换行', 'Enter to post · Shift + Enter for a new line')}
+              </span>
+            </span>
             <button type="submit" className="comment-form__submit" disabled={submitting}>
               {submitting ? t('发布中…', 'Posting…') : t('发布评论', 'Post comment')}
             </button>

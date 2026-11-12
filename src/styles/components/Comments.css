@@ -121,6 +121,12 @@
   letter-spacing: 0.06em;
 }
 
+/* 快捷键提示：桌面端可见，窄屏收起省空间 */
+.comment-form__hint {
+  margin-left: 14px;
+  opacity: 0.75;
+}
+
 .comment-form__submit {
   padding: 11px 22px;
   border-radius: 999px;
@@ -356,6 +362,10 @@
 
   .comment__replies {
     padding-left: 14px;
+  }
+
+  .comment-form__hint {
+    display: none;
   }
 
   .comment--reply .comment__avatar {
