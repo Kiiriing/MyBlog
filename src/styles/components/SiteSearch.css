@@ -105,12 +105,13 @@
   animation: search-fade-out 0.22s ease both;
 }
 
+/* 顶部只留一小截橙色刻度，避免和输入框的聚焦光晕挤成两条并行橙线 */
 .search__panel::before {
   content: '';
   position: absolute;
   top: 0;
-  left: 0;
-  width: 100%;
+  left: 20px;
+  width: 76px;
   height: 1px;
   background: linear-gradient(90deg, #ff5a2f, rgba(255, 90, 47, 0));
 }
@@ -120,7 +121,7 @@
   flex: 0 0 auto;
   align-items: center;
   gap: 13px;
-  padding: 14px 16px;
+  padding: 22px 16px 14px;
   border-bottom: 1px solid rgba(242, 237, 228, 0.1);
 }
 
@@ -142,10 +143,12 @@
   font-family: var(--font-sans);
   font-size: 16px;
   letter-spacing: 0.01em;
-  outline-offset: 2px;
+  outline: none;
+  caret-color: #ff5a2f;
   transition:
     border-color 0.4s ease,
-    background-color 0.4s ease;
+    background-color 0.4s ease,
+    box-shadow 0.4s ease;
 }
 
 .search__input::placeholder {
@@ -156,9 +159,15 @@
   border-color: rgba(242, 237, 228, 0.24);
 }
 
+/* 聚焦不用硬描边：暖色细边 + 一圈极淡的光，和顶部那截橙色刻度错开层次 */
+.search__input:focus,
 .search__input:focus-visible {
-  border-color: rgba(255, 90, 47, 0.5);
-  background: rgba(242, 237, 228, 0.055);
+  outline: none;
+  border-color: rgba(255, 90, 47, 0.42);
+  background: rgba(242, 237, 228, 0.05);
+  box-shadow:
+    0 0 0 3px rgba(255, 90, 47, 0.06),
+    0 0 22px rgba(255, 90, 47, 0.08);
 }
 
 .search__esc {
