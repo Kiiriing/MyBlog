@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { ReactNode } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { api, ApiError, type CommentList, type PostComment } from '../lib/api'
+import { api, ApiError, type PostComment } from '../lib/api'
 import { findBannedWord } from '../data/moderation'
 import { useAuth } from '../store/auth'
 import { getLang, useI18n } from '../store/i18n'
-import { scrollTo } from '../composables/useSmoothScroll'
+import { getLenis, scrollTo } from '../composables/useSmoothScroll'
 import '../styles/components/Comments.css'
 
 function formatTime(iso: string) {
@@ -39,7 +40,7 @@ function avatarTone(name: string) {
   return sum % 3
 }
 
-/** 在评论树里定位一条评论并替换，用于点赞后的局部更新 */
+/** 在评论树里定位一条评论并替换，用于点赞、展开楼中楼后的局部更新 */
 function mapComment(
   items: PostComment[],
   id: string,
@@ -69,12 +70,88 @@ type SortMode = 'recent' | 'likes'
 /** 一级评论每页条数，与后端默认值保持一致 */
 const PAGE_SIZE = 20
 
+/** 还没测量过高度的评论先按这个值占位，渲染出来后会换成真实高度 */
+const ROW_ESTIMATE = 220
+
+/** 视口上下各多渲染 0.75 屏，滚动时不会露出空白，也不至于挂太多 DOM */
+const OVERSCAN_RATIO = 0.75
+
+/** 从按页缓存里取第 index 条一级评论 */
+function itemAt(pages: Map<number, PostComment[]>, index: number) {
+  const page = pages.get(Math.floor(index / PAGE_SIZE))
+  return page?.[index % PAGE_SIZE]
+}
+
+/** 在有序的偏移数组里找 value 落在哪一条评论上 */
+function locate(offsets: number[], value: number, total: number) {
+  let low = 0
+  let high = total
+  while (low < high) {
+    const mid = (low + high) >> 1
+    if (offsets[mid + 1] <= value) low = mid + 1
+    else high = mid
+  }
+  return Math.min(low, Math.max(0, total - 1))
+}
+
+/** 在整页缓存里定位一条评论并替换，没命中就原样返回 */
+function updateInPages(
+  pages: Map<number, PostComment[]>,
+  id: string,
+  updater: (comment: PostComment) => PostComment
+) {
+  const next = new Map(pages)
+  let changed = false
+  for (const [page, items] of pages) {
+    const hit = items.some(
+      (comment) => comment.id === id || comment.replies.some((reply) => reply.id === id)
+    )
+    if (!hit) continue
+    next.set(page, mapComment(items, id, updater))
+    changed = true
+  }
+  return changed ? next : pages
+}
+
+/** 只负责测量自身高度并回报，切换排序或滚动时随窗口一起挂载 / 卸载 */
+function CommentRow({
+  commentId,
+  onMeasure,
+  children
+}: {
+  commentId: string
+  onMeasure: (id: string, height: number) => void
+  children: ReactNode
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const node = ref.current
+    if (!node) return
+    const report = () => onMeasure(commentId, node.getBoundingClientRect().height)
+    const observer = new ResizeObserver(report)
+    observer.observe(node)
+    report()
+    return () => observer.disconnect()
+  }, [commentId, onMeasure])
+
+  return (
+    <div className="comment-row" ref={ref} data-comment-id={commentId}>
+      {children}
+    </div>
+  )
+}
+
 export default function CommentSection({ slug }: { slug: string }) {
   const { user } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
   const { t } = useI18n()
-  const [data, setData] = useState<CommentList | null>(null)
+  /* 一级评论按页缓存：只加载视口附近的页，离开视野后 DOM 会被卸载 */
+  const [pages, setPages] = useState<Map<number, PostComment[]>>(new Map())
+  const [rootTotal, setRootTotal] = useState(0)
+  const [total, setTotal] = useState(0)
+  const [range, setRange] = useState({ start: 0, end: PAGE_SIZE - 1 })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [content, setContent] = useState('')
@@ -84,59 +161,188 @@ export default function CommentSection({ slug }: { slug: string }) {
   const [sort, setSort] = useState<SortMode>('recent')
   const [deleteTarget, setDeleteTarget] = useState<PostComment | null>(null)
   const [deleting, setDeleting] = useState(false)
-  const [loadingMore, setLoadingMore] = useState(false)
   const [expandingId, setExpandingId] = useState<string | null>(null)
+  /* 高度测量完成后自增，用来重算各条评论的偏移量 */
+  const [measureRev, setMeasureRev] = useState(0)
+  /* 深链定位任务：等目标行渲染出来再高亮 */
+  const [anchorJob, setAnchorJob] = useState<{ id: string; index: number } | null>(null)
   const composer = useRef<HTMLTextAreaElement>(null)
+  const listRef = useRef<HTMLDivElement>(null)
+  const heights = useRef(new Map<string, number>())
+  const offsetsRef = useRef<number[]>([0])
+  const pagesRef = useRef(pages)
+  const rangeRef = useRef(range)
+  const fetching = useRef(new Set<number>())
+  /* 切换排序 / 文章时自增，丢弃旧请求的结果 */
+  const generation = useRef(0)
+  const measureFrame = useRef(0)
   /* 记录最近一次用于定位的锚点，避免地址栏锚点被清掉后又重复请求 */
   const lastAnchor = useRef<string | null>(null)
-  /* 已经加载了多少条一级评论：超过一页就不再自动整表刷新 */
-  const loadedCount = useRef(0)
 
-  useEffect(() => {
-    loadedCount.current = data?.items.length ?? 0
-  }, [data])
+  pagesRef.current = pages
+  rangeRef.current = range
 
+  /* 一行的高度变了就重算偏移，同一帧内的多次测量合并成一次渲染 */
+  const handleMeasure = useCallback((id: string, height: number) => {
+    if (!height) return
+    const prev = heights.current.get(id)
+    if (prev !== undefined && Math.abs(prev - height) < 1) return
+    heights.current.set(id, height)
+    if (measureFrame.current) return
+    measureFrame.current = requestAnimationFrame(() => {
+      measureFrame.current = 0
+      setMeasureRev((value) => value + 1)
+    })
+  }, [])
+
+  /* 每条一级评论的上下偏移：测量过的用真实高度，没测量过的用估算值 */
+  const offsets = useMemo(() => {
+    const list = new Array<number>(rootTotal + 1)
+    list[0] = 0
+    for (let index = 0; index < rootTotal; index += 1) {
+      const comment = itemAt(pages, index)
+      const measured = comment ? heights.current.get(comment.id) : undefined
+      list[index + 1] = list[index] + (measured ?? ROW_ESTIMATE)
+    }
+    return list
+    // measureRev 变化代表高度变了，需要重算
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pages, rootTotal, measureRev])
+
+  offsetsRef.current = offsets
+
+  /** 确保某一页在缓存里；失败不标记，下次滚动会重试 */
+  const ensurePage = useCallback(
+    async (page: number) => {
+      if (page < 0) return
+      if (pagesRef.current.has(page) || fetching.current.has(page)) return
+      if (rootTotal && page * PAGE_SIZE >= rootTotal) return
+      const gen = generation.current
+      fetching.current.add(page)
+      try {
+        const result = await api.comments(slug, sort, page, PAGE_SIZE)
+        if (gen !== generation.current) return
+        setPages((previous) => new Map(previous).set(result.page, result.items))
+        setRootTotal(result.rootTotal)
+        setTotal(result.total)
+      } catch {
+        /* 交给后续滚动或切回标签页时重试 */
+      } finally {
+        fetching.current.delete(page)
+      }
+    },
+    [slug, sort, rootTotal]
+  )
+
+  /* 首屏 / 切换排序：清空缓存，只取第一页（深链时取目标所在页） */
   useEffect(() => {
     let alive = true
+    const gen = ++generation.current
+    fetching.current.clear()
+    heights.current.clear()
+    setPages(new Map())
+    setRootTotal(0)
+    setTotal(0)
+    setRange({ start: 0, end: PAGE_SIZE - 1 })
+    setLoading(true)
+    setError('')
     const match = /^#comment-(.+)$/.exec(location.hash)
     const anchor = match ? match[1] : undefined
     lastAnchor.current = anchor ?? null
-    setLoading(true)
-    setError('')
-    /* 带 #comment-xxx 进入时把锚点交给后端，直接返回目标所在的那一页 */
     api
       .comments(slug, sort, 0, PAGE_SIZE, anchor)
       .then((result) => {
-        if (alive) setData(result)
+        if (!alive || gen !== generation.current) return
+        setPages(new Map([[result.page, result.items]]))
+        setRootTotal(result.rootTotal)
+        setTotal(result.total)
+        if (anchor) {
+          const offset = result.items.findIndex(
+            (comment) => comment.id === anchor || comment.replies.some((reply) => reply.id === anchor)
+          )
+          if (offset >= 0) setAnchorJob({ id: anchor, index: result.page * PAGE_SIZE + offset })
+        }
       })
       .catch(() => {
-        if (alive) setError(t('评论加载失败，请稍后再试。', 'Could not load comments. Please try again later.'))
+        if (alive && gen === generation.current) {
+          setError(t('评论加载失败，请稍后再试。', 'Could not load comments. Please try again later.'))
+        }
       })
       .finally(() => {
-        if (alive) setLoading(false)
+        if (alive && gen === generation.current) setLoading(false)
       })
     return () => {
       alive = false
+      generation.current += 1
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug, sort])
 
-  /* 已经在页面上时再点一条通知：目标不在已加载的评论里，就带着锚点重新取所在页 */
+  /* 滚动时按视口算出要渲染的区间，只有这一段评论会挂到 DOM 上 */
+  useEffect(() => {
+    if (!rootTotal) return
+    let frame = 0
+    const update = () => {
+      frame = 0
+      const box = listRef.current
+      const list = offsetsRef.current
+      if (!box || list.length < 2) return
+      const rect = box.getBoundingClientRect()
+      const viewTop = -rect.top
+      const pad = window.innerHeight * OVERSCAN_RATIO
+      const start = locate(list, viewTop - pad, rootTotal)
+      const end = locate(list, viewTop + window.innerHeight + pad, rootTotal)
+      setRange((previous) =>
+        previous.start === start && previous.end === end ? previous : { start, end }
+      )
+    }
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update)
+    }
+    update()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll)
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
+      if (frame) cancelAnimationFrame(frame)
+    }
+  }, [rootTotal, offsets])
+
+  /* 把视口附近的页准备好，页没到之前先显示等高占位 */
+  useEffect(() => {
+    if (!rootTotal) return
+    const from = Math.max(0, range.start - PAGE_SIZE)
+    const to = Math.min(rootTotal - 1, range.end + PAGE_SIZE)
+    const firstPage = Math.floor(from / PAGE_SIZE)
+    const lastPage = Math.floor(to / PAGE_SIZE)
+    for (let page = firstPage; page <= lastPage; page += 1) {
+      void ensurePage(page)
+    }
+  }, [range, pages, rootTotal, ensurePage])
+
+  /* 已经在页面上时再点一条通知：目标不在缓存里，就取它所在页并定位 */
   useEffect(() => {
     const match = /^#comment-(.+)$/.exec(location.hash)
-    if (!match || lastAnchor.current === match[1]) return
+    if (!match) return
+    if (lastAnchor.current === match[1]) return
     if (document.getElementById(`comment-${match[1]}`)) return
-    let alive = true
     lastAnchor.current = match[1]
+    const gen = generation.current
     api
       .comments(slug, sort, 0, PAGE_SIZE, match[1])
       .then((result) => {
-        if (alive) setData(result)
+        if (gen !== generation.current) return
+        setPages((previous) => new Map(previous).set(result.page, result.items))
+        setRootTotal(result.rootTotal)
+        setTotal(result.total)
+        const offset = result.items.findIndex(
+          (comment) =>
+            comment.id === match[1] || comment.replies.some((reply) => reply.id === match[1])
+        )
+        if (offset >= 0) setAnchorJob({ id: match[1], index: result.page * PAGE_SIZE + offset })
       })
       .catch(() => {})
-    return () => {
-      alive = false
-    }
   }, [location.hash, slug, sort])
 
   /* 别人删了评论后，停在页面上的人不刷新也能同步：切回标签页时静默拉一次，可见期间每 30 秒一次 */
@@ -144,12 +350,15 @@ export default function CommentSection({ slug }: { slug: string }) {
     let alive = true
     const sync = () => {
       if (document.visibilityState !== 'visible') return
-      /* 已经翻过页时不再整表刷新，避免把用户加载的更多页冲掉 */
-      if (loadedCount.current > PAGE_SIZE) return
+      /* 滚远了就交给按窗口加载，不做整表刷新 */
+      if (rangeRef.current.start > PAGE_SIZE) return
       api
         .comments(slug, sort, 0, PAGE_SIZE)
         .then((result) => {
-          if (alive) setData(result)
+          if (!alive) return
+          setPages((previous) => new Map(previous).set(result.page, result.items))
+          setRootTotal(result.rootTotal)
+          setTotal(result.total)
         })
         .catch(() => {})
     }
@@ -179,15 +388,15 @@ export default function CommentSection({ slug }: { slug: string }) {
     return () => cancelAnimationFrame(frame)
   }, [replyTo])
 
-  /* 从通知里的 #comment-xxx 进入时，等评论加载完再定位到屏幕中间偏上并闪烁提示 */
+  /* 深链定位：先把目标所在行挂到 DOM，量出真实位置再瞬移过去，最后闪烁提示 */
   useEffect(() => {
-    if (loading || !data) return
-    const match = /^#comment-(.+)$/.exec(location.hash)
-    if (!match) return
-    const id = match[1]
-    let frame = 0
+    if (!anchorJob) return
+    const { id, index } = anchorJob
+    let cancelled = false
+    let findTimer = 0
     let highlightTimer = 0
     let settleTimer = 0
+    let tries = 0
     let interrupted = false
 
     const interrupt = () => {
@@ -197,39 +406,86 @@ export default function CommentSection({ slug }: { slug: string }) {
     window.addEventListener('touchstart', interrupt, { passive: true })
     window.addEventListener('keydown', interrupt)
 
-    /* 统一走 Lenis，避免和页面的平滑滚动互相抢滚动位置 */
-    const align = (target: HTMLElement) => {
-      const desired = window.innerHeight * 0.4
-      const top = window.scrollY + target.getBoundingClientRect().top - desired
-      scrollTo(Math.max(0, top), { duration: 1.1, force: true })
-    }
+    /* 目标附近的评论先挂上，跳转才有真实的落点；远处仍是等高占位 */
+    const start = Math.max(0, index - 3)
+    const end = Math.min(rootTotal - 1, index + 6)
+    setRange((previous) =>
+      previous.start === start && previous.end === end ? previous : { start, end }
+    )
 
-    frame = requestAnimationFrame(() => {
+    const reveal = () => {
+      if (cancelled) return
       const target = document.getElementById(`comment-${id}`)
-      if (!target) return
-      align(target)
-      target.classList.add('is-target')
+      if (!target) {
+        /* 目标行可能还在等所在页返回，最多等 3 秒 */
+        if (tries < 60) {
+          tries += 1
+          findTimer = window.setTimeout(reveal, 50)
+        }
+        return
+      }
+
+      /* 先瞬移到目标附近，再持续校正：视口内那几行的高度会从估算值换成真实值，
+         上方的累计高度一直在变，只跳一次会偏出去几百像素 */
+      let ticks = 0
+      let stable = 0
+      const pin = () => {
+        if (cancelled) return
+        /* 每一拍都重新取节点：滚动窗口变化时这一行可能刚好被卸载重建 */
+        const current = document.getElementById(`comment-${id}`)
+        if (!current) {
+          /* 高度校正把目标挤出渲染窗口后，按估算位置再跳一次把它拉回来 */
+          const box = listRef.current
+          if (box && !interrupted) {
+            const top =
+              window.scrollY +
+              box.getBoundingClientRect().top +
+              (offsetsRef.current[index] ?? 0) -
+              window.innerHeight * 0.4
+            scrollTo(Math.max(0, top), { immediate: true, force: true })
+          }
+          if (ticks < 25) {
+            ticks += 1
+            settleTimer = window.setTimeout(pin, 100)
+          }
+          return
+        }
+        current.classList.add('is-target')
+        const desired = window.innerHeight * 0.4
+        const delta = current.getBoundingClientRect().top - desired
+        if (!interrupted && Math.abs(delta) > 16) {
+          getLenis()?.resize()
+          scrollTo(Math.max(0, window.scrollY + delta), { immediate: true, force: true })
+          stable = 0
+        } else {
+          stable += 1
+        }
+        ticks += 1
+        if (stable < 3 && ticks < 25) settleTimer = window.setTimeout(pin, 100)
+      }
+      pin()
+
       highlightTimer = window.setTimeout(() => {
-        target.classList.remove('is-target')
+        document.getElementById(`comment-${id}`)?.classList.remove('is-target')
         /* 高亮结束把地址栏锚点抹掉，刷新或再分享时不会重复跳动；replace 不重新加载页面 */
         navigate(`${location.pathname}${location.search}`, { replace: true })
       }, 2500)
-      /* 图片、字体加载会改变上方高度，滚动结束后偏移明显再校正一次 */
-      settleTimer = window.setTimeout(() => {
-        const desired = window.innerHeight * 0.4
-        if (!interrupted && Math.abs(target.getBoundingClientRect().top - desired) > 80) align(target)
-      }, 1400)
-    })
+    }
+    const frame = requestAnimationFrame(reveal)
 
     return () => {
+      cancelled = true
       cancelAnimationFrame(frame)
+      if (findTimer) window.clearTimeout(findTimer)
       if (highlightTimer) window.clearTimeout(highlightTimer)
       if (settleTimer) window.clearTimeout(settleTimer)
       window.removeEventListener('wheel', interrupt)
       window.removeEventListener('touchstart', interrupt)
       window.removeEventListener('keydown', interrupt)
     }
-  }, [loading, data, location.hash])
+    // rootTotal 只在取到首屏时确定，不需要因为后续同值更新重跑定位
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [anchorJob, location.pathname, location.search, navigate])
 
   useEffect(() => {
     if (!deleteTarget) return
@@ -240,27 +496,26 @@ export default function CommentSection({ slug }: { slug: string }) {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [deleteTarget])
 
-  /** 一级评论：继续往下翻一页 */
-  async function loadMore() {
-    if (!data || loadingMore || !data.hasMore) return
-    setLoadingMore(true)
+  useEffect(
+    () => () => {
+      if (measureFrame.current) cancelAnimationFrame(measureFrame.current)
+    },
+    []
+  )
+
+  /** 发布 / 删除后重拉当前窗口这一页，并丢掉其余缓存 */
+  async function reloadWindow() {
+    const gen = ++generation.current
+    fetching.current.clear()
+    const page = Math.floor(rangeRef.current.start / PAGE_SIZE)
     try {
-      const nextPage = Math.floor(data.items.length / PAGE_SIZE)
-      const next = await api.comments(slug, sort, nextPage, PAGE_SIZE)
-      setData((current) =>
-        current
-          ? {
-              ...current,
-              items: [...current.items, ...next.items],
-              total: next.total,
-              hasMore: next.hasMore
-            }
-          : next
-      )
+      const result = await api.comments(slug, sort, page, PAGE_SIZE)
+      if (gen !== generation.current) return
+      setPages(new Map([[result.page, result.items]]))
+      setRootTotal(result.rootTotal)
+      setTotal(result.total)
     } catch {
-      setNotice(t('加载失败，请稍后再试。', 'Could not load more. Please try again.'))
-    } finally {
-      setLoadingMore(false)
+      /* 失败就保持现状，后续滚动会重新拉 */
     }
   }
 
@@ -272,19 +527,14 @@ export default function CommentSection({ slug }: { slug: string }) {
     try {
       const page = expanded ? Math.floor(comment.replies.length / PAGE_SIZE) : 0
       const result = await api.replies(comment.id, sort, page, PAGE_SIZE)
-      setData((current) =>
-        current
-          ? {
-              ...current,
-              items: mapComment(current.items, comment.id, (item) => ({
-                ...item,
-                replies: expanded ? [...item.replies, ...result.items] : result.items,
-                replyCount: result.total,
-                repliesLoaded: true,
-                repliesHasMore: result.hasMore
-              }))
-            }
-          : current
+      setPages((previous) =>
+        updateInPages(previous, comment.id, (item) => ({
+          ...item,
+          replies: expanded ? [...item.replies, ...result.items] : result.items,
+          replyCount: result.total,
+          repliesLoaded: true,
+          repliesHasMore: result.hasMore
+        }))
       )
     } catch {
       setNotice(t('加载失败，请稍后再试。', 'Could not load more. Please try again.'))
@@ -315,8 +565,7 @@ export default function CommentSection({ slug }: { slug: string }) {
       setContent('')
       setReplyTo(null)
       setNotice(t('评论已发布。', 'Comment posted.'))
-      const result = await api.comments(slug, sort, 0, PAGE_SIZE)
-      setData(result)
+      await reloadWindow()
     } catch (err) {
       setNotice(err instanceof ApiError ? err.message : t('发布失败，请稍后再试。', 'Could not post. Please try again later.'))
     } finally {
@@ -338,8 +587,7 @@ export default function CommentSection({ slug }: { slug: string }) {
     try {
       await api.deleteComment(deleteTarget.id)
       setDeleteTarget(null)
-      const result = await api.comments(slug, sort, 0, PAGE_SIZE)
-      setData(result)
+      await reloadWindow()
       setNotice(t('评论已删除。', 'Comment deleted.'))
     } catch (err) {
       setDeleteTarget(null)
@@ -355,33 +603,24 @@ export default function CommentSection({ slug }: { slug: string }) {
       return
     }
     if (comment.deleted) return
-    setData((current) =>
-      current ? { ...current, items: mapComment(current.items, comment.id, toggleLikeState) } : current
-    )
+    setPages((previous) => updateInPages(previous, comment.id, toggleLikeState))
     try {
       const result = await api.likeComment(comment.id)
-      setData((current) =>
-        current
-          ? {
-              ...current,
-              items: mapComment(current.items, comment.id, (item) => ({
-                ...item,
-                likedByMe: result.active,
-                likeCount: result.count
-              }))
-            }
-          : current
+      setPages((previous) =>
+        updateInPages(previous, comment.id, (item) => ({
+          ...item,
+          likedByMe: result.active,
+          likeCount: result.count
+        }))
       )
     } catch (err) {
-      setData((current) =>
-        current ? { ...current, items: mapComment(current.items, comment.id, toggleLikeState) } : current
-      )
+      setPages((previous) => updateInPages(previous, comment.id, toggleLikeState))
       setNotice(err instanceof ApiError ? err.message : t('点赞失败，请稍后再试。', 'Could not like. Please try again.'))
     }
   }
 
   const loginHref = `/login?next=${encodeURIComponent(location.pathname)}`
-  const count = data ? String(data.total).padStart(2, '0') : '00'
+  const count = loading ? '00' : String(total).padStart(2, '0')
 
   function renderComment(comment: PostComment, isReply = false) {
     const initial = comment.authorName.trim().charAt(0).toUpperCase() || '·'
@@ -481,6 +720,35 @@ export default function CommentSection({ slug }: { slug: string }) {
       </article>
     )
   }
+
+  const rows: ReactNode[] = []
+  if (!loading && !error && rootTotal > 0) {
+    const end = Math.min(range.end, rootTotal - 1)
+    for (let index = range.start; index <= end; index += 1) {
+      const comment = itemAt(pages, index)
+      rows.push(
+        comment ? (
+          <CommentRow key={comment.id} commentId={comment.id} onMeasure={handleMeasure}>
+            {renderComment(comment)}
+          </CommentRow>
+        ) : (
+          <div
+            key={`placeholder-${index}`}
+            className="comment-row comment-row--placeholder"
+            style={{ height: ROW_ESTIMATE }}
+            aria-hidden="true"
+          >
+            <span className="mono">···</span>
+          </div>
+        )
+      )
+    }
+  }
+  const topHeight = offsets[Math.min(range.start, rootTotal)] ?? 0
+  const bottomHeight = Math.max(
+    0,
+    (offsets[rootTotal] ?? 0) - (offsets[Math.min(range.end + 1, rootTotal)] ?? 0)
+  )
 
   return (
     <section className="comments shell" id="comments" aria-label={t('评论区', 'Comments')}>
@@ -591,10 +859,10 @@ export default function CommentSection({ slug }: { slug: string }) {
             </div>
           </div>
 
-          <div className="comments__list">
+          <div className="comments__list comments__list--virtual" ref={listRef}>
             {loading ? <p className="mono comments__state">{t('正在加载评论…', 'Loading comments…')}</p> : null}
             {!loading && error ? <p className="mono comments__state">{error}</p> : null}
-            {!loading && !error && data && data.items.length === 0 ? (
+            {!loading && !error && rootTotal === 0 ? (
               <div className="comments__empty">
                 <span className="comments__empty-no" aria-hidden="true">
                   00
@@ -602,16 +870,12 @@ export default function CommentSection({ slug }: { slug: string }) {
                 <p>{t('还没有评论，来写下第一条。', 'No comments yet — write the first one.')}</p>
               </div>
             ) : null}
-            {data?.items.map((comment) => renderComment(comment))}
-            {!loading && data?.hasMore ? (
-              <button
-                type="button"
-                className="comments__more mono"
-                onClick={loadMore}
-                disabled={loadingMore}
-              >
-                {loadingMore ? t('加载中…', 'Loading…') : t('加载更多评论', 'Load more comments')}
-              </button>
+            {!loading && !error && rootTotal > 0 ? (
+              <>
+                <div className="comments__spacer" style={{ height: topHeight }} aria-hidden="true" />
+                {rows}
+                <div className="comments__spacer" style={{ height: bottomHeight }} aria-hidden="true" />
+              </>
             ) : null}
           </div>
         </div>

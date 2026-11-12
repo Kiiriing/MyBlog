@@ -57,6 +57,10 @@ export type CommentList = {
   items: PostComment[]
   total: number
   hasMore: boolean
+  /** 实际返回的页码（带 anchor 时是目标所在页） */
+  page: number
+  /** 一级评论总数，评论区的虚拟滚动按它计算总高度 */
+  rootTotal: number
 }
 
 export type ReplyList = {

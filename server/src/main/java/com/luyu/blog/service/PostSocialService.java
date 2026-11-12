@@ -138,7 +138,7 @@ public class PostSocialService {
 		}
 
 		long visible = all.stream().filter(comment -> !comment.isDeleted()).count();
-		return new CommentListDto(items, visible, to < roots.size());
+		return new CommentListDto(items, visible, to < roots.size(), pageIndex, roots.size());
 	}
 
 	/** 楼中楼分页加载：点开「查看全部回复」时才请求 */

@@ -39,7 +39,16 @@ public final class PostSocialDtos {
 			List<CommentDto> replies) {
 	}
 
-	public record CommentListDto(List<CommentDto> items, long total, boolean hasMore) {
+	/**
+	 * 一级评论分页结果。
+	 *
+	 * @param items     当前页的一级评论（各带几条楼中楼预览）
+	 * @param total     该文章下所有未删除评论数（含楼中楼），用于顶部计数
+	 * @param hasMore   是否还有下一页
+	 * @param page      实际返回的页码（带 anchor 时是目标所在页）
+	 * @param rootTotal 一级评论总数，前端按它做虚拟滚动
+	 */
+	public record CommentListDto(List<CommentDto> items, long total, boolean hasMore, int page, long rootTotal) {
 	}
 
 	/** 楼中楼按需分页加载 */

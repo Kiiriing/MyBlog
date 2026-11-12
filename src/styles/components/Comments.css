@@ -376,31 +376,31 @@
   margin-top: clamp(22px, 3vw, 30px);
 }
 
-/* 分页加载按钮：评论多的时候一页页往下翻，不一次性渲染上千条 */
-.comments__more {
-  align-self: center;
-  margin-top: 4px;
-  padding: 10px 24px;
-  border: 1px solid var(--line-strong);
-  border-radius: 999px;
-  background: transparent;
-  color: var(--fg-dim);
+/* 虚拟滚动：只渲染视口附近的评论，间距交给每一行自己的底部留白 */
+.comments__list--virtual {
+  display: block;
+  gap: 0;
+}
+
+.comment-row {
+  position: relative;
+  padding-bottom: clamp(18px, 2.4vw, 26px);
+}
+
+/* 还没加载到的评论先占住高度，滚到附近时再换成真实内容 */
+.comment-row--placeholder {
+  display: flex;
+  align-items: flex-start;
+  padding-left: 58px;
+  color: var(--fg-faint);
   font-size: 10px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  transition:
-    border-color 0.3s ease,
-    color 0.3s ease;
-}
-
-.comments__more:hover:not(:disabled) {
-  border-color: var(--fg);
-  color: var(--fg);
-}
-
-.comments__more:disabled {
+  letter-spacing: 0.2em;
   opacity: 0.5;
-  cursor: wait;
+}
+
+.comments__spacer {
+  width: 100%;
+  pointer-events: none;
 }
 
 /* 楼中楼：先看 3 条预览，点开再加载整页 */
@@ -437,7 +437,7 @@
   align-items: start;
 }
 
-.comments__list > .comment:not(:last-child)::before {
+.comment-row > .comment::before {
   position: absolute;
   top: 54px;
   bottom: -14px;
