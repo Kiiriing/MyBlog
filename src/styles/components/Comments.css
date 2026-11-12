@@ -438,9 +438,23 @@
   border-color: var(--line-strong);
 }
 
+/* 自己的评论：整行淡橙底，含头像列在内连成一整块 */
+.comment.is-mine {
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+
+.comment.is-mine:hover {
+  background: color-mix(in srgb, var(--accent) 9%, transparent);
+}
+
 .comment.is-mine .comment__main {
-  border-color: color-mix(in srgb, var(--accent) 32%, var(--line));
-  background: color-mix(in srgb, var(--accent) 5%, var(--card));
+  border-color: transparent;
+  background: transparent;
+}
+
+.comment.is-mine .comment__main:hover {
+  border-color: transparent;
 }
 
 .comment.is-mine .comment__avatar {
@@ -563,19 +577,26 @@
   color: var(--accent);
 }
 
-/* 从通知跳转过来时短暂高亮目标评论 */
-.comment.is-target .comment__main {
+/* 从通知跳转过来时短暂高亮目标评论（整行，而不是只染气泡） */
+.comment.is-target {
+  border-radius: 16px;
   animation: comment-target 2.6s ease;
+}
+
+.comment.is-target .comment__main {
+  border-color: transparent;
+  background: transparent;
 }
 
 @keyframes comment-target {
   0%,
   18% {
-    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 15%, transparent);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
   }
 
   100% {
+    background: color-mix(in srgb, var(--accent) 6%, transparent);
     box-shadow: 0 0 0 0 transparent;
   }
 }
