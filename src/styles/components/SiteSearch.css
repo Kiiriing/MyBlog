@@ -1,0 +1,311 @@
+/* 头部搜索入口：一枚细边胶囊，放在消息铃铛左侧 */
+.search-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 11px 0 10px;
+  border: 1px solid rgba(242, 237, 228, 0.3);
+  border-radius: 999px;
+  color: inherit;
+  background: none;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  transition:
+    border-color 0.35s ease,
+    background-color 0.35s ease;
+}
+
+.search-trigger svg {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  opacity: 0.75;
+}
+
+.search-trigger__kbd {
+  padding-left: 8px;
+  border-left: 1px solid rgba(242, 237, 228, 0.22);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  opacity: 0.5;
+}
+
+.search-trigger:hover {
+  border-color: currentColor;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.search-trigger:focus-visible {
+  outline: 1px solid currentColor;
+  outline-offset: 3px;
+}
+
+/* 搜索面板：挂在 body 上，始终是深色纸面 */
+.search {
+  position: fixed;
+  inset: 0;
+  /* 低于自定义光标（1100），面板打开时鼠标圆环仍在最上层 */
+  z-index: 1080;
+  display: flex;
+  justify-content: center;
+  padding: clamp(70px, 12vh, 150px) var(--gutter) 24px;
+  color: #f2ede4;
+}
+
+.search__backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: rgba(4, 4, 6, 0.72);
+  backdrop-filter: blur(8px);
+  animation: search-fade 0.28s ease both;
+}
+
+.search__panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(680px, 100%);
+  max-height: min(70vh, 620px);
+  overflow: hidden;
+  border: 1px solid rgba(242, 237, 228, 0.16);
+  border-radius: 6px;
+  background: #101014;
+  box-shadow: 0 40px 120px rgba(0, 0, 0, 0.62);
+  animation: search-pop 0.36s var(--ease-out) both;
+}
+
+.search__panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, #ff5a2f, rgba(255, 90, 47, 0));
+}
+
+.search__bar {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+  border-bottom: 1px solid rgba(242, 237, 228, 0.1);
+}
+
+.search__bar > svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  opacity: 0.5;
+}
+
+.search__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  background: none;
+  color: #f2ede4;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  letter-spacing: 0.01em;
+  outline: none;
+}
+
+.search__input::placeholder {
+  color: #615c54;
+}
+
+.search__esc {
+  flex: 0 0 auto;
+  padding: 4px 7px;
+  border: 1px solid rgba(242, 237, 228, 0.18);
+  border-radius: 3px;
+  color: #615c54;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  background: none;
+  cursor: pointer;
+  transition:
+    color 0.3s ease,
+    border-color 0.3s ease;
+}
+
+.search__esc:hover {
+  border-color: rgba(242, 237, 228, 0.4);
+  color: #f2ede4;
+}
+
+.search__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(242, 237, 228, 0.2) transparent;
+}
+
+.search__group {
+  padding: 10px 12px 8px;
+  color: #615c54;
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.search__row {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  padding: 11px 12px;
+  border: 0;
+  border-left: 2px solid transparent;
+  border-radius: 4px;
+  background: none;
+  color: #9b9487;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.search__row.is-active {
+  border-left-color: #ff5a2f;
+  background: rgba(242, 237, 228, 0.055);
+  color: #f2ede4;
+}
+
+.search__kind {
+  color: #615c54;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+  transition: color 0.2s ease;
+}
+
+.search__row.is-active .search__kind {
+  color: #ff5a2f;
+}
+
+.search__title {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 13.5px;
+  line-height: 1.5;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.search__title mark {
+  background: none;
+  color: #ff5a2f;
+}
+
+.search__meta {
+  color: #615c54;
+  font-size: 9px;
+  letter-spacing: 0.07em;
+  white-space: nowrap;
+}
+
+.search__empty {
+  padding: 44px 20px 48px;
+  text-align: center;
+}
+
+.search__empty-title {
+  font-family: var(--font-serif);
+  font-size: 24px;
+  font-style: italic;
+  line-height: 1.2;
+  color: #f2ede4;
+}
+
+.search__empty-note {
+  margin-top: 10px;
+  color: #938b7d;
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+.search__foot {
+  display: flex;
+  flex: 0 0 auto;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 20px;
+  border-top: 1px solid rgba(242, 237, 228, 0.1);
+  color: #615c54;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+}
+
+.search__foot b {
+  color: #9b9487;
+  font-weight: 400;
+}
+
+@keyframes search-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes search-pop {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -10px, 0) scale(0.985);
+  }
+}
+
+@media (max-width: 720px) {
+  .search-trigger__kbd {
+    display: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .search-trigger {
+    width: 32px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .search-trigger__label {
+    display: none;
+  }
+
+  .search {
+    padding: 64px 12px 12px;
+  }
+
+  .search__row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .search__kind {
+    display: none;
+  }
+
+  .search__foot span:first-child {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .search__backdrop,
+  .search__panel {
+    animation: none;
+  }
+}

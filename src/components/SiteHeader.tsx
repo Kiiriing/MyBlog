@@ -7,6 +7,7 @@ import { signOut, useAuth } from '../store/auth'
 import { lockScroll, scrollTo, unlockScroll } from '../composables/useSmoothScroll'
 import { site } from '../data/site'
 import NotificationBell from './NotificationBell'
+import SiteSearch from './SiteSearch'
 import WarmTooltip from './WarmTooltip'
 import '../styles/components/SiteHeader.css'
 import '../styles/components/Notifications.css'
@@ -84,6 +85,7 @@ export default function SiteHeader() {
       </div>
 
       <div className="header-actions">
+        <SiteSearch />
         <NotificationBell />
 
         {auth.user ? (
