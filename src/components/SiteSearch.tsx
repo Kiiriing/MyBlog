@@ -3,12 +3,14 @@ import { createPortal } from 'react-dom'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { lockScroll, scrollTo, scrollToSection, unlockScroll } from '../composables/useSmoothScroll'
 import {
+  buildUpdateItems,
   escapeRegExp,
   searchSite,
   splitTokens,
   suggestions,
   type SearchItem
 } from '../data/search'
+import { api } from '../lib/api'
 import { useI18n } from '../store/i18n'
 import '../styles/components/SiteSearch.css'
 
@@ -31,6 +33,9 @@ export default function SiteSearch() {
   const [phase, setPhase] = useState<'closed' | 'open' | 'closing'>('closed')
   const [query, setQuery] = useState('')
   const [active, setActive] = useState(0)
+  /* 更新记录来自后端：第一次打开面板时拉一次，之后复用 */
+  const [updates, setUpdates] = useState<SearchItem[]>([])
+  const updatesLoaded = useRef(false)
   const { t } = useI18n()
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
@@ -40,8 +45,8 @@ export default function SiteSearch() {
   const mounted = phase !== 'closed'
   const tokens = useMemo(() => splitTokens(query), [query])
   const results = useMemo(
-    () => (tokens.length ? searchSite(query) : suggestions),
-    [query, tokens.length]
+    () => (tokens.length ? searchSite(query, 12, updates) : suggestions),
+    [query, tokens.length, updates]
   )
 
   const openPanel = useCallback(() => {
@@ -49,6 +54,15 @@ export default function SiteSearch() {
     setQuery('')
     setActive(0)
     setPhase('open')
+    if (updatesLoaded.current) return
+    updatesLoaded.current = true
+    api
+      .changelog()
+      .then((entries) => setUpdates(buildUpdateItems(entries)))
+      .catch(() => {
+        /* 拉取失败就只搜本地索引，不打断搜索 */
+        updatesLoaded.current = false
+      })
   }, [])
 
   const close = useCallback(() => {

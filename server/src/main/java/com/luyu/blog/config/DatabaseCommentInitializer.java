@@ -89,6 +89,18 @@ public class DatabaseCommentInitializer implements ApplicationRunner {
 			"COMMENT ON COLUMN post_stats.likes IS '当前点赞数（取消点赞会扣减）'",
 			"COMMENT ON COLUMN post_stats.favorites IS '当前收藏数（取消收藏会扣减）'",
 
+			"COMMENT ON TABLE changelog_entries IS '更新页版本记录表'",
+			"COMMENT ON COLUMN changelog_entries.id IS '主键（UUID）'",
+			"COMMENT ON COLUMN changelog_entries.version IS '版本号，同时作为页面锚点（唯一）'",
+			"COMMENT ON COLUMN changelog_entries.date_label IS '展示用时间，可写时间区间'",
+			"COMMENT ON COLUMN changelog_entries.occurred_at IS '发生时间，用于倒序排列'",
+			"COMMENT ON COLUMN changelog_entries.title IS '该版本的标题'",
+
+			"COMMENT ON TABLE changelog_items IS '更新页版本下的改动条目'",
+			"COMMENT ON COLUMN changelog_items.entry_id IS '所属版本记录 ID'",
+			"COMMENT ON COLUMN changelog_items.position IS '条目顺序，从 0 开始'",
+			"COMMENT ON COLUMN changelog_items.item IS '条目正文，支持用反引号标记行内代码'",
+
 			"COMMENT ON TABLE post_reactions IS '文章点赞 / 收藏明细表，一个用户对一篇文章的同一种操作只有一条'",
 			"COMMENT ON COLUMN post_reactions.id IS '主键（UUID）'",
 			"COMMENT ON COLUMN post_reactions.post_slug IS '文章 slug'",

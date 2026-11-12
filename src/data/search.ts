@@ -4,7 +4,7 @@
 import { chapters } from './chapters'
 import { posts } from './posts'
 import { works } from './works'
-import { changelog } from './changelog'
+import type { ChangelogEntry } from '../lib/api'
 import { awards, certificates, experience } from './profile'
 
 export type SearchKind = 'page' | 'journal' | 'work' | 'update' | 'profile'
@@ -55,15 +55,18 @@ const workItems: SearchItem[] = works.map((work) => ({
   text: [work.category, work.tagline, work.summary, work.role, work.status].join(' ')
 }))
 
-const updateItems: SearchItem[] = changelog.map((entry) => ({
-  id: `update-${entry.version}`,
-  kind: 'update',
-  label: '更新',
-  title: entry.title,
-  meta: `${entry.version} · ${entry.date}`,
-  path: '/updates',
-  text: [entry.version, entry.title, ...entry.items].join(' ')
-}))
+/** 更新记录存在后端，搜索面板打开时拉取并补进索引 */
+export function buildUpdateItems(entries: ChangelogEntry[]): SearchItem[] {
+  return entries.map((entry) => ({
+    id: `update-${entry.version}`,
+    kind: 'update',
+    label: '更新',
+    title: entry.title,
+    meta: `${entry.version} · ${entry.date}`,
+    path: '/updates',
+    text: [entry.version, entry.title, ...entry.items].join(' ')
+  }))
+}
 
 const profileItems: SearchItem[] = [
   ...experience.map((job, index) => ({
@@ -99,7 +102,6 @@ export const searchIndex: SearchItem[] = [
   ...pageItems,
   ...workItems,
   ...journalItems,
-  ...updateItems,
   ...profileItems
 ]
 
@@ -114,13 +116,13 @@ export function splitTokens(raw: string) {
   return raw.trim().toLowerCase().split(/\s+/).filter(Boolean)
 }
 
-export function searchSite(raw: string, limit = 12): SearchResult[] {
+export function searchSite(raw: string, limit = 12, extras: SearchItem[] = []): SearchResult[] {
   const tokens = splitTokens(raw)
   if (!tokens.length) return []
 
   const results: SearchResult[] = []
 
-  for (const item of searchIndex) {
+  for (const item of [...searchIndex, ...extras]) {
     const title = item.title.toLowerCase()
     const body = item.text.toLowerCase()
     let score = 0

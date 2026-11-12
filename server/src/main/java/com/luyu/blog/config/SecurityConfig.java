@@ -26,6 +26,7 @@ public class SecurityConfig {
 						.requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/code",
 								"/api/auth/code/verify", "/api/auth/captcha", "/api/auth/password/reset").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/posts/**").permitAll()
+						.requestMatchers(HttpMethod.GET, "/api/changelog").permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/posts/*/view").permitAll()
 						.requestMatchers("/api/admin/**").hasRole("ADMIN")
 						.requestMatchers("/api/**").authenticated()

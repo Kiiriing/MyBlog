@@ -65,6 +65,15 @@ export type ReplyList = {
   hasMore: boolean
 }
 
+/** 更新页的一条版本记录，字段与后端 ChangelogEntryDto 对应 */
+export type ChangelogEntry = {
+  version: string
+  date: string
+  dateTime: string
+  title: string
+  items: string[]
+}
+
 export type PostStats = {
   slug: string
   views: number
@@ -214,6 +223,8 @@ export const api = {
 
   replies: (commentId: string, sort: 'recent' | 'likes' = 'recent', page = 0, size = 20) =>
     request<ReplyList>(`/posts/comments/${commentId}/replies?sort=${sort}&page=${page}&size=${size}`),
+
+  changelog: () => request<ChangelogEntry[]>('/changelog'),
 
   addComment: (slug: string, content: string, parentId?: string | null) =>
     request<PostComment>(`/posts/${slug}/comments`, {

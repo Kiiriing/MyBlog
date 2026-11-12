@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { Link } from 'react-router-dom'
 import { scrollTo } from '../composables/useSmoothScroll'
-import { changelog } from '../data/changelog'
+import { api, type ChangelogEntry } from '../lib/api'
 import SiteFooter from '../components/SiteFooter'
 import Seo from '../components/Seo'
 import { useI18n } from '../store/i18n'
@@ -25,13 +25,39 @@ function renderText(text: string) {
 
 export default function UpdatesView() {
   const { t, lang } = useI18n()
-  const [active, setActive] = useState(changelog[0].version)
+  const [entries, setEntries] = useState<ChangelogEntry[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [active, setActive] = useState('')
   const listRef = useRef<HTMLOListElement>(null)
   const navListRef = useRef<HTMLOListElement>(null)
   /* 目录列表是否还有被遮住的内容：决定上下两条渐隐遮罩是否出现 */
   const [edge, setEdge] = useState({ top: false, bottom: false })
   /* 点击目录后先锁住高亮，等平滑滚动结束再交还给滚动监听，避免中途闪到别的版本 */
   const lockUntil = useRef(0)
+
+  /* 版本记录统一由后端下发，页面不再维护写死的数据 */
+  useEffect(() => {
+    let alive = true
+    setLoading(true)
+    setError('')
+    api
+      .changelog()
+      .then((list) => {
+        if (!alive) return
+        setEntries(list)
+        setActive(list[0]?.version ?? '')
+      })
+      .catch(() => {
+        if (alive) setError('更新记录加载失败，请稍后再试。')
+      })
+      .finally(() => {
+        if (alive) setLoading(false)
+      })
+    return () => {
+      alive = false
+    }
+  }, [])
 
   useEffect(() => {
     document.title = lang === 'zh' ? '更新记录 Changelog — 陆屿 LU YU' : 'Changelog — LU YU'
@@ -68,7 +94,7 @@ export default function UpdatesView() {
       window.removeEventListener('scroll', onScroll)
       if (frame) window.cancelAnimationFrame(frame)
     }
-  }, [])
+  }, [entries])
 
   /* 目录列表自身可滚动（滚轮 / 触摸），滚到两端时切换渐隐遮罩 */
   useEffect(() => {
@@ -125,9 +151,9 @@ export default function UpdatesView() {
     scrollTo(el, { offset: -200 })
   }, [])
 
-  const total = String(changelog.length).padStart(2, '0')
-  const latest = changelog[0]
-  const activeIndex = changelog.findIndex((entry) => entry.version === active)
+  const total = String(entries.length).padStart(2, '0')
+  const latest = entries[0]
+  const activeIndex = Math.max(0, entries.findIndex((entry) => entry.version === active))
 
   return (
     <div className="updates-page theme-paper">
@@ -163,8 +189,14 @@ export default function UpdatesView() {
               )}
             </p>
             <div className="updates-page__index mono">
-              <span>{t('最新', 'Latest')} {latest.version}</span>
-              <span>{latest.date}</span>
+              {latest ? (
+                <>
+                  <span>{t('最新', 'Latest')} {latest.version}</span>
+                  <span>{latest.date}</span>
+                </>
+              ) : (
+                <span>{loading ? t('正在读取…', 'Loading…') : t('暂无记录', 'No entries')}</span>
+              )}
               <span>Beijing</span>
             </div>
           </div>
@@ -173,6 +205,11 @@ export default function UpdatesView() {
 
       <main className="updates-page__body">
         <div className="shell">
+          {loading || error || !entries.length ? (
+            <p className="updates-page__state mono">
+              {loading ? t('正在读取版本记录…', 'Loading changelog…') : error || t('暂无更新记录。', 'No entries yet.')}
+            </p>
+          ) : (
           <div className="updates-layout">
             <aside className="updates-nav" aria-label={t('版本目录', 'Version index')}>
               <div className="updates-nav__head">
@@ -184,7 +221,7 @@ export default function UpdatesView() {
                 className={`updates-nav__list${edge.top ? ' is-faded-top' : ''}${edge.bottom ? ' is-faded-bottom' : ''}`}
                 data-lenis-prevent
               >
-                {changelog.map((entry) => (
+                {entries.map((entry) => (
                   <li key={entry.version} data-nav-version={entry.version}>
                     <button
                       type="button"
@@ -205,14 +242,14 @@ export default function UpdatesView() {
                 <span className="updates-nav__track" aria-hidden="true">
                   <span
                     className="updates-nav__track-fill"
-                    style={{ transform: `scaleX(${(activeIndex + 1) / changelog.length})` }}
+                    style={{ transform: `scaleX(${entries.length ? (activeIndex + 1) / entries.length : 0})` }}
                   />
                 </span>
               </div>
             </aside>
 
             <ol className="timeline" ref={listRef}>
-              {changelog.map((entry, i) => (
+              {entries.map((entry, i) => (
                 <li
                   key={entry.version}
                   id={entry.version}
@@ -240,10 +277,11 @@ export default function UpdatesView() {
               ))}
             </ol>
           </div>
+          )}
 
           <div className="updates-page__foot">
             <p className="mono">
-              {t(`日志结束 — 共 ${changelog.length} 个里程碑。`, `End of log — ${changelog.length} milestones.`)}
+              {t(`日志结束 — 共 ${entries.length} 个里程碑。`, `End of log — ${entries.length} milestones.`)}
             </p>
             <Link to="/" className="updates-page__home" data-cursor="Index">
               <span>{t('回到首页', 'Back to index')}</span>

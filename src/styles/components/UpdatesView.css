@@ -413,6 +413,16 @@
   }
 }
 
+/* 读取中 / 加载失败时的占位 --------------------------------------------- */
+
+.updates-page__state {
+  padding: clamp(40px, 8vw, 96px) 0;
+  color: var(--fg-faint);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-align: center;
+}
+
 /* 页脚 --------------------------------------------------------------- */
 
 .updates-page__foot {
