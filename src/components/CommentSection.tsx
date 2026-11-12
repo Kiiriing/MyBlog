@@ -4,6 +4,7 @@ import { api, ApiError, type CommentList, type PostComment } from '../lib/api'
 import { findBannedWord } from '../data/moderation'
 import { useAuth } from '../store/auth'
 import { getLang, useI18n } from '../store/i18n'
+import { scrollTo } from '../composables/useSmoothScroll'
 import '../styles/components/Comments.css'
 
 function formatTime(iso: string) {
@@ -116,18 +117,46 @@ export default function CommentSection({ slug }: { slug: string }) {
     if (loading || !data) return
     const match = /^#comment-(.+)$/.exec(location.hash)
     if (!match) return
-    let timer = 0
-    const frame = requestAnimationFrame(() => {
-      const target = document.getElementById(`comment-${match[1]}`)
+    const id = match[1]
+    let frame = 0
+    let highlightTimer = 0
+    let settleTimer = 0
+    let interrupted = false
+
+    const interrupt = () => {
+      interrupted = true
+    }
+    window.addEventListener('wheel', interrupt, { passive: true })
+    window.addEventListener('touchstart', interrupt, { passive: true })
+    window.addEventListener('keydown', interrupt)
+
+    /* 统一走 Lenis，避免和页面的平滑滚动互相抢滚动位置 */
+    const align = (target: HTMLElement) => {
+      const desired = window.innerHeight * 0.4
+      const top = window.scrollY + target.getBoundingClientRect().top - desired
+      scrollTo(Math.max(0, top), { duration: 1.1, force: true })
+    }
+
+    frame = requestAnimationFrame(() => {
+      const target = document.getElementById(`comment-${id}`)
       if (!target) return
-      const top = window.scrollY + target.getBoundingClientRect().top - window.innerHeight * 0.34
-      window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' })
+      align(target)
       target.classList.add('is-target')
-      timer = window.setTimeout(() => target.classList.remove('is-target'), 2500)
+      highlightTimer = window.setTimeout(() => target.classList.remove('is-target'), 2500)
+      /* 图片、字体加载会改变上方高度，落位后偏移明显再校正一次 */
+      settleTimer = window.setTimeout(() => {
+        const desired = window.innerHeight * 0.4
+        if (!interrupted && Math.abs(target.getBoundingClientRect().top - desired) > 80) align(target)
+      }, 1100)
     })
+
     return () => {
       cancelAnimationFrame(frame)
-      if (timer) window.clearTimeout(timer)
+      if (highlightTimer) window.clearTimeout(highlightTimer)
+      if (settleTimer) window.clearTimeout(settleTimer)
+      window.removeEventListener('wheel', interrupt)
+      window.removeEventListener('touchstart', interrupt)
+      window.removeEventListener('keydown', interrupt)
     }
   }, [loading, data, location.hash])
 
