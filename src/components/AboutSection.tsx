@@ -54,23 +54,33 @@ export default function AboutSection() {
       return
     }
 
+    const expanded = () => Boolean(content.querySelector('.about__cap:hover'))
+
     const sync = () => {
-      /* 悬停期间内容已展开，此刻量到的高度不能作为基准 */
-      if (content.matches(':hover')) return
+      /* 条目展开期间量到的是过渡中的高度，不能作为基准 */
+      if (expanded()) return
       col.style.height = `${content.getBoundingClientRect().height}px`
     }
 
     sync()
-    window.addEventListener('resize', sync)
-    /* 只跟随窗口尺寸变化重新测量：ResizeObserver 会把悬停展开的过渡高度也当成基准，
-       鼠标离开条目时左列反而跟着收缩，造成吊牌再次上下抽动 */
+
+    /* 用 ResizeObserver 跟踪右栏的自然高度，但要等展开 / 收起的过渡（0.5s）结束再锁，
+       否则会把中途的高度当成基准，吊牌反而被拉长再缩回 */
     let active = true
+    let timer = 0
+    const observer = new ResizeObserver(() => {
+      window.clearTimeout(timer)
+      timer = window.setTimeout(sync, 520)
+    })
+    observer.observe(content)
+
     document.fonts?.ready.then(() => {
       if (active) sync()
     })
     return () => {
       active = false
-      window.removeEventListener('resize', sync)
+      window.clearTimeout(timer)
+      observer.disconnect()
       col.style.height = ''
     }
   }, [compactLanyard])
