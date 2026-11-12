@@ -742,6 +742,15 @@
 /* 窄屏 ------------------------------------------------------------------- */
 
 @media (max-width: 900px) {
+  /* 单列后标题顶到最上面，悬浮的返回键会盖住 Sign in：
+     窄屏改成参与排版的一行，独占自己的高度 */
+  .login__back {
+    position: static;
+    width: 42px;
+    height: 42px;
+    margin: 8px 0 4px var(--gutter);
+  }
+
   .login__stage {
     grid-template-columns: minmax(0, 1fr);
     gap: 26px;
