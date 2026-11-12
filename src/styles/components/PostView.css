@@ -186,7 +186,7 @@
   justify-content: center;
   gap: clamp(32px, 4.5vw, 76px);
   align-items: start;
-  padding-block: clamp(38px, 4.8vw, 70px) clamp(20px, 3vw, 34px);
+  padding-block: clamp(38px, 4.8vw, 70px) clamp(48px, 5.6vw, 82px);
 }
 
 .post-rail {
@@ -1046,7 +1046,7 @@
   }
 
   .post-main {
-    padding-block: 40px 56px;
+    padding-block: 40px 64px;
   }
 
   .post-body__p:first-of-type::first-letter {
