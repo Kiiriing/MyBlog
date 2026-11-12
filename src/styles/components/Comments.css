@@ -602,9 +602,9 @@
 
 /* 从通知跳转过来时，目标评论闪烁提示几次 */
 .comment.is-target .comment__main {
-  border-radius: 12px;
+  border-radius: 14px;
   outline: 2px solid transparent;
-  outline-offset: 4px;
+  outline-offset: 8px;
   animation: comment-flash 0.8s ease-in-out 3;
 }
 
@@ -646,7 +646,7 @@
 }
 
 .comment--reply .comment__main {
-  padding: 0;
+  padding: 12px 16px 10px;
   border: 0;
   background: transparent;
 }
@@ -917,6 +917,10 @@
 
   .comment.is-mine .comment__main {
     border-radius: 3px 15px 15px 15px;
+  }
+
+  .comment--reply .comment__main {
+    padding: 10px 14px 8px;
   }
 
   .comment--reply.is-mine .comment__main {
