@@ -1,27 +1,21 @@
 package com.luyu.blog.service;
 
-import com.luyu.blog.domain.Notification;
-import com.luyu.blog.domain.NotificationCategory;
 import com.luyu.blog.domain.Audience;
 import com.luyu.blog.domain.CommentLike;
+import com.luyu.blog.domain.Notification;
+import com.luyu.blog.domain.NotificationCategory;
 import com.luyu.blog.domain.PostComment;
-import com.luyu.blog.domain.PostReaction;
-import com.luyu.blog.domain.PostStat;
-import com.luyu.blog.domain.ReactionKind;
 import com.luyu.blog.domain.Role;
 import com.luyu.blog.domain.User;
 import com.luyu.blog.repo.CommentLikeRepository;
 import com.luyu.blog.repo.NotificationRepository;
 import com.luyu.blog.repo.PostCommentRepository;
-import com.luyu.blog.repo.PostReactionRepository;
-import com.luyu.blog.repo.PostStatRepository;
 import com.luyu.blog.repo.UserRepository;
 import com.luyu.blog.security.UserPrincipal;
 import com.luyu.blog.web.ApiException;
 import com.luyu.blog.web.dto.PostSocialDtos.CommentDto;
 import com.luyu.blog.web.dto.PostSocialDtos.CommentListDto;
 import com.luyu.blog.web.dto.PostSocialDtos.CommentRequest;
-import com.luyu.blog.web.dto.PostSocialDtos.PostStatsDto;
 import com.luyu.blog.web.dto.PostSocialDtos.ReactionDto;
 import com.luyu.blog.web.dto.PostSocialDtos.ReplyListDto;
 import org.springframework.http.HttpStatus;
@@ -32,7 +26,6 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -44,36 +37,27 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+/** 评论的读取、发表、删除与楼中楼点赞 */
 @Service
-@Transactional
-public class PostSocialService {
+public class CommentService {
 
 	/** 同一用户每小时最多发表的评论数 */
 	private static final int MAX_COMMENTS_PER_HOUR = 20;
 
 	private final PostCommentRepository comments;
-	private final PostStatRepository stats;
-	private final PostReactionRepository reactions;
 	private final CommentLikeRepository commentLikes;
 	private final UserRepository users;
 	private final NotificationRepository notifications;
 	private final ModerationService moderation;
-	private final ViewCountBuffer viewCounts;
 
-	public PostSocialService(PostCommentRepository comments, PostStatRepository stats,
-			PostReactionRepository reactions, CommentLikeRepository commentLikes, UserRepository users,
-			NotificationRepository notifications, ModerationService moderation, ViewCountBuffer viewCounts) {
+	public CommentService(PostCommentRepository comments, CommentLikeRepository commentLikes, UserRepository users,
+			NotificationRepository notifications, ModerationService moderation) {
 		this.comments = comments;
-		this.stats = stats;
-		this.reactions = reactions;
 		this.commentLikes = commentLikes;
 		this.users = users;
 		this.notifications = notifications;
 		this.moderation = moderation;
-		this.viewCounts = viewCounts;
 	}
-
-	/* 评论 ------------------------------------------------------------------ */
 
 	/** 一级评论每页条数；楼中楼只带预览，点开后再按需分页加载 */
 	public static final int PAGE_SIZE = 20;
@@ -95,7 +79,7 @@ public class PostSocialService {
 	@Transactional(readOnly = true)
 	public CommentListDto listComments(String rawSlug, UserPrincipal principal, String sort, int page, int size,
 			UUID anchor) {
-		String slug = normalizeSlug(rawSlug);
+		String slug = PostSocialSupport.normalizeSlug(rawSlug);
 		UUID currentId = principal == null ? null : principal.id();
 		int pageSize = clampSize(size);
 		boolean byLikes = "likes".equalsIgnoreCase(sort);
@@ -285,9 +269,10 @@ public class PostSocialService {
 		return -1;
 	}
 
+	@Transactional
 	public CommentDto addComment(UserPrincipal principal, String rawSlug, CommentRequest request) {
-		String slug = normalizeSlug(rawSlug);
-		User author = requireUser(principal);
+		String slug = PostSocialSupport.normalizeSlug(rawSlug);
+		User author = PostSocialSupport.requireUser(principal, users);
 
 		long recent = comments.countByUser_IdAndCreatedAtGreaterThanEqual(author.getId(),
 				Instant.now().minus(1, ChronoUnit.HOURS));
@@ -320,8 +305,9 @@ public class PostSocialService {
 		return toDto(saved, List.of(), 0, author.getId(), Map.of(), Set.of());
 	}
 
+	@Transactional
 	public void deleteComment(UserPrincipal principal, UUID id) {
-		User user = requireUser(principal);
+		User user = PostSocialSupport.requireUser(principal, users);
 		PostComment comment = comments.findById(id)
 				.orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "评论不存在"));
 		boolean owner = comment.getUser().getId().equals(user.getId());
@@ -333,8 +319,9 @@ public class PostSocialService {
 		evictCommentCache(comment.getPostSlug());
 	}
 
+	@Transactional
 	public ReactionDto toggleCommentLike(UserPrincipal principal, UUID id) {
-		User user = requireUser(principal);
+		User user = PostSocialSupport.requireUser(principal, users);
 		PostComment comment = comments.findById(id)
 				.orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "评论不存在"));
 		if (comment.isDeleted()) {
@@ -379,105 +366,6 @@ public class PostSocialService {
 				link));
 	}
 
-	/* 阅读量、点赞与收藏 ----------------------------------------------------- */
-
-	@Transactional(readOnly = true)
-	public PostStatsDto stats(String rawSlug, UserPrincipal principal) {
-		String slug = normalizeSlug(rawSlug);
-		PostStat stat = stats.findById(slug).orElse(null);
-		Set<ReactionKind> mine = principal == null ? Set.of() : mineFor(slug, principal.id());
-		return toDto(slug, stat, viewCounts.pending(slug), mine);
-	}
-
-	@Transactional(readOnly = true)
-	public List<PostStatsDto> statsFor(List<String> rawSlugs, UserPrincipal principal) {
-		List<String> slugs = rawSlugs.stream()
-				.filter(slug -> slug != null && !slug.isBlank())
-				.map(String::trim)
-				.distinct()
-				.limit(50)
-				.toList();
-		if (slugs.isEmpty()) {
-			return List.of();
-		}
-
-		Map<String, PostStat> statMap = stats.findByPostSlugIn(slugs).stream()
-				.collect(Collectors.toMap(PostStat::getPostSlug, stat -> stat));
-
-		Map<String, Set<ReactionKind>> mine = new HashMap<>();
-		if (principal != null) {
-			reactions.findByUser_IdAndPostSlugIn(principal.id(), slugs).forEach(reaction ->
-					mine.computeIfAbsent(reaction.getPostSlug(), key -> EnumSet.noneOf(ReactionKind.class))
-							.add(reaction.getKind()));
-		}
-
-		return slugs.stream()
-				.map(slug -> toDto(slug, statMap.get(slug), viewCounts.pending(slug), mine.getOrDefault(slug, Set.of())))
-				.toList();
-	}
-
-	/** 浏览只累加在内存里，定时批量落库；返回值带上还没落库的部分 */
-	public PostStatsDto recordView(String rawSlug) {
-		String slug = normalizeSlug(rawSlug);
-		viewCounts.increment(slug);
-		PostStat stat = stats.findById(slug).orElse(null);
-		return toDto(slug, stat, viewCounts.pending(slug), Set.of());
-	}
-
-	public ReactionDto toggleReaction(UserPrincipal principal, String rawSlug, ReactionKind kind) {
-		String slug = normalizeSlug(rawSlug);
-		User user = requireUser(principal);
-		PostStat stat = statOf(slug);
-
-		var existing = reactions.findByPostSlugAndUser_IdAndKind(slug, user.getId(), kind);
-		boolean active;
-		if (existing.isPresent()) {
-			reactions.delete(existing.get());
-			if (kind == ReactionKind.LIKE) {
-				stat.removeLike();
-			} else {
-				stat.removeFavorite();
-			}
-			active = false;
-		} else {
-			reactions.save(new PostReaction(slug, user, kind));
-			if (kind == ReactionKind.LIKE) {
-				stat.addLike();
-			} else {
-				stat.addFavorite();
-			}
-			active = true;
-		}
-
-		stats.save(stat);
-		long count = kind == ReactionKind.LIKE ? stat.getLikes() : stat.getFavorites();
-		return new ReactionDto(active, count);
-	}
-
-	/* 内部工具 -------------------------------------------------------------- */
-
-	private PostStat statOf(String slug) {
-		return stats.findById(slug).orElseGet(() -> stats.save(new PostStat(slug)));
-	}
-
-	private Set<ReactionKind> mineFor(String slug, UUID userId) {
-		Set<ReactionKind> kinds = new HashSet<>();
-		for (PostReaction reaction : reactions.findByPostSlugAndUser_Id(slug, userId)) {
-			kinds.add(reaction.getKind());
-		}
-		return kinds;
-	}
-
-	private PostStatsDto toDto(String slug, PostStat stat, long pendingViews, Set<ReactionKind> mine) {
-		return new PostStatsDto(
-				slug,
-				(stat == null ? 0 : stat.getViews()) + pendingViews,
-				stat == null ? 0 : stat.getLikes(),
-				stat == null ? 0 : stat.getFavorites(),
-				mine.contains(ReactionKind.LIKE),
-				mine.contains(ReactionKind.FAVORITE));
-	}
-
 	private CommentDto toDto(PostComment comment, List<PostComment> replies, int replyCount, UUID currentId,
 			Map<UUID, Long> likeCounts, Set<UUID> likedByMe) {
 		UUID authorId = comment.getUser().getId();
@@ -501,25 +389,6 @@ public class PostSocialService {
 				replyToExcerpt,
 				replyCount,
 				children);
-	}
-
-	private String normalizeSlug(String slug) {
-		if (slug == null) {
-			throw new ApiException(HttpStatus.BAD_REQUEST, "文章不存在");
-		}
-		String cleaned = slug.trim();
-		if (cleaned.isEmpty() || cleaned.length() > 190 || !cleaned.matches("[A-Za-z0-9_-]+")) {
-			throw new ApiException(HttpStatus.BAD_REQUEST, "文章不存在");
-		}
-		return cleaned;
-	}
-
-	private User requireUser(UserPrincipal principal) {
-		if (principal == null) {
-			throw new ApiException(HttpStatus.UNAUTHORIZED, "请先登录");
-		}
-		return users.findById(principal.id())
-				.orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "登录状态已失效"));
 	}
 
 	private String excerpt(String text) {
