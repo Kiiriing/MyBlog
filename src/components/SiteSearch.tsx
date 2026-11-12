@@ -19,7 +19,7 @@ const CLOSE_MS =
   typeof window !== 'undefined' &&
   window.matchMedia('(prefers-reduced-motion: reduce)').matches
     ? 0
-    : 200
+    : 220
 
 /* 全站搜索：头部的搜索按钮打开一层面板，匹配页面 / 作品 / 手记 / 更新 / 履历。
    面板挂在 body 上，避免被头部的 mix-blend-mode 反相；
