@@ -23,6 +23,7 @@ import com.luyu.blog.web.dto.PostSocialDtos.CommentListDto;
 import com.luyu.blog.web.dto.PostSocialDtos.CommentRequest;
 import com.luyu.blog.web.dto.PostSocialDtos.PostStatsDto;
 import com.luyu.blog.web.dto.PostSocialDtos.ReactionDto;
+import com.luyu.blog.web.dto.PostSocialDtos.ReplyListDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -70,8 +71,16 @@ public class PostSocialService {
 
 	/* 评论 ------------------------------------------------------------------ */
 
+	/** 一级评论每页条数；楼中楼只带预览，点开后再按需分页加载 */
+	public static final int PAGE_SIZE = 20;
+
+	private static final int MAX_PAGE_SIZE = 50;
+
+	private static final int REPLY_PREVIEW = 3;
+
 	@Transactional(readOnly = true)
-	public CommentListDto listComments(String rawSlug, UserPrincipal principal, String sort) {
+	public CommentListDto listComments(String rawSlug, UserPrincipal principal, String sort, int page, int size,
+			UUID anchor) {
 		String slug = normalizeSlug(rawSlug);
 		List<PostComment> all = comments.findByPostSlugOrderByCreatedAtAsc(slug);
 		UUID currentId = principal == null ? null : principal.id();
@@ -85,40 +94,118 @@ public class PostSocialService {
 						.map(like -> like.getComment().getId())
 						.collect(Collectors.toSet());
 
-		Map<UUID, List<PostComment>> replies = all.stream()
+		Map<UUID, List<PostComment>> replyMap = all.stream()
 				.filter(comment -> comment.getParent() != null && !comment.isDeleted())
 				.collect(Collectors.groupingBy(comment -> comment.getParent().getId()));
 
-		Comparator<PostComment> topOrder = Comparator.comparing(PostComment::getCreatedAt).reversed();
-		Comparator<PostComment> replyOrder = Comparator.comparing(PostComment::getCreatedAt);
+		Comparator<PostComment> replyOrder = replyOrder(sort, likeCounts);
+		List<PostComment> roots = all.stream()
+				/* 已删除的评论不再出现在列表里；父评论被删除时，把仍存在的回复提升为一级，避免内容消失 */
+				.filter(comment -> !comment.isDeleted())
+				.filter(comment -> comment.getParent() == null || comment.getParent().isDeleted())
+				.sorted(rootOrder(sort, likeCounts))
+				.toList();
+
+		int pageSize = clampSize(size);
+		int pageIndex = Math.max(0, page);
+		UUID anchorRootId = anchorRootId(all, anchor);
+		if (anchorRootId != null) {
+			/* 深链：直接翻到目标评论所在页，不用前端一页页试 */
+			for (int i = 0; i < roots.size(); i++) {
+				if (roots.get(i).getId().equals(anchorRootId)) {
+					pageIndex = i / pageSize;
+					break;
+				}
+			}
+		}
+
+		int from = Math.min(pageIndex * pageSize, roots.size());
+		int to = Math.min(from + pageSize, roots.size());
+		List<CommentDto> items = new ArrayList<>();
+		for (PostComment root : roots.subList(from, to)) {
+			List<PostComment> children = orderReplies(replyMap.getOrDefault(root.getId(), List.of()), replyOrder);
+			List<PostComment> preview = new ArrayList<>(children.size() <= REPLY_PREVIEW ? children
+					: children.subList(0, REPLY_PREVIEW));
+			/* 深链指向楼中楼时，把目标回复补进预览，保证页面上能定位到它 */
+			if (anchor != null && children.size() > REPLY_PREVIEW) {
+				children.stream()
+						.filter(child -> child.getId().equals(anchor))
+						.filter(child -> preview.stream().noneMatch(item -> item.getId().equals(child.getId())))
+						.findFirst()
+						.ifPresent(preview::add);
+			}
+			items.add(toDto(root, preview, children.size(), currentId, likeCounts, likedByMe));
+		}
+
+		long visible = all.stream().filter(comment -> !comment.isDeleted()).count();
+		return new CommentListDto(items, visible, to < roots.size());
+	}
+
+	/** 楼中楼分页加载：点开「查看全部回复」时才请求 */
+	@Transactional(readOnly = true)
+	public ReplyListDto listReplies(UUID commentId, UserPrincipal principal, String sort, int page, int size) {
+		comments.findById(commentId)
+				.orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "评论不存在"));
+		UUID currentId = principal == null ? null : principal.id();
+
+		List<PostComment> children = comments.findByParent_IdOrderByCreatedAtAsc(commentId).stream()
+				.filter(child -> !child.isDeleted())
+				.toList();
+
+		Set<UUID> ids = children.stream().map(PostComment::getId).collect(Collectors.toSet());
+		List<CommentLike> likes = ids.isEmpty() ? List.of() : commentLikes.findByComment_IdIn(ids);
+		Map<UUID, Long> likeCounts = likes.stream()
+				.collect(Collectors.groupingBy(like -> like.getComment().getId(), Collectors.counting()));
+		Set<UUID> likedByMe = currentId == null ? Set.of()
+				: likes.stream()
+						.filter(like -> like.getUser().getId().equals(currentId))
+						.map(like -> like.getComment().getId())
+						.collect(Collectors.toSet());
+
+		List<PostComment> sorted = orderReplies(children, replyOrder(sort, likeCounts));
+		int pageSize = clampSize(size);
+		int from = Math.min(Math.max(0, page) * pageSize, sorted.size());
+		int to = Math.min(from + pageSize, sorted.size());
+		List<CommentDto> items = sorted.subList(from, to).stream()
+				.map(reply -> toDto(reply, List.of(), 0, currentId, likeCounts, likedByMe))
+				.toList();
+		return new ReplyListDto(items, sorted.size(), to < sorted.size());
+	}
+
+	private Comparator<PostComment> rootOrder(String sort, Map<UUID, Long> likeCounts) {
 		if ("likes".equalsIgnoreCase(sort)) {
-			topOrder = Comparator
+			return Comparator
 					.comparingLong((PostComment comment) -> likeCounts.getOrDefault(comment.getId(), 0L))
 					.reversed()
 					.thenComparing(Comparator.comparing(PostComment::getCreatedAt).reversed());
-			/* 楼中楼同样按点赞数排，点赞相同再按时间先后 */
-			replyOrder = Comparator
+		}
+		return Comparator.comparing(PostComment::getCreatedAt).reversed();
+	}
+
+	private Comparator<PostComment> replyOrder(String sort, Map<UUID, Long> likeCounts) {
+		if ("likes".equalsIgnoreCase(sort)) {
+			return Comparator
 					.comparingLong((PostComment comment) -> likeCounts.getOrDefault(comment.getId(), 0L))
 					.reversed()
 					.thenComparing(Comparator.comparing(PostComment::getCreatedAt));
 		}
+		return Comparator.comparing(PostComment::getCreatedAt);
+	}
 
-		List<CommentDto> items = new ArrayList<>();
-		Comparator<PostComment> order = topOrder;
-		Comparator<PostComment> childOrder = replyOrder;
-		all.stream()
-				/* 已删除的评论不再出现在列表里；父评论被删除时，把仍存在的回复提升为一级，避免内容消失 */
-				.filter(comment -> !comment.isDeleted())
-				.filter(comment -> comment.getParent() == null || comment.getParent().isDeleted())
-				.sorted(order)
-				.forEach(comment -> {
-					List<PostComment> children = orderReplies(
-							replies.getOrDefault(comment.getId(), List.of()), childOrder);
-					items.add(toDto(comment, children, currentId, likeCounts, likedByMe));
-				});
+	/** 深链锚点所属的一级评论 id（锚点本身是一级评论时就是它自己） */
+	private UUID anchorRootId(List<PostComment> all, UUID anchor) {
+		if (anchor == null) return null;
+		return all.stream()
+				.filter(comment -> comment.getId().equals(anchor))
+				.map(comment -> comment.getParent() == null || comment.getParent().isDeleted()
+						? comment.getId() : comment.getParent().getId())
+				.findFirst()
+				.orElse(null);
+	}
 
-		long visible = all.stream().filter(comment -> !comment.isDeleted()).count();
-		return new CommentListDto(items, (int) visible);
+	private int clampSize(int size) {
+		if (size <= 0) return PAGE_SIZE;
+		return Math.min(size, MAX_PAGE_SIZE);
 	}
 
 	/** 子评论排序；若某条回复是回复楼中楼里的另一条，被回复的那条必须排在前面 */
@@ -183,7 +270,7 @@ public class PostSocialService {
 		PostComment saved = comments.save(new PostComment(slug, author, parent, quoted, content));
 		notifyComment(slug, author, saved, replyTarget, parent);
 
-		return toDto(saved, List.of(), author.getId(), Map.of(), Set.of());
+		return toDto(saved, List.of(), 0, author.getId(), Map.of(), Set.of());
 	}
 
 	public void deleteComment(UserPrincipal principal, UUID id) {
@@ -341,11 +428,11 @@ public class PostSocialService {
 				mine.contains(ReactionKind.FAVORITE));
 	}
 
-	private CommentDto toDto(PostComment comment, List<PostComment> replies, UUID currentId,
+	private CommentDto toDto(PostComment comment, List<PostComment> replies, int replyCount, UUID currentId,
 			Map<UUID, Long> likeCounts, Set<UUID> likedByMe) {
 		UUID authorId = comment.getUser().getId();
 		List<CommentDto> children = replies.stream()
-				.map(reply -> toDto(reply, List.of(), currentId, likeCounts, likedByMe))
+				.map(reply -> toDto(reply, List.of(), 0, currentId, likeCounts, likedByMe))
 				.toList();
 		PostComment quoted = comment.getReplyTo();
 		String replyToName = quoted == null ? null : quoted.getUser().getDisplayName();
@@ -362,6 +449,7 @@ public class PostSocialService {
 				likedByMe.contains(comment.getId()),
 				replyToName,
 				replyToExcerpt,
+				replyCount,
 				children);
 	}
 

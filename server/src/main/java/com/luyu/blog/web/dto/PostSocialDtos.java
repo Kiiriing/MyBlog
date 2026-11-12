@@ -34,10 +34,16 @@ public final class PostSocialDtos {
 			/** 楼中楼引用回复时，被回复人的昵称与评论摘要 */
 			String replyToName,
 			String replyToExcerpt,
+			/** 楼中楼回复总数；replies 只带前几条预览 */
+			int replyCount,
 			List<CommentDto> replies) {
 	}
 
-	public record CommentListDto(List<CommentDto> items, long total) {
+	public record CommentListDto(List<CommentDto> items, long total, boolean hasMore) {
+	}
+
+	/** 楼中楼按需分页加载 */
+	public record ReplyListDto(List<CommentDto> items, long total, boolean hasMore) {
 	}
 
 	public record PostStatsDto(

@@ -66,6 +66,9 @@ function excerpt(text: string, max = 80) {
 
 type SortMode = 'recent' | 'likes'
 
+/** 一级评论每页条数，与后端默认值保持一致 */
+const PAGE_SIZE = 20
+
 export default function CommentSection({ slug }: { slug: string }) {
   const { user } = useAuth()
   const location = useLocation()
@@ -81,14 +84,28 @@ export default function CommentSection({ slug }: { slug: string }) {
   const [sort, setSort] = useState<SortMode>('recent')
   const [deleteTarget, setDeleteTarget] = useState<PostComment | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [expandingId, setExpandingId] = useState<string | null>(null)
   const composer = useRef<HTMLTextAreaElement>(null)
+  /* 记录最近一次用于定位的锚点，避免地址栏锚点被清掉后又重复请求 */
+  const lastAnchor = useRef<string | null>(null)
+  /* 已经加载了多少条一级评论：超过一页就不再自动整表刷新 */
+  const loadedCount = useRef(0)
+
+  useEffect(() => {
+    loadedCount.current = data?.items.length ?? 0
+  }, [data])
 
   useEffect(() => {
     let alive = true
+    const match = /^#comment-(.+)$/.exec(location.hash)
+    const anchor = match ? match[1] : undefined
+    lastAnchor.current = anchor ?? null
     setLoading(true)
     setError('')
+    /* 带 #comment-xxx 进入时把锚点交给后端，直接返回目标所在的那一页 */
     api
-      .comments(slug, sort)
+      .comments(slug, sort, 0, PAGE_SIZE, anchor)
       .then((result) => {
         if (alive) setData(result)
       })
@@ -101,15 +118,36 @@ export default function CommentSection({ slug }: { slug: string }) {
     return () => {
       alive = false
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug, sort])
+
+  /* 已经在页面上时再点一条通知：目标不在已加载的评论里，就带着锚点重新取所在页 */
+  useEffect(() => {
+    const match = /^#comment-(.+)$/.exec(location.hash)
+    if (!match || lastAnchor.current === match[1]) return
+    if (document.getElementById(`comment-${match[1]}`)) return
+    let alive = true
+    lastAnchor.current = match[1]
+    api
+      .comments(slug, sort, 0, PAGE_SIZE, match[1])
+      .then((result) => {
+        if (alive) setData(result)
+      })
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [location.hash, slug, sort])
 
   /* 别人删了评论后，停在页面上的人不刷新也能同步：切回标签页时静默拉一次，可见期间每 30 秒一次 */
   useEffect(() => {
     let alive = true
     const sync = () => {
       if (document.visibilityState !== 'visible') return
+      /* 已经翻过页时不再整表刷新，避免把用户加载的更多页冲掉 */
+      if (loadedCount.current > PAGE_SIZE) return
       api
-        .comments(slug, sort)
+        .comments(slug, sort, 0, PAGE_SIZE)
         .then((result) => {
           if (alive) setData(result)
         })
@@ -202,6 +240,59 @@ export default function CommentSection({ slug }: { slug: string }) {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [deleteTarget])
 
+  /** 一级评论：继续往下翻一页 */
+  async function loadMore() {
+    if (!data || loadingMore || !data.hasMore) return
+    setLoadingMore(true)
+    try {
+      const nextPage = Math.floor(data.items.length / PAGE_SIZE)
+      const next = await api.comments(slug, sort, nextPage, PAGE_SIZE)
+      setData((current) =>
+        current
+          ? {
+              ...current,
+              items: [...current.items, ...next.items],
+              total: next.total,
+              hasMore: next.hasMore
+            }
+          : next
+      )
+    } catch {
+      setNotice(t('加载失败，请稍后再试。', 'Could not load more. Please try again.'))
+    } finally {
+      setLoadingMore(false)
+    }
+  }
+
+  /** 楼中楼：第一次点开用整页替换 3 条预览，之后就是继续追加 */
+  async function loadReplies(comment: PostComment) {
+    if (expandingId) return
+    const expanded = comment.repliesLoaded === true
+    setExpandingId(comment.id)
+    try {
+      const page = expanded ? Math.floor(comment.replies.length / PAGE_SIZE) : 0
+      const result = await api.replies(comment.id, sort, page, PAGE_SIZE)
+      setData((current) =>
+        current
+          ? {
+              ...current,
+              items: mapComment(current.items, comment.id, (item) => ({
+                ...item,
+                replies: expanded ? [...item.replies, ...result.items] : result.items,
+                replyCount: result.total,
+                repliesLoaded: true,
+                repliesHasMore: result.hasMore
+              }))
+            }
+          : current
+      )
+    } catch {
+      setNotice(t('加载失败，请稍后再试。', 'Could not load more. Please try again.'))
+    } finally {
+      setExpandingId(null)
+    }
+  }
+
   async function submit(event: React.FormEvent) {
     event.preventDefault()
     if (!user || submitting) return
@@ -224,7 +315,7 @@ export default function CommentSection({ slug }: { slug: string }) {
       setContent('')
       setReplyTo(null)
       setNotice(t('评论已发布。', 'Comment posted.'))
-      const result = await api.comments(slug, sort)
+      const result = await api.comments(slug, sort, 0, PAGE_SIZE)
       setData(result)
     } catch (err) {
       setNotice(err instanceof ApiError ? err.message : t('发布失败，请稍后再试。', 'Could not post. Please try again later.'))
@@ -247,7 +338,7 @@ export default function CommentSection({ slug }: { slug: string }) {
     try {
       await api.deleteComment(deleteTarget.id)
       setDeleteTarget(null)
-      const result = await api.comments(slug, sort)
+      const result = await api.comments(slug, sort, 0, PAGE_SIZE)
       setData(result)
       setNotice(t('评论已删除。', 'Comment deleted.'))
     } catch (err) {
@@ -367,9 +458,23 @@ export default function CommentSection({ slug }: { slug: string }) {
             </div>
           ) : null}
 
-          {comment.replies.length ? (
+          {comment.replies.length || comment.replyCount > 0 ? (
             <div className="comment__replies">
               {comment.replies.map((reply) => renderComment(reply, true))}
+              {comment.replyCount > comment.replies.length ? (
+                <button
+                  type="button"
+                  className="comment__more mono"
+                  onClick={() => loadReplies(comment)}
+                  disabled={expandingId === comment.id}
+                >
+                  {expandingId === comment.id
+                    ? t('加载中…', 'Loading…')
+                    : comment.repliesLoaded
+                      ? t('加载更多回复', 'Load more replies')
+                      : t(`查看全部 ${comment.replyCount} 条回复`, `View all ${comment.replyCount} replies`)}
+                </button>
+              ) : null}
             </div>
           ) : null}
         </div>
@@ -498,6 +603,16 @@ export default function CommentSection({ slug }: { slug: string }) {
               </div>
             ) : null}
             {data?.items.map((comment) => renderComment(comment))}
+            {!loading && data?.hasMore ? (
+              <button
+                type="button"
+                className="comments__more mono"
+                onClick={loadMore}
+                disabled={loadingMore}
+              >
+                {loadingMore ? t('加载中…', 'Loading…') : t('加载更多评论', 'Load more comments')}
+              </button>
+            ) : null}
           </div>
         </div>
       </div>

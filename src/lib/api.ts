@@ -44,12 +44,25 @@ export type PostComment = {
   /** 楼中楼引用回复时，被回复人的昵称与评论摘要 */
   replyToName: string | null
   replyToExcerpt: string | null
+  /** 楼中楼回复总数，replies 里只是前几条预览 */
+  replyCount: number
   replies: PostComment[]
+  /** 楼中楼是否还有未加载的回复（前端分页用） */
+  repliesHasMore?: boolean
+  /** 楼中楼是否已经是完整列表（而不是 3 条预览） */
+  repliesLoaded?: boolean
 }
 
 export type CommentList = {
   items: PostComment[]
   total: number
+  hasMore: boolean
+}
+
+export type ReplyList = {
+  items: PostComment[]
+  total: number
+  hasMore: boolean
 }
 
 export type PostStats = {
@@ -194,8 +207,13 @@ export const api = {
       body: JSON.stringify({ content })
     }),
 
-  comments: (slug: string, sort: 'recent' | 'likes' = 'recent') =>
-    request<CommentList>(`/posts/${slug}/comments?sort=${sort}`),
+  comments: (slug: string, sort: 'recent' | 'likes' = 'recent', page = 0, size = 20, anchor?: string) =>
+    request<CommentList>(
+      `/posts/${slug}/comments?sort=${sort}&page=${page}&size=${size}${anchor ? `&anchor=${anchor}` : ''}`
+    ),
+
+  replies: (commentId: string, sort: 'recent' | 'likes' = 'recent', page = 0, size = 20) =>
+    request<ReplyList>(`/posts/comments/${commentId}/replies?sort=${sort}&page=${page}&size=${size}`),
 
   addComment: (slug: string, content: string, parentId?: string | null) =>
     request<PostComment>(`/posts/${slug}/comments`, {

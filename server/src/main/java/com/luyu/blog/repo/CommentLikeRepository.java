@@ -3,6 +3,7 @@ package com.luyu.blog.repo;
 import com.luyu.blog.domain.CommentLike;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -15,4 +16,7 @@ public interface CommentLikeRepository extends JpaRepository<CommentLike, UUID> 
 
 	/** 一次取出一篇文章全部评论的点赞记录，用于统计点赞数与当前用户状态 */
 	List<CommentLike> findByComment_PostSlug(String postSlug);
+
+	/** 楼中楼分页时只统计这一页评论的点赞 */
+	List<CommentLike> findByComment_IdIn(Collection<UUID> commentIds);
 }

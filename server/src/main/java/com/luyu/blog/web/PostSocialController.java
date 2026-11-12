@@ -8,6 +8,7 @@ import com.luyu.blog.web.dto.PostSocialDtos.CommentListDto;
 import com.luyu.blog.web.dto.PostSocialDtos.CommentRequest;
 import com.luyu.blog.web.dto.PostSocialDtos.PostStatsDto;
 import com.luyu.blog.web.dto.PostSocialDtos.ReactionDto;
+import com.luyu.blog.web.dto.PostSocialDtos.ReplyListDto;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -38,8 +39,20 @@ public class PostSocialController {
 	@GetMapping("/{slug}/comments")
 	public CommentListDto comments(@PathVariable String slug,
 			@RequestParam(name = "sort", required = false, defaultValue = "recent") String sort,
+			@RequestParam(name = "page", required = false, defaultValue = "0") int page,
+			@RequestParam(name = "size", required = false, defaultValue = "20") int size,
+			@RequestParam(name = "anchor", required = false) UUID anchor,
 			@AuthenticationPrincipal UserPrincipal principal) {
-		return postSocialService.listComments(slug, principal, sort);
+		return postSocialService.listComments(slug, principal, sort, page, size, anchor);
+	}
+
+	@GetMapping("/comments/{id}/replies")
+	public ReplyListDto replies(@PathVariable UUID id,
+			@RequestParam(name = "sort", required = false, defaultValue = "recent") String sort,
+			@RequestParam(name = "page", required = false, defaultValue = "0") int page,
+			@RequestParam(name = "size", required = false, defaultValue = "20") int size,
+			@AuthenticationPrincipal UserPrincipal principal) {
+		return postSocialService.listReplies(id, principal, sort, page, size);
 	}
 
 	@PostMapping("/{slug}/comments")

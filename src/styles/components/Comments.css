@@ -376,6 +376,58 @@
   margin-top: clamp(22px, 3vw, 30px);
 }
 
+/* 分页加载按钮：评论多的时候一页页往下翻，不一次性渲染上千条 */
+.comments__more {
+  align-self: center;
+  margin-top: 4px;
+  padding: 10px 24px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--fg-dim);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition:
+    border-color 0.3s ease,
+    color 0.3s ease;
+}
+
+.comments__more:hover:not(:disabled) {
+  border-color: var(--fg);
+  color: var(--fg);
+}
+
+.comments__more:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+/* 楼中楼：先看 3 条预览，点开再加载整页 */
+.comment__more {
+  margin-top: 6px;
+  padding: 5px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--fg) 5%, transparent);
+  color: var(--fg-dim);
+  font-size: 10.5px;
+  letter-spacing: 0.02em;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
+}
+
+.comment__more:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--fg) 9%, transparent);
+  color: var(--fg);
+}
+
+.comment__more:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
 /* 单条评论：头像 + 气泡，头像列有一根细线把同一串讨论串起来 */
 .comment {
   position: relative;

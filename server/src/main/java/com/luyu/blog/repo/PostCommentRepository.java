@@ -11,6 +11,9 @@ public interface PostCommentRepository extends JpaRepository<PostComment, UUID> 
 
 	List<PostComment> findByPostSlugOrderByCreatedAtAsc(String postSlug);
 
+	/** 楼中楼按需分页用 */
+	List<PostComment> findByParent_IdOrderByCreatedAtAsc(UUID parentId);
+
 	long countByPostSlug(String postSlug);
 
 	/** 限流：统计某个用户从某个时间点起发表的评论数 */
