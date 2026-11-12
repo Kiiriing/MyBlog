@@ -3,12 +3,14 @@ package com.luyu.blog.service;
 import com.luyu.blog.domain.Notification;
 import com.luyu.blog.domain.NotificationCategory;
 import com.luyu.blog.domain.Audience;
+import com.luyu.blog.domain.CommentLike;
 import com.luyu.blog.domain.PostComment;
 import com.luyu.blog.domain.PostReaction;
 import com.luyu.blog.domain.PostStat;
 import com.luyu.blog.domain.ReactionKind;
 import com.luyu.blog.domain.Role;
 import com.luyu.blog.domain.User;
+import com.luyu.blog.repo.CommentLikeRepository;
 import com.luyu.blog.repo.NotificationRepository;
 import com.luyu.blog.repo.PostCommentRepository;
 import com.luyu.blog.repo.PostReactionRepository;
@@ -34,6 +36,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -48,16 +51,18 @@ public class PostSocialService {
 	private final PostCommentRepository comments;
 	private final PostStatRepository stats;
 	private final PostReactionRepository reactions;
+	private final CommentLikeRepository commentLikes;
 	private final UserRepository users;
 	private final NotificationRepository notifications;
 	private final ModerationService moderation;
 
 	public PostSocialService(PostCommentRepository comments, PostStatRepository stats,
-			PostReactionRepository reactions, UserRepository users, NotificationRepository notifications,
-			ModerationService moderation) {
+			PostReactionRepository reactions, CommentLikeRepository commentLikes, UserRepository users,
+			NotificationRepository notifications, ModerationService moderation) {
 		this.comments = comments;
 		this.stats = stats;
 		this.reactions = reactions;
+		this.commentLikes = commentLikes;
 		this.users = users;
 		this.notifications = notifications;
 		this.moderation = moderation;
@@ -66,24 +71,42 @@ public class PostSocialService {
 	/* 评论 ------------------------------------------------------------------ */
 
 	@Transactional(readOnly = true)
-	public CommentListDto listComments(String rawSlug, UserPrincipal principal) {
+	public CommentListDto listComments(String rawSlug, UserPrincipal principal, String sort) {
 		String slug = normalizeSlug(rawSlug);
 		List<PostComment> all = comments.findByPostSlugOrderByCreatedAtAsc(slug);
 		UUID currentId = principal == null ? null : principal.id();
+
+		List<CommentLike> likes = commentLikes.findByComment_PostSlug(slug);
+		Map<UUID, Long> likeCounts = likes.stream()
+				.collect(Collectors.groupingBy(like -> like.getComment().getId(), Collectors.counting()));
+		Set<UUID> likedByMe = currentId == null ? Set.of()
+				: likes.stream()
+						.filter(like -> like.getUser().getId().equals(currentId))
+						.map(like -> like.getComment().getId())
+						.collect(Collectors.toSet());
 
 		Map<UUID, List<PostComment>> replies = all.stream()
 				.filter(comment -> comment.getParent() != null)
 				.collect(Collectors.groupingBy(comment -> comment.getParent().getId()));
 
+		Comparator<PostComment> topOrder = Comparator.comparing(PostComment::getCreatedAt).reversed();
+		if ("likes".equalsIgnoreCase(sort)) {
+			topOrder = Comparator
+					.comparingLong((PostComment comment) -> likeCounts.getOrDefault(comment.getId(), 0L))
+					.reversed()
+					.thenComparing(Comparator.comparing(PostComment::getCreatedAt).reversed());
+		}
+
 		List<CommentDto> items = new ArrayList<>();
+		Comparator<PostComment> order = topOrder;
 		all.stream()
 				.filter(comment -> comment.getParent() == null)
-				.sorted(Comparator.comparing(PostComment::getCreatedAt).reversed())
+				.sorted(order)
 				.forEach(comment -> {
 					List<PostComment> children = replies.getOrDefault(comment.getId(), List.of()).stream()
 							.sorted(Comparator.comparing(PostComment::getCreatedAt))
 							.toList();
-					items.add(toDto(comment, children, currentId));
+					items.add(toDto(comment, children, currentId, likeCounts, likedByMe));
 				});
 
 		return new CommentListDto(items, all.size());
@@ -103,19 +126,20 @@ public class PostSocialService {
 		moderation.validate(content);
 
 		PostComment parent = null;
+		PostComment replyTarget = null;
 		if (request.parentId() != null) {
-			PostComment target = comments.findById(request.parentId())
+			replyTarget = comments.findById(request.parentId())
 					.orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "要回复的评论不存在"));
-			if (!target.getPostSlug().equals(slug)) {
+			if (!replyTarget.getPostSlug().equals(slug)) {
 				throw new ApiException(HttpStatus.BAD_REQUEST, "评论不属于这篇文章");
 			}
-			parent = target.getParent() == null ? target : target.getParent();
+			parent = replyTarget.getParent() == null ? replyTarget : replyTarget.getParent();
 		}
 
 		PostComment saved = comments.save(new PostComment(slug, author, parent, content));
-		notifyComment(slug, author, saved, parent);
+		notifyComment(slug, author, saved, replyTarget, parent);
 
-		return toDto(saved, List.of(), author.getId());
+		return toDto(saved, List.of(), author.getId(), Map.of(), Set.of());
 	}
 
 	public void deleteComment(UserPrincipal principal, UUID id) {
@@ -130,26 +154,49 @@ public class PostSocialService {
 		comments.save(comment);
 	}
 
-	private void notifyComment(String slug, User author, PostComment comment, PostComment parent) {
-		String link = "/journal/" + slug + "#comments";
-		String body = excerpt(comment.getContent());
+	public ReactionDto toggleCommentLike(UserPrincipal principal, UUID id) {
+		User user = requireUser(principal);
+		PostComment comment = comments.findById(id)
+				.orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "评论不存在"));
+		if (comment.isDeleted()) {
+			throw new ApiException(HttpStatus.BAD_REQUEST, "评论已删除");
+		}
 
-		if (parent != null) {
-			User target = parent.getUser();
-			if (!target.getId().equals(author.getId())) {
-				notifications.save(new Notification(NotificationCategory.COMMENT, Audience.USER, target, author,
-						"有人回复了你的评论", body, link));
+		Optional<CommentLike> existing = commentLikes.findByComment_IdAndUser_Id(id, user.getId());
+		if (existing.isPresent()) {
+			commentLikes.delete(existing.get());
+		} else {
+			commentLikes.save(new CommentLike(comment, user));
+		}
+		return new ReactionDto(existing.isEmpty(), commentLikes.countByComment_Id(id));
+	}
+
+	private void notifyComment(String slug, User author, PostComment comment, PostComment replyTarget,
+			PostComment parent) {
+		// 通知直接跳到新评论的位置，打开后会自动定位并高亮
+		String link = "/journal/" + slug + "#comment-" + comment.getId();
+		String body = excerpt(comment.getContent());
+		Set<UUID> notified = new HashSet<>();
+
+		if (replyTarget != null) {
+			notifyUser(replyTarget.getUser(), author, "有人回复了你的评论", body, link, notified);
+			if (parent != null) {
+				notifyUser(parent.getUser(), author, "你的评论有了新回复", body, link, notified);
 			}
 			return;
 		}
 
 		for (User admin : users.findByRole(Role.ADMIN)) {
-			if (admin.getId().equals(author.getId())) {
-				continue;
-			}
-			notifications.save(new Notification(NotificationCategory.COMMENT, Audience.USER, admin, author,
-					"来自 " + author.getDisplayName() + " 的评论", body, link));
+			notifyUser(admin, author, "来自 " + author.getDisplayName() + " 的评论", body, link, notified);
 		}
+	}
+
+	private void notifyUser(User target, User author, String title, String body, String link, Set<UUID> notified) {
+		if (target.getId().equals(author.getId()) || !notified.add(target.getId())) {
+			return;
+		}
+		notifications.save(new Notification(NotificationCategory.COMMENT, Audience.USER, target, author, title, body,
+				link));
 	}
 
 	/* 阅读量、点赞与收藏 ----------------------------------------------------- */
@@ -250,10 +297,11 @@ public class PostSocialService {
 				mine.contains(ReactionKind.FAVORITE));
 	}
 
-	private CommentDto toDto(PostComment comment, List<PostComment> replies, UUID currentId) {
+	private CommentDto toDto(PostComment comment, List<PostComment> replies, UUID currentId,
+			Map<UUID, Long> likeCounts, Set<UUID> likedByMe) {
 		UUID authorId = comment.getUser().getId();
 		List<CommentDto> children = replies.stream()
-				.map(reply -> toDto(reply, List.of(), currentId))
+				.map(reply -> toDto(reply, List.of(), currentId, likeCounts, likedByMe))
 				.toList();
 		return new CommentDto(
 				comment.getId(),
@@ -263,6 +311,8 @@ public class PostSocialService {
 				authorId,
 				currentId != null && currentId.equals(authorId),
 				comment.isDeleted(),
+				likeCounts.getOrDefault(comment.getId(), 0L),
+				likedByMe.contains(comment.getId()),
 				children);
 	}
 

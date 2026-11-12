@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { api, ApiError, type CommentList, type PostComment } from '../lib/api'
 import { findBannedWord } from '../data/moderation'
 import { useAuth } from '../store/auth'
@@ -38,9 +38,37 @@ function avatarTone(name: string) {
   return sum % 3
 }
 
+/** 在评论树里定位一条评论并替换，用于点赞后的局部更新 */
+function mapComment(
+  items: PostComment[],
+  id: string,
+  updater: (comment: PostComment) => PostComment
+): PostComment[] {
+  return items.map((comment) => {
+    const next = comment.id === id ? updater(comment) : comment
+    if (!next.replies.length) return next
+    return { ...next, replies: mapComment(next.replies, id, updater) }
+  })
+}
+
+function toggleLikeState(comment: PostComment): PostComment {
+  return {
+    ...comment,
+    likedByMe: !comment.likedByMe,
+    likeCount: Math.max(0, comment.likeCount + (comment.likedByMe ? -1 : 1))
+  }
+}
+
+function excerpt(text: string, max = 80) {
+  return text.length <= max ? text : `${text.slice(0, max - 2)}…`
+}
+
+type SortMode = 'recent' | 'likes'
+
 export default function CommentSection({ slug }: { slug: string }) {
   const { user } = useAuth()
   const location = useLocation()
+  const navigate = useNavigate()
   const { t } = useI18n()
   const [data, setData] = useState<CommentList | null>(null)
   const [loading, setLoading] = useState(true)
@@ -49,6 +77,9 @@ export default function CommentSection({ slug }: { slug: string }) {
   const [replyTo, setReplyTo] = useState<PostComment | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [notice, setNotice] = useState('')
+  const [sort, setSort] = useState<SortMode>('recent')
+  const [deleteTarget, setDeleteTarget] = useState<PostComment | null>(null)
+  const [deleting, setDeleting] = useState(false)
   const composer = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
@@ -56,7 +87,7 @@ export default function CommentSection({ slug }: { slug: string }) {
     setLoading(true)
     setError('')
     api
-      .comments(slug)
+      .comments(slug, sort)
       .then((result) => {
         if (alive) setData(result)
       })
@@ -69,7 +100,7 @@ export default function CommentSection({ slug }: { slug: string }) {
     return () => {
       alive = false
     }
-  }, [slug])
+  }, [slug, sort])
 
   useEffect(() => {
     if (!replyTo) return
@@ -79,6 +110,34 @@ export default function CommentSection({ slug }: { slug: string }) {
     })
     return () => cancelAnimationFrame(frame)
   }, [replyTo])
+
+  /* 从通知里的 #comment-xxx 进入时，等评论加载完再定位并高亮 */
+  useEffect(() => {
+    if (loading || !data) return
+    const match = /^#comment-(.+)$/.exec(location.hash)
+    if (!match) return
+    let timer = 0
+    const frame = requestAnimationFrame(() => {
+      const target = document.getElementById(`comment-${match[1]}`)
+      if (!target) return
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      target.classList.add('is-target')
+      timer = window.setTimeout(() => target.classList.remove('is-target'), 2600)
+    })
+    return () => {
+      cancelAnimationFrame(frame)
+      if (timer) window.clearTimeout(timer)
+    }
+  }, [loading, data, location.hash])
+
+  useEffect(() => {
+    if (!deleteTarget) return
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') setDeleteTarget(null)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [deleteTarget])
 
   async function submit(event: React.FormEvent) {
     event.preventDefault()
@@ -102,7 +161,7 @@ export default function CommentSection({ slug }: { slug: string }) {
       setContent('')
       setReplyTo(null)
       setNotice(t('评论已发布。', 'Comment posted.'))
-      const result = await api.comments(slug)
+      const result = await api.comments(slug, sort)
       setData(result)
     } catch (err) {
       setNotice(err instanceof ApiError ? err.message : t('发布失败，请稍后再试。', 'Could not post. Please try again later.'))
@@ -119,14 +178,51 @@ export default function CommentSection({ slug }: { slug: string }) {
     event.currentTarget.form?.requestSubmit()
   }
 
-  async function remove(id: string) {
-    if (!window.confirm(t('删除这条评论？', 'Delete this comment?'))) return
+  async function confirmDelete() {
+    if (!deleteTarget || deleting) return
+    setDeleting(true)
     try {
-      await api.deleteComment(id)
-      const result = await api.comments(slug)
+      await api.deleteComment(deleteTarget.id)
+      setDeleteTarget(null)
+      const result = await api.comments(slug, sort)
       setData(result)
+      setNotice(t('评论已删除。', 'Comment deleted.'))
     } catch (err) {
+      setDeleteTarget(null)
       setNotice(err instanceof ApiError ? err.message : t('删除失败，请稍后再试。', 'Could not delete. Please try again later.'))
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  async function toggleLike(comment: PostComment) {
+    if (!user) {
+      navigate(loginHref)
+      return
+    }
+    if (comment.deleted) return
+    setData((current) =>
+      current ? { ...current, items: mapComment(current.items, comment.id, toggleLikeState) } : current
+    )
+    try {
+      const result = await api.likeComment(comment.id)
+      setData((current) =>
+        current
+          ? {
+              ...current,
+              items: mapComment(current.items, comment.id, (item) => ({
+                ...item,
+                likedByMe: result.active,
+                likeCount: result.count
+              }))
+            }
+          : current
+      )
+    } catch (err) {
+      setData((current) =>
+        current ? { ...current, items: mapComment(current.items, comment.id, toggleLikeState) } : current
+      )
+      setNotice(err instanceof ApiError ? err.message : t('点赞失败，请稍后再试。', 'Could not like. Please try again.'))
     }
   }
 
@@ -138,6 +234,7 @@ export default function CommentSection({ slug }: { slug: string }) {
     return (
       <article
         key={comment.id}
+        id={`comment-${comment.id}`}
         className={`comment${isReply ? ' comment--reply' : ''}${comment.mine && !comment.deleted ? ' is-mine' : ''}${
           comment.deleted ? ' is-deleted' : ''
         }`}
@@ -159,7 +256,7 @@ export default function CommentSection({ slug }: { slug: string }) {
               {formatTime(comment.createdAt)}
             </time>
             {comment.mine && !comment.deleted ? (
-              <button type="button" className="comment__action" onClick={() => remove(comment.id)}>
+              <button type="button" className="comment__action" onClick={() => setDeleteTarget(comment)}>
                 {t('删除', 'Delete')}
               </button>
             ) : null}
@@ -176,6 +273,24 @@ export default function CommentSection({ slug }: { slug: string }) {
               >
                 <span aria-hidden="true">↳</span>
                 {replyTo?.id === comment.id ? t('取消回复', 'Cancel reply') : t('回复', 'Reply')}
+              </button>
+              <button
+                type="button"
+                className={`comment__like${comment.likedByMe ? ' is-on' : ''}`}
+                aria-pressed={comment.likedByMe}
+                aria-label={t('点赞', 'Like')}
+                onClick={() => toggleLike(comment)}
+              >
+                <svg viewBox="0 0 16 16" aria-hidden="true">
+                  <path
+                    d="M8 13.2S2.4 9.9 2.4 6.4A3 3 0 0 1 8 4.9a3 3 0 0 1 5.6 1.5c0 3.5-5.6 6.8-5.6 6.8Z"
+                    fill={comment.likedByMe ? 'currentColor' : 'none'}
+                    stroke="currentColor"
+                    strokeWidth="1.2"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                <span>{comment.likeCount > 0 ? comment.likeCount : t('赞', 'Like')}</span>
               </button>
             </div>
           ) : null}
@@ -279,6 +394,24 @@ export default function CommentSection({ slug }: { slug: string }) {
           <div className="comments__stream-head">
             <span className="mono">{t('全部评论', 'All comments')}</span>
             <span className="mono comments__stream-count">{count}</span>
+            <div className="comments__sort" role="group" aria-label={t('评论排序', 'Sort comments')}>
+              <button
+                type="button"
+                className={sort === 'recent' ? 'is-active' : ''}
+                aria-pressed={sort === 'recent'}
+                onClick={() => setSort('recent')}
+              >
+                {t('最近', 'Latest')}
+              </button>
+              <button
+                type="button"
+                className={sort === 'likes' ? 'is-active' : ''}
+                aria-pressed={sort === 'likes'}
+                onClick={() => setSort('likes')}
+              >
+                {t('最多点赞', 'Top')}
+              </button>
+            </div>
           </div>
 
           <div className="comments__list">
@@ -296,6 +429,45 @@ export default function CommentSection({ slug }: { slug: string }) {
           </div>
         </div>
       </div>
+
+      {deleteTarget ? (
+        <div
+          className="comment-modal"
+          role="presentation"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) setDeleteTarget(null)
+          }}
+        >
+          <div
+            className="comment-modal__dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="comment-delete-title"
+          >
+            <span className="mono comment-modal__eyebrow">Delete / {t('删除评论', 'Delete comment')}</span>
+            <h3 className="comment-modal__title" id="comment-delete-title">
+              {t('确定删除这条评论？', 'Delete this comment?')}
+            </h3>
+            <p className="comment-modal__body">“{excerpt(deleteTarget.content)}”</p>
+            <p className="comment-modal__hint">
+              {t('删除后无法恢复，楼中楼回复会保留。', 'This cannot be undone. Replies to it will remain.')}
+            </p>
+            <div className="comment-modal__actions">
+              <button
+                type="button"
+                className="comment-modal__cancel"
+                onClick={() => setDeleteTarget(null)}
+                autoFocus
+              >
+                {t('取消', 'Cancel')}
+              </button>
+              <button type="button" className="comment-modal__confirm" onClick={confirmDelete} disabled={deleting}>
+                {deleting ? t('删除中…', 'Deleting…') : t('删除', 'Delete')}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   )
 }

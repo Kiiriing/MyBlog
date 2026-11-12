@@ -39,6 +39,8 @@ export type PostComment = {
   authorId: string
   mine: boolean
   deleted: boolean
+  likeCount: number
+  likedByMe: boolean
   replies: PostComment[]
 }
 
@@ -189,7 +191,8 @@ export const api = {
       body: JSON.stringify({ content })
     }),
 
-  comments: (slug: string) => request<CommentList>(`/posts/${slug}/comments`),
+  comments: (slug: string, sort: 'recent' | 'likes' = 'recent') =>
+    request<CommentList>(`/posts/${slug}/comments?sort=${sort}`),
 
   addComment: (slug: string, content: string, parentId?: string | null) =>
     request<PostComment>(`/posts/${slug}/comments`, {
@@ -199,6 +202,9 @@ export const api = {
 
   deleteComment: (id: string) =>
     request<void>(`/posts/comments/${id}`, { method: 'DELETE' }),
+
+  likeComment: (id: string) =>
+    request<{ active: boolean; count: number }>(`/posts/comments/${id}/like`, { method: 'POST' }),
 
   postStats: (slug: string) => request<PostStats>(`/posts/${slug}/stats`),
 

@@ -29,6 +29,8 @@ public final class PostSocialDtos {
 			UUID authorId,
 			boolean mine,
 			boolean deleted,
+			long likeCount,
+			boolean likedByMe,
 			List<CommentDto> replies) {
 	}
 

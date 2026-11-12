@@ -37,8 +37,9 @@ public class PostSocialController {
 
 	@GetMapping("/{slug}/comments")
 	public CommentListDto comments(@PathVariable String slug,
+			@RequestParam(name = "sort", required = false, defaultValue = "recent") String sort,
 			@AuthenticationPrincipal UserPrincipal principal) {
-		return postSocialService.listComments(slug, principal);
+		return postSocialService.listComments(slug, principal, sort);
 	}
 
 	@PostMapping("/{slug}/comments")
@@ -52,6 +53,11 @@ public class PostSocialController {
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	public void deleteComment(@AuthenticationPrincipal UserPrincipal principal, @PathVariable UUID id) {
 		postSocialService.deleteComment(principal, id);
+	}
+
+	@PostMapping("/comments/{id}/like")
+	public ReactionDto likeComment(@AuthenticationPrincipal UserPrincipal principal, @PathVariable UUID id) {
+		return postSocialService.toggleCommentLike(principal, id);
 	}
 
 	@GetMapping("/{slug}/stats")
