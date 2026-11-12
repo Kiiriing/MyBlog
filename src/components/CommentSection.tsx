@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { api, ApiError, type CommentList, type PostComment } from '../lib/api'
+import { findBannedWord } from '../data/moderation'
 import { useAuth } from '../store/auth'
 import { getLang, useI18n } from '../store/i18n'
 import '../styles/components/Comments.css'
@@ -85,6 +86,12 @@ export default function CommentSection({ slug }: { slug: string }) {
     const text = content.trim()
     if (text.length < 2) {
       setNotice(t('多写两个字再发吧。', 'A few more characters, please.'))
+      return
+    }
+    if (findBannedWord(text)) {
+      setNotice(
+        t('内容里包含不合适的词汇，请修改后再提交。', 'The content contains inappropriate language. Please revise it.')
+      )
       return
     }
 
