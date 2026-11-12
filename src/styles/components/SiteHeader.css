@@ -189,19 +189,22 @@
     width 0.45s var(--ease-out);
 }
 
-.menu-btn:hover .menu-btn__icon i:first-child {
+/* 悬停缩短只在未展开菜单时生效，否则打开后的 X 会缺一条边 */
+.site-header:not(.is-menu-open) .menu-btn:hover .menu-btn__icon i:first-child {
   width: 13px;
 }
 
-.menu-btn:hover .menu-btn__icon i:last-child {
+.site-header:not(.is-menu-open) .menu-btn:hover .menu-btn__icon i:last-child {
   width: 20px;
 }
 
 .is-menu-open .menu-btn__icon i:first-child {
+  width: 100%;
   transform: translateY(3px) rotate(45deg);
 }
 
 .is-menu-open .menu-btn__icon i:last-child {
+  width: 100%;
   transform: translateY(-3px) rotate(-45deg);
 }
 
