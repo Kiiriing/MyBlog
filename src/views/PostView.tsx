@@ -243,61 +243,66 @@ export default function PostView() {
             </span>
           </div>
 
-          <div className="post-head__meta">
-            <span className="post-head__cat mono">{post.category}</span>
-            {project ? (
-              <Link to={`/journal?project=${project.slug}`} className="post-head__project mono">
-                {project.title} · {project.cn}
-              </Link>
-            ) : null}
-            <span className="mono">{post.date}</span>
-            <span className="mono">{post.reading} {t('阅读', 'read')}</span>
-          </div>
+          {/* 桌面端把标题与配图并成杂志式双栏：正文起点从第二屏拉回首屏 */}
+          <div className="post-head__masthead">
+            <div className="post-head__intro">
+              <div className="post-head__meta">
+                <span className="post-head__cat mono">{post.category}</span>
+                {project ? (
+                  <Link to={`/journal?project=${project.slug}`} className="post-head__project mono">
+                    {project.title} · {project.cn}
+                  </Link>
+                ) : null}
+                <span className="mono">{post.date}</span>
+                <span className="mono">{post.reading} {t('阅读', 'read')}</span>
+              </div>
 
-          <h1 className="post-head__title">
-            {titleParts.map((part, index) => (
-              <span key={index} className="post-head__title-part">
-                {part}
-              </span>
-            ))}
-          </h1>
-          <p className="post-head__en">{post.en}</p>
-          <p className="post-head__excerpt">{post.excerpt}</p>
+              <h1 className="post-head__title">
+                {titleParts.map((part, index) => (
+                  <span key={index} className="post-head__title-part">
+                    {part}
+                  </span>
+                ))}
+              </h1>
+              <p className="post-head__en">{post.en}</p>
+              <p className="post-head__excerpt">{post.excerpt}</p>
 
-          <div className="post-head__tags">
-            {post.tags.map((tag) => (
-              <Link
-                key={tag}
-                to={`/journal/tag/${encodeURIComponent(tag)}`}
-                className="post-head__tag mono"
-                data-cursor="Tag"
+              <div className="post-head__tags">
+                {post.tags.map((tag) => (
+                  <Link
+                    key={tag}
+                    to={`/journal/tag/${encodeURIComponent(tag)}`}
+                    className="post-head__tag mono"
+                    data-cursor="Tag"
+                  >
+                    #{tag}
+                  </Link>
+                ))}
+              </div>
+
+              <EngagementBar slug={post.slug} />
+            </div>
+
+            <figure className="post-cover">
+              <ArtworkFrame
+                src={post.art}
+                alt={t(`${post.title} — 文章配图`, `${post.en} — article image`)}
+                ratio="4 / 5"
+                parallax={8}
+                eager
               >
-                #{tag}
-              </Link>
-            ))}
+                <div className="post-cover__meta mono">
+                  <span>LU YU / Journal</span>
+                  <span>{post.date}</span>
+                </div>
+              </ArtworkFrame>
+              <figcaption className="post-cover__caption mono">
+                Fig. {post.index} — {post.en}, {post.date.slice(0, 4)}
+              </figcaption>
+            </figure>
           </div>
-
-          <EngagementBar slug={post.slug} />
         </div>
       </header>
-
-      <div className="post-cover shell">
-        <ArtworkFrame
-          src={post.art}
-          alt={t(`${post.title} — 文章配图`, `${post.en} — article image`)}
-          ratio="16 / 9"
-          parallax={8}
-          eager
-        >
-          <div className="post-cover__meta mono">
-            <span>LU YU / Journal</span>
-            <span>{post.date}</span>
-          </div>
-        </ArtworkFrame>
-        <p className="post-cover__caption mono">
-          Fig. {post.index} — {post.en}, {post.date.slice(0, 4)}
-        </p>
-      </div>
 
       <div className="post-layout shell">
         <aside className="post-aside">
