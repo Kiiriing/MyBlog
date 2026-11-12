@@ -17,6 +17,9 @@
   position: absolute;
   inset: 0;
   z-index: 0;
+  /* 右下角的巨大箭头按设计要出血到画布外，裁在幕布边缘，
+     否则幕布上移时会露出箭头尾巴，压到下面的新页面上 */
+  overflow: hidden;
   background: var(--accent);
   color: var(--ink);
   transform: translate3d(0, 100%, 0);
