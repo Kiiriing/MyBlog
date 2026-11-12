@@ -21,6 +21,7 @@ import '../styles/components/Notifications.css'
 const CATEGORY_LABEL: Record<NotificationCategory, string> = {
   SYSTEM: '系统通知',
   FEEDBACK: '用户反馈',
+  COMMENT: '评论回复',
   DIRECT: '私信'
 }
 

@@ -1,5 +1,5 @@
 export type Role = 'USER' | 'ADMIN'
-export type NotificationCategory = 'SYSTEM' | 'FEEDBACK' | 'DIRECT'
+export type NotificationCategory = 'SYSTEM' | 'FEEDBACK' | 'COMMENT' | 'DIRECT'
 
 export type AuthUser = {
   id: string
@@ -29,6 +29,36 @@ export type NotificationList = {
 export type AuthResponse = {
   token: string
   user: AuthUser
+}
+
+export type PostComment = {
+  id: string
+  content: string
+  createdAt: string
+  authorName: string
+  authorId: string
+  mine: boolean
+  deleted: boolean
+  replies: PostComment[]
+}
+
+export type CommentList = {
+  items: PostComment[]
+  total: number
+}
+
+export type PostStats = {
+  slug: string
+  views: number
+  likes: number
+  favorites: number
+  liked: boolean
+  favorited: boolean
+}
+
+export type ReactionResult = {
+  active: boolean
+  count: number
 }
 
 export type CodeScene = 'REGISTER' | 'RESET_PASSWORD'
@@ -157,5 +187,30 @@ export const api = {
     request<void>('/feedback', {
       method: 'POST',
       body: JSON.stringify({ content })
-    })
+    }),
+
+  comments: (slug: string) => request<CommentList>(`/posts/${slug}/comments`),
+
+  addComment: (slug: string, content: string, parentId?: string | null) =>
+    request<PostComment>(`/posts/${slug}/comments`, {
+      method: 'POST',
+      body: JSON.stringify({ content, parentId: parentId ?? null })
+    }),
+
+  deleteComment: (id: string) =>
+    request<void>(`/posts/comments/${id}`, { method: 'DELETE' }),
+
+  postStats: (slug: string) => request<PostStats>(`/posts/${slug}/stats`),
+
+  postStatsList: (slugs: string[]) =>
+    request<PostStats[]>(`/posts/stats?slugs=${encodeURIComponent(slugs.join(','))}`),
+
+  recordView: (slug: string) =>
+    request<PostStats>(`/posts/${slug}/view`, { method: 'POST' }),
+
+  toggleLike: (slug: string) =>
+    request<ReactionResult>(`/posts/${slug}/like`, { method: 'POST' }),
+
+  toggleFavorite: (slug: string) =>
+    request<ReactionResult>(`/posts/${slug}/favorite`, { method: 'POST' })
 }

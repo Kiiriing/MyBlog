@@ -220,6 +220,32 @@
   color: var(--fg);
 }
 
+.journal-page__sort {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.journal-page__sort button {
+  padding: 5px 11px;
+  border-radius: 999px;
+  color: var(--fg-faint);
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
+}
+
+.journal-page__sort button:hover {
+  color: var(--fg);
+}
+
+.journal-page__sort button.is-active {
+  background: var(--fg);
+  color: var(--paper);
+}
+
 /* 选中项目后的项目卡：把“分类”变成一个有名字的项目 */
 .journal-project {
   display: flex;

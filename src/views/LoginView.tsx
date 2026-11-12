@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { api, ApiError, type CodeScene } from '../lib/api'
 import { signIn, signOut, useAuth } from '../store/auth'
 import { refreshNotifications } from '../store/notifications'
@@ -63,7 +63,12 @@ function strengthOf(password: string) {
 
 export default function LoginView() {
   const navigate = useNavigate()
+  const location = useLocation()
   const auth = useAuth()
+
+  /* 登录后回到来源页（只接受站内路径），评论登录门槛会带上 ?next= */
+  const nextParam = new URLSearchParams(location.search).get('next')
+  const next = nextParam && nextParam.startsWith('/') && !nextParam.startsWith('//') ? nextParam : '/'
 
   const [mode, setMode] = useState<Mode>('login')
   const [account, setAccount] = useState('')
@@ -250,7 +255,7 @@ export default function LoginView() {
         const result = await api.login(account.trim(), password)
         signIn(result)
         await refreshNotifications()
-        navigate('/')
+        navigate(next)
         return
       }
 
@@ -263,7 +268,7 @@ export default function LoginView() {
         })
         signIn(result)
         await refreshNotifications()
-        navigate('/')
+        navigate(next)
         return
       }
 

@@ -380,6 +380,11 @@
   color: #a99bff;
 }
 
+.inbox__tag--comment {
+  border-color: rgba(64, 168, 158, 0.38);
+  color: #6fc3b8;
+}
+
 .inbox__time {
   color: var(--fg-faint);
   font-size: 10px;

@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import {
   getAllTags,
@@ -9,6 +10,7 @@ import {
   postsByProject,
   postsByYear
 } from '../data/posts'
+import { api } from '../lib/api'
 import JournalList from '../components/JournalList'
 import SiteFooter from '../components/SiteFooter'
 import ChapterTag from '../components/ChapterTag'
@@ -24,10 +26,36 @@ export default function JournalView() {
   const pageTitle = project
     ? `${project.title} ${project.cn} · 手记 — 陆屿 LU YU`
     : '手记 Journal — 陆屿 LU YU'
+  const [sort, setSort] = useState<'latest' | 'hot'>('latest')
+  const [heat, setHeat] = useState<Record<string, number>>({})
+
+  useEffect(() => {
+    let alive = true
+    api
+      .postStatsList(posts.map((post) => post.slug))
+      .then((list) => {
+        if (!alive) return
+        const next: Record<string, number> = {}
+        list.forEach((item) => {
+          next[item.slug] = item.views + item.likes * 6 + item.favorites * 8
+        })
+        setHeat(next)
+      })
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [])
 
   const filtered = posts.filter(
     (post) => (!project || post.project === project.slug) && (!year || postYear(post) === year)
   )
+  const ordered =
+    sort === 'hot'
+      ? [...filtered].sort(
+          (a, b) => (heat[b.slug] ?? 0) - (heat[a.slug] ?? 0) || b.date.localeCompare(a.date)
+        )
+      : filtered
   const total = String(posts.length).padStart(2, '0')
   const years = getYears()
   const tags = getAllTags()
@@ -137,6 +165,24 @@ export default function JournalView() {
                 </button>
               ))}
             </div>
+            <div className="journal-page__sort" role="group" aria-label="排序方式">
+              <button
+                type="button"
+                className={`mono${sort === 'latest' ? ' is-active' : ''}`}
+                aria-pressed={sort === 'latest'}
+                onClick={() => setSort('latest')}
+              >
+                最新
+              </button>
+              <button
+                type="button"
+                className={`mono${sort === 'hot' ? ' is-active' : ''}`}
+                aria-pressed={sort === 'hot'}
+                onClick={() => setSort('hot')}
+              >
+                热度
+              </button>
+            </div>
           </div>
 
           {project ? (
@@ -180,8 +226,8 @@ export default function JournalView() {
           ) : null}
 
           <div className="journal-page__list">
-            {filtered.length ? (
-              <JournalList posts={filtered} />
+            {ordered.length ? (
+              <JournalList posts={ordered} />
             ) : (
               <p className="journal-page__empty">
                 这个筛选下还没有手记，换一个项目或年份看看。

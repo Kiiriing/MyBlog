@@ -20,7 +20,7 @@ public class ModerationService {
 		String lower = text.toLowerCase(Locale.ROOT);
 		for (String word : BANNED_WORDS) {
 			if (lower.contains(word)) {
-				throw new ApiException(HttpStatus.BAD_REQUEST, "反馈中包含不合适的词汇，请修改后再提交。");
+				throw new ApiException(HttpStatus.BAD_REQUEST, "内容中包含不合适的词汇，请修改后再提交。");
 			}
 		}
 	}

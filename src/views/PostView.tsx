@@ -5,6 +5,8 @@ import { lockScroll, scrollTo, unlockScroll } from '../composables/useSmoothScro
 import ArtworkFrame from '../components/ArtworkFrame'
 import SiteFooter from '../components/SiteFooter'
 import ChapterNext from '../components/ChapterNext'
+import EngagementBar from '../components/EngagementBar'
+import CommentSection from '../components/CommentSection'
 import Seo, { SITE_URL } from '../components/Seo'
 import '../styles/components/PostView.css'
 
@@ -272,6 +274,8 @@ export default function PostView() {
               </Link>
             ))}
           </div>
+
+          <EngagementBar slug={post.slug} />
         </div>
       </header>
 
@@ -428,6 +432,8 @@ export default function PostView() {
           </div>
         </section>
       ) : null}
+
+      <CommentSection slug={post.slug} />
 
       <nav className="post-adjacent shell" aria-label="文章导航">
         {adjacent.prev ? (
