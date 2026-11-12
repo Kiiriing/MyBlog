@@ -39,6 +39,11 @@ public class PostComment {
 	@JoinColumn(name = "parent_id")
 	private PostComment parent;
 
+	/** 被引用回复的那条评论；直接回复主评论时为空 */
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "reply_to_id")
+	private PostComment replyTo;
+
 	@Column(nullable = false, columnDefinition = "text")
 	private String content;
 
@@ -51,10 +56,11 @@ public class PostComment {
 	protected PostComment() {
 	}
 
-	public PostComment(String postSlug, User user, PostComment parent, String content) {
+	public PostComment(String postSlug, User user, PostComment parent, PostComment replyTo, String content) {
 		this.postSlug = postSlug;
 		this.user = user;
 		this.parent = parent;
+		this.replyTo = replyTo;
 		this.content = content;
 		this.createdAt = Instant.now();
 	}
@@ -73,6 +79,10 @@ public class PostComment {
 
 	public PostComment getParent() {
 		return parent;
+	}
+
+	public PostComment getReplyTo() {
+		return replyTo;
 	}
 
 	public String getContent() {

@@ -438,23 +438,10 @@
   border-color: var(--line-strong);
 }
 
-/* 自己的评论：整行淡橙底，含头像列在内连成一整块 */
-.comment.is-mine {
-  border-radius: 16px;
-  background: color-mix(in srgb, var(--accent) 6%, transparent);
-}
-
-.comment.is-mine:hover {
-  background: color-mix(in srgb, var(--accent) 9%, transparent);
-}
-
+/* 自己的评论：气泡淡橙底 */
 .comment.is-mine .comment__main {
-  border-color: transparent;
-  background: transparent;
-}
-
-.comment.is-mine .comment__main:hover {
-  border-color: transparent;
+  border-color: color-mix(in srgb, var(--accent) 32%, var(--line));
+  background: color-mix(in srgb, var(--accent) 5%, var(--card));
 }
 
 .comment.is-mine .comment__avatar {
@@ -512,6 +499,31 @@
   line-height: 1.9;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
+}
+
+/* 楼中楼引用回复：先显示被回复的人与摘要，再显示回复正文 */
+.comment__quote {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 7px;
+  padding: 7px 11px;
+  border-left: 2px solid color-mix(in srgb, var(--accent) 45%, var(--line-strong));
+  border-radius: 0 8px 8px 0;
+  background: color-mix(in srgb, var(--fg) 4%, transparent);
+}
+
+.comment__quote-name {
+  color: var(--accent);
+  font-size: 10.5px;
+  letter-spacing: 0.03em;
+}
+
+.comment__quote-text {
+  color: var(--fg-faint);
+  font-size: 12.5px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
 }
 
 .comment__foot {
@@ -577,27 +589,24 @@
   color: var(--accent);
 }
 
-/* 从通知跳转过来时短暂高亮目标评论（整行，而不是只染气泡） */
-.comment.is-target {
-  border-radius: 16px;
-  animation: comment-target 2.6s ease;
-}
-
+/* 从通知跳转过来时，目标评论闪烁提示几次 */
 .comment.is-target .comment__main {
-  border-color: transparent;
-  background: transparent;
+  border-radius: 12px;
+  outline: 2px solid transparent;
+  outline-offset: 4px;
+  animation: comment-flash 0.8s ease-in-out 3;
 }
 
-@keyframes comment-target {
+@keyframes comment-flash {
   0%,
-  18% {
-    background: color-mix(in srgb, var(--accent) 15%, transparent);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+  100% {
+    outline-color: transparent;
+    box-shadow: 0 0 0 0 transparent;
   }
 
-  100% {
-    background: color-mix(in srgb, var(--accent) 6%, transparent);
-    box-shadow: 0 0 0 0 transparent;
+  45% {
+    outline-color: color-mix(in srgb, var(--accent) 78%, transparent);
+    box-shadow: 0 0 0 7px color-mix(in srgb, var(--accent) 15%, transparent);
   }
 }
 

@@ -136,7 +136,8 @@ public class PostSocialService {
 			parent = replyTarget.getParent() == null ? replyTarget : replyTarget.getParent();
 		}
 
-		PostComment saved = comments.save(new PostComment(slug, author, parent, content));
+		PostComment quoted = replyTarget != null && replyTarget.getParent() != null ? replyTarget : null;
+		PostComment saved = comments.save(new PostComment(slug, author, parent, quoted, content));
 		notifyComment(slug, author, saved, replyTarget, parent);
 
 		return toDto(saved, List.of(), author.getId(), Map.of(), Set.of());
@@ -303,6 +304,9 @@ public class PostSocialService {
 		List<CommentDto> children = replies.stream()
 				.map(reply -> toDto(reply, List.of(), currentId, likeCounts, likedByMe))
 				.toList();
+		PostComment quoted = comment.getReplyTo();
+		String replyToName = quoted == null ? null : quoted.getUser().getDisplayName();
+		String replyToExcerpt = quoted == null ? null : excerpt(quoted.getContent());
 		return new CommentDto(
 				comment.getId(),
 				comment.getContent(),
@@ -313,6 +317,8 @@ public class PostSocialService {
 				comment.isDeleted(),
 				likeCounts.getOrDefault(comment.getId(), 0L),
 				likedByMe.contains(comment.getId()),
+				replyToName,
+				replyToExcerpt,
 				children);
 	}
 

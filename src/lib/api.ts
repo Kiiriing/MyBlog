@@ -41,6 +41,9 @@ export type PostComment = {
   deleted: boolean
   likeCount: number
   likedByMe: boolean
+  /** 楼中楼引用回复时，被回复人的昵称与评论摘要 */
+  replyToName: string | null
+  replyToExcerpt: string | null
   replies: PostComment[]
 }
 

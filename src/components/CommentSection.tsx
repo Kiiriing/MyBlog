@@ -111,7 +111,7 @@ export default function CommentSection({ slug }: { slug: string }) {
     return () => cancelAnimationFrame(frame)
   }, [replyTo])
 
-  /* 从通知里的 #comment-xxx 进入时，等评论加载完再定位并高亮 */
+  /* 从通知里的 #comment-xxx 进入时，等评论加载完再定位到屏幕中间偏上并闪烁提示 */
   useEffect(() => {
     if (loading || !data) return
     const match = /^#comment-(.+)$/.exec(location.hash)
@@ -120,9 +120,10 @@ export default function CommentSection({ slug }: { slug: string }) {
     const frame = requestAnimationFrame(() => {
       const target = document.getElementById(`comment-${match[1]}`)
       if (!target) return
-      target.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      const top = window.scrollY + target.getBoundingClientRect().top - window.innerHeight * 0.34
+      window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' })
       target.classList.add('is-target')
-      timer = window.setTimeout(() => target.classList.remove('is-target'), 2600)
+      timer = window.setTimeout(() => target.classList.remove('is-target'), 2500)
     })
     return () => {
       cancelAnimationFrame(frame)
@@ -261,6 +262,15 @@ export default function CommentSection({ slug }: { slug: string }) {
               </button>
             ) : null}
           </header>
+
+          {comment.replyToName && !comment.deleted ? (
+            <div className="comment__quote">
+              <span className="comment__quote-name mono">
+                {t('回复', 'Reply to')} @{comment.replyToName}
+              </span>
+              <span className="comment__quote-text">{comment.replyToExcerpt}</span>
+            </div>
+          ) : null}
 
           <p className="comment__body">{comment.content}</p>
 

@@ -31,6 +31,9 @@ public final class PostSocialDtos {
 			boolean deleted,
 			long likeCount,
 			boolean likedByMe,
+			/** 楼中楼引用回复时，被回复人的昵称与评论摘要 */
+			String replyToName,
+			String replyToExcerpt,
 			List<CommentDto> replies) {
 	}
 

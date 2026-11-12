@@ -178,7 +178,14 @@ function InboxRow({ item, index, onDelete }: InboxRowProps) {
           ) : null}
         </button>
         {item.link ? (
-          <Link className="inbox__item-link mono" to={item.link} onClick={closePanel}>
+          <Link
+            className="inbox__item-link mono"
+            to={item.link}
+            onClick={() => {
+              if (!item.read) void markRead(item.id)
+              closePanel()
+            }}
+          >
             {t('查看详情', 'View details')} <span aria-hidden="true">↗</span>
           </Link>
         ) : null}
