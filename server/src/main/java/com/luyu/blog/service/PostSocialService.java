@@ -90,29 +90,66 @@ public class PostSocialService {
 				.collect(Collectors.groupingBy(comment -> comment.getParent().getId()));
 
 		Comparator<PostComment> topOrder = Comparator.comparing(PostComment::getCreatedAt).reversed();
+		Comparator<PostComment> replyOrder = Comparator.comparing(PostComment::getCreatedAt);
 		if ("likes".equalsIgnoreCase(sort)) {
 			topOrder = Comparator
 					.comparingLong((PostComment comment) -> likeCounts.getOrDefault(comment.getId(), 0L))
 					.reversed()
 					.thenComparing(Comparator.comparing(PostComment::getCreatedAt).reversed());
+			/* 楼中楼同样按点赞数排，点赞相同再按时间先后 */
+			replyOrder = Comparator
+					.comparingLong((PostComment comment) -> likeCounts.getOrDefault(comment.getId(), 0L))
+					.reversed()
+					.thenComparing(Comparator.comparing(PostComment::getCreatedAt));
 		}
 
 		List<CommentDto> items = new ArrayList<>();
 		Comparator<PostComment> order = topOrder;
+		Comparator<PostComment> childOrder = replyOrder;
 		all.stream()
 				/* 已删除的评论不再出现在列表里；父评论被删除时，把仍存在的回复提升为一级，避免内容消失 */
 				.filter(comment -> !comment.isDeleted())
 				.filter(comment -> comment.getParent() == null || comment.getParent().isDeleted())
 				.sorted(order)
 				.forEach(comment -> {
-					List<PostComment> children = replies.getOrDefault(comment.getId(), List.of()).stream()
-							.sorted(Comparator.comparing(PostComment::getCreatedAt))
-							.toList();
+					List<PostComment> children = orderReplies(
+							replies.getOrDefault(comment.getId(), List.of()), childOrder);
 					items.add(toDto(comment, children, currentId, likeCounts, likedByMe));
 				});
 
 		long visible = all.stream().filter(comment -> !comment.isDeleted()).count();
 		return new CommentListDto(items, (int) visible);
+	}
+
+	/** 子评论排序；若某条回复是回复楼中楼里的另一条，被回复的那条必须排在前面 */
+	private List<PostComment> orderReplies(List<PostComment> children, Comparator<PostComment> order) {
+		List<PostComment> sorted = children.stream()
+				.sorted(order)
+				.collect(Collectors.toCollection(ArrayList::new));
+		int guard = sorted.size() * sorted.size() + sorted.size();
+		while (guard-- > 0) {
+			boolean moved = false;
+			for (int i = 0; i < sorted.size(); i++) {
+				PostComment comment = sorted.get(i);
+				UUID targetId = comment.getReplyTo() == null ? null : comment.getReplyTo().getId();
+				if (targetId == null) continue;
+				int targetIndex = indexOfComment(sorted, targetId);
+				if (targetIndex < 0 || targetIndex <= i) continue;
+				sorted.remove(i);
+				sorted.add(indexOfComment(sorted, targetId) + 1, comment);
+				moved = true;
+				break;
+			}
+			if (!moved) break;
+		}
+		return sorted;
+	}
+
+	private int indexOfComment(List<PostComment> comments, UUID id) {
+		for (int i = 0; i < comments.size(); i++) {
+			if (comments.get(i).getId().equals(id)) return i;
+		}
+		return -1;
 	}
 
 	public CommentDto addComment(UserPrincipal principal, String rawSlug, CommentRequest request) {
