@@ -404,6 +404,11 @@
     grid-template-columns: 28px minmax(0, 1fr) auto;
   }
 
+  /* 触屏点按后 hover 态会保留，展开格放开高度上限，多行条目也能完整显示 */
+  .about__cap:hover .about__cap-items {
+    max-height: none;
+  }
+
   .about__cap-plus {
     display: none;
   }
