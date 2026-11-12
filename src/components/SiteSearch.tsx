@@ -24,6 +24,13 @@ const CLOSE_MS =
     ? 0
     : 220
 
+/** 展开动画时长，和 CSS 里的 search-panel-in 保持一致；动画没放完之前的点击一律忽略 */
+const OPEN_MS =
+  typeof window !== 'undefined' &&
+  window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    ? 0
+    : 440
+
 /* 全站搜索：头部的搜索按钮打开一层面板，匹配页面 / 作品 / 手记 / 更新 / 履历。
    面板挂在 body 上，避免被头部的 mix-blend-mode 反相；
    打开、收起、跳转都有过渡，收起动画放完才真正卸载。 */
@@ -41,6 +48,9 @@ export default function SiteSearch() {
   const listRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const closeTimer = useRef(0)
+  const openTimer = useRef(0)
+  /* 展开动画结束前为 false：此时的点击（关闭遮罩、点结果、ESC）都不生效 */
+  const ready = useRef(false)
 
   const mounted = phase !== 'closed'
   const tokens = useMemo(() => splitTokens(query), [query])
@@ -54,6 +64,12 @@ export default function SiteSearch() {
     setQuery('')
     setActive(0)
     setPhase('open')
+    /* 展开动画放完再接受点击，避免连点或动画途中误触把面板关掉 */
+    ready.current = false
+    window.clearTimeout(openTimer.current)
+    openTimer.current = window.setTimeout(() => {
+      ready.current = true
+    }, OPEN_MS)
     if (updatesLoaded.current) return
     updatesLoaded.current = true
     api
@@ -66,6 +82,7 @@ export default function SiteSearch() {
   }, [])
 
   const close = useCallback(() => {
+    if (!ready.current) return
     setPhase((prev) => (prev === 'open' ? 'closing' : prev))
     window.clearTimeout(closeTimer.current)
     closeTimer.current = window.setTimeout(() => {
@@ -76,6 +93,7 @@ export default function SiteSearch() {
 
   const jump = useCallback(
     (item: SearchItem) => {
+      if (!ready.current) return
       setPhase('closing')
       window.clearTimeout(closeTimer.current)
       closeTimer.current = window.setTimeout(() => {
@@ -108,7 +126,13 @@ export default function SiteSearch() {
     return () => window.removeEventListener('keydown', onKey)
   }, [close, openPanel, phase])
 
-  useEffect(() => () => window.clearTimeout(closeTimer.current), [])
+  useEffect(
+    () => () => {
+      window.clearTimeout(closeTimer.current)
+      window.clearTimeout(openTimer.current)
+    },
+    []
+  )
 
   /* 面板打开期间锁住页面滚动，收起动画结束后再放开 */
   useEffect(() => {
