@@ -120,7 +120,9 @@ export default function App() {
     later(() => {
       setRendered(locationRef.current)
       setLeaving(false)
-      resetScroll()
+      /* 带评论锚点时不回顶，交给 CommentSection 定位，避免先回顶再滚回来 */
+      if (locationRef.current.hash.startsWith('#comment-')) scheduleRefresh(520)
+      else resetScroll()
       later(() => setPageReady(true), 90)
     }, prefersReducedMotion() ? 140 : 470)
   }, [location.pathname])
@@ -142,6 +144,9 @@ export default function App() {
     if (!ui.introDone || showPreloader || !pageReady || !location.hash) return
 
     const id = location.hash.replace('#', '')
+    /* 评论锚点由 CommentSection 在评论加载完后自己定位到视口中间偏上，
+       这里再做一次「贴顶对齐」会把已经定位好的评论重新顶到屏幕顶部 */
+    if (id.startsWith('comment-')) return
     const timer = later(() => {
       const el = document.getElementById(id)
       if (!el) return

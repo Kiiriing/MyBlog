@@ -151,11 +151,11 @@ export default function CommentSection({ slug }: { slug: string }) {
       align(target)
       target.classList.add('is-target')
       highlightTimer = window.setTimeout(() => target.classList.remove('is-target'), 2500)
-      /* 图片、字体加载会改变上方高度，落位后偏移明显再校正一次 */
+      /* 图片、字体加载会改变上方高度，滚动结束后偏移明显再校正一次 */
       settleTimer = window.setTimeout(() => {
         const desired = window.innerHeight * 0.4
         if (!interrupted && Math.abs(target.getBoundingClientRect().top - desired) > 80) align(target)
-      }, 1100)
+      }, 1400)
     })
 
     return () => {
