@@ -171,7 +171,11 @@ export default function CommentSection({ slug }: { slug: string }) {
       if (!target) return
       align(target)
       target.classList.add('is-target')
-      highlightTimer = window.setTimeout(() => target.classList.remove('is-target'), 2500)
+      highlightTimer = window.setTimeout(() => {
+        target.classList.remove('is-target')
+        /* 高亮结束把地址栏锚点抹掉，刷新或再分享时不会重复跳动；replace 不重新加载页面 */
+        navigate(`${location.pathname}${location.search}`, { replace: true })
+      }, 2500)
       /* 图片、字体加载会改变上方高度，滚动结束后偏移明显再校正一次 */
       settleTimer = window.setTimeout(() => {
         const desired = window.innerHeight * 0.4
