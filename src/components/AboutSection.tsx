@@ -9,9 +9,11 @@ import { useNearViewport } from '../hooks/useNearViewport'
 import { useIdleReady } from '../hooks/useIdleReady'
 import { useReveal } from '../hooks/useReveal'
 import { useI18n } from '../store/i18n'
+import { useUi } from '../store/ui'
 import '../styles/components/AboutSection.css'
 
-const Lanyard = lazy(() => import('./Lanyard'))
+const loadLanyard = () => import('./Lanyard')
+const Lanyard = lazy(loadLanyard)
 
 export default function AboutSection() {
   const { t } = useI18n()
@@ -34,18 +36,46 @@ export default function AboutSection() {
   /* 吊牌在第三屏，首屏看不到：接近视口时再挂载，并等浏览器空闲，
      让建上下文、编译着色器、上传贴图都发生在滚动停下之后 */
   const [lanyardHost, lanyardNear] = useNearViewport<HTMLDivElement>('1400px 0px')
-  /* 首屏加载后先预热一次：把建场景 / 编译着色器 / 上传贴图的开销放在
-     用户还在看首屏时完成，滚到吊牌时只剩物理启动，低配机也不会在滚动中卡住 */
+  /* 入场结束后再预热吊牌场景：把建上下文 / 编译着色器 / 上传贴图的开销
+     放在用户还在看首屏时完成，滚到吊牌时只剩物理启动，低配机也不会在滚动中卡住 */
   const [lanyardWarm, setLanyardWarm] = useState(false)
-  const lanyardReady = useIdleReady(lanyardNear || lanyardWarm)
+  const [introSettled, setIntroSettled] = useState(false)
+  const ui = useUi()
+  /* 入场动画 + 首屏标题动画全部落定前不挂载：
+     1400px 预取范围在大窗口下首屏就会命中，必须自己再挡一层，
+     否则建 WebGL 上下文的同步长任务会直接顶掉入场动画的帧 */
+  const lanyardReady = useIdleReady(introSettled && (lanyardNear || lanyardWarm))
+
+  /* 入场动画一开始就把吊牌模块异步取回来：只下载 / 解析，不在动画里建场景。
+     放进空闲回调，动画正在跑时不和它抢主线程；慢一点没关系，不顶帧 */
+  useEffect(() => {
+    /* 运行时守卫：Safari 没有 requestIdleCallback */
+    const idle = window.requestIdleCallback?.bind(window)
+    if (!idle) {
+      const timer = window.setTimeout(() => void loadLanyard(), 400)
+      return () => window.clearTimeout(timer)
+    }
+    const handle = idle(() => void loadLanyard(), { timeout: 4000 })
+    return () => window.cancelIdleCallback?.(handle)
+  }, [])
 
   useEffect(() => {
-    const conn = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection
-    /* 省流模式不做预热，仍等接近视口再加载 */
-    if (conn?.saveData) return
-    const timer = window.setTimeout(() => setLanyardWarm(true), 1200)
+    /* 入场动画结束前绝不建场景：建上下文、编译着色器、上传贴图
+       都是同步长任务，叠在动画上就是肉眼可见的卡顿 */
+    if (!ui.introDone) return
+
+    /* 首屏标题动画约 2.5 秒，再等 3 秒才放开挂载 */
+    const timer = window.setTimeout(() => {
+      setIntroSettled(true)
+
+      const conn = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection
+      /* 省流模式不做预热，仍等接近视口再加载 */
+      if (conn?.saveData) return
+      /* 用户已经往下走了就不在视野里建场景，交给接近视口的挂载逻辑 */
+      if (window.scrollY < window.innerHeight * 0.6) setLanyardWarm(true)
+    }, 3000)
     return () => window.clearTimeout(timer)
-  }, [])
+  }, [ui.introDone])
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 1100px)')
