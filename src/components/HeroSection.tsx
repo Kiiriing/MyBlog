@@ -282,7 +282,7 @@ export default function HeroSection() {
         <div className="hero__veil hero-fade" aria-hidden="true">
           <div className="hero__veil-inner">
             <Suspense fallback={null}>
-              <DitherVeil src="/art/chrome-head.png" fit="contain" inkColor="#08080a" />
+              <DitherVeil src="/art/chrome-head.webp" fit="contain" inkColor="#08080a" />
             </Suspense>
           </div>
         </div>

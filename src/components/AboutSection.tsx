@@ -178,8 +178,8 @@ export default function AboutSection() {
                 {lanyardReady ? (
                   <Suspense fallback={null}>
                     <Lanyard
-                      frontImage="/art/avatar-kiiriing.png"
-                      backImage="/art/lanyard-back.png"
+                      frontImage="/art/avatar-kiiriing.webp"
+                      backImage="/art/lanyard-back.webp"
                       cardColor="#f2ede4"
                       size={compactLanyard ? 0.57 : 0.33}
                       strapLength={0.35}

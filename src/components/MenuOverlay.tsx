@@ -120,7 +120,7 @@ export default function MenuOverlay() {
 
           <aside className="menu__preview">
             <ProfileCard
-              avatarUrl="/art/avatar-kiiriing.png"
+              avatarUrl="/art/avatar-kiiriing.webp"
               miniAvatarUrl="/art/avatar-kiiriing-sm.png"
               name="Kiiriing"
               title={t('全栈网页开发者', 'Full-stack Web Developer')}

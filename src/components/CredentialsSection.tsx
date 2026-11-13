@@ -10,14 +10,14 @@ import PassageGallery, { type PassageItem } from './PassageGallery'
 import { useI18n } from '../store/i18n'
 import '../styles/components/CredentialsSection.css'
 
-/* 荣誉通道：先用 public/art/mywork 里的临时照片，换真图时同名替换即可 */
+/* 荣誉通道：先用 public/art/mywork 里的临时照片，换真图时同名替换即可（.webp） */
 const passageItems: PassageItem[] = [
-  { src: '/art/mywork/honor-1.jpg', alt: '颁奖典礼', title: '国际大学生创新大赛 · 一等奖' },
-  { src: '/art/mywork/honor-2.jpg', alt: '奖杯与奖牌', title: '第三届全国技能大赛 · 二等奖' },
-  { src: '/art/mywork/honor-3.jpg', alt: '比赛现场', title: '大数据技术服务赛项 · 二等奖' },
-  { src: '/art/mywork/honor-4.jpg', alt: '证书细节', title: 'AI 创新编程 · 完赛证书' },
-  { src: '/art/mywork/honor-5.jpg', alt: '路演舞台', title: 'ICode 未来编程 · 二等奖' },
-  { src: '/art/mywork/honor-6.jpg', alt: '志愿服务', title: '志愿服务 · 20+ hours' }
+  { src: '/art/mywork/honor-1.webp', alt: '颁奖典礼', title: '国际大学生创新大赛 · 一等奖' },
+  { src: '/art/mywork/honor-2.webp', alt: '奖杯与奖牌', title: '第三届全国技能大赛 · 二等奖' },
+  { src: '/art/mywork/honor-3.webp', alt: '比赛现场', title: '大数据技术服务赛项 · 二等奖' },
+  { src: '/art/mywork/honor-4.webp', alt: '证书细节', title: 'AI 创新编程 · 完赛证书' },
+  { src: '/art/mywork/honor-5.webp', alt: '路演舞台', title: 'ICode 未来编程 · 二等奖' },
+  { src: '/art/mywork/honor-6.webp', alt: '志愿服务', title: '志愿服务 · 20+ hours' }
 ]
 
 function AwardRow({

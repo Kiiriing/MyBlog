@@ -20,7 +20,7 @@
 - **LetterGlitch**（React Bits 字符故障背景，`src/components/LetterGlitch.tsx`）：首屏整屏铺满的 WebGL2 字符场（字形图集 + 状态贴图、流动噪声、游走撕裂与指针火花），默认参数与官方一致，`prefers-reduced-motion` 下退化为静止字符
 - **LogoLoop**（React Bits 技术栈长条，`src/components/LogoLoop.jsx` + 类型声明 `.d.ts`）：关于页底部的 25 个技术栈品牌图标（`public/art/logo`），按语言 → 前端 / 后端框架 → 运行时 → 数据库 → 构建与工具 → 部署与系统 → 编辑器分层排列，连续滚动、可拖拽甩动、悬停停下并恢复品牌色
 - **DitherVeil**（React Bits 抖动之幕，`src/components/DitherVeil.jsx`）：把镀铬头像压成 1-bit 点阵
-- **Web Audio**（`src/lib/vinylAudio.ts`）：左下角黑胶播放器读真实音频——`public/art/music` 下的 mp3 经 `HTMLAudioElement` 解码，再走 `MediaElementSource → 母带增益 → AnalyserNode → 输出`，频谱柱读真实波形。目前十首：`☔️` / `Cry For Me` / `溯` / `SPECIALZ` / `You Got Me (Mashup)` / `Turning Around(余烬重燃)` / `远航星的告别` / `小小奇迹` / `反乌托邦 × 拼接遗憾` / `人间白首`，内圈封面依次是 `covers/cover-1.jpg` ~ `cover-10.jpg`（第 8 首为 `cover-8.png`）
+- **Web Audio**（`src/lib/vinylAudio.ts`）：左下角黑胶播放器读真实音频——`public/art/music` 下的 mp3 经 `HTMLAudioElement` 解码，再走 `MediaElementSource → 母带增益 → AnalyserNode → 输出`，频谱柱读真实波形。目前十首：`☔️` / `Cry For Me` / `溯` / `SPECIALZ` / `You Got Me (Mashup)` / `Turning Around(余烬重燃)` / `远航星的告别` / `小小奇迹` / `反乌托邦 × 拼接遗憾` / `人间白首`，内圈封面依次是 `covers/cover-1.webp` ~ `covers/cover-10.webp`
 - 组件样式集中在 `src/styles/components/*.css`（51 个组件样式文件，`src/styles` 合计 53 个），由各组件按需引入
 - 界面文案支持中 / 英切换（`src/store/i18n.ts`，选择写入 `localStorage`）；手记正文与项目长文属于内容，不随界面语言切换
 

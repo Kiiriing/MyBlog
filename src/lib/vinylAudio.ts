@@ -38,7 +38,7 @@ export const vinylTracks: VinylTrack[] = [
     cn: 'Radiax',
     side: 'SIDE A · 01',
     file: 'Radiax - ☔️.mp3',
-    cover: '/art/music/covers/cover-1.jpg',
+    cover: '/art/music/covers/cover-1.webp',
     duration: 117.13
   },
   {
@@ -46,7 +46,7 @@ export const vinylTracks: VinylTrack[] = [
     cn: 'feat. 愛海 · Michita',
     side: 'SIDE A · 02',
     file: 'CryForMe.Feat.愛海.-Michita.mp3',
-    cover: '/art/music/covers/cover-2.jpg',
+    cover: '/art/music/covers/cover-2.webp',
     duration: 303.05
   },
   {
@@ -55,7 +55,7 @@ export const vinylTracks: VinylTrack[] = [
     cn: 'Sù',
     side: 'SIDE A · 03',
     file: '溯.mp3',
-    cover: '/art/music/covers/cover-3.jpg',
+    cover: '/art/music/covers/cover-3.webp',
     duration: 192.03
   },
   {
@@ -63,7 +63,7 @@ export const vinylTracks: VinylTrack[] = [
     cn: 'King Gnu',
     side: 'SIDE A · 04',
     file: 'SPECIALZ-King+Gnu.mp3',
-    cover: '/art/music/covers/cover-4.jpg',
+    cover: '/art/music/covers/cover-4.webp',
     duration: 239.28
   },
   {
@@ -71,7 +71,7 @@ export const vinylTracks: VinylTrack[] = [
     cn: 'MaiGet',
     side: 'SIDE A · 05',
     file: 'MaiGet - You Got Me (Mashup).mp3',
-    cover: '/art/music/covers/cover-5.jpg',
+    cover: '/art/music/covers/cover-5.webp',
     duration: 128.94
   },
   {
@@ -79,7 +79,7 @@ export const vinylTracks: VinylTrack[] = [
     cn: '鸣潮先约电台 · Grabbitz',
     side: 'SIDE A · 06',
     file: 'Turning Around (余烬重燃)-Grabbitz.mp3',
-    cover: '/art/music/covers/cover-6.jpg',
+    cover: '/art/music/covers/cover-6.webp',
     duration: 247.88
   },
   {
@@ -87,7 +87,7 @@ export const vinylTracks: VinylTrack[] = [
     cn: '鸣潮先约电台',
     side: 'SIDE A · 07',
     file: '远航星的告别-鸣潮先约电台.mp3',
-    cover: '/art/music/covers/cover-7.jpg',
+    cover: '/art/music/covers/cover-7.webp',
     duration: 225.07
   },
   {
@@ -95,7 +95,7 @@ export const vinylTracks: VinylTrack[] = [
     cn: '鸣潮先约电台 · jixwang · 飞行雪绒',
     side: 'SIDE A · 08',
     file: '小小奇迹-鸣潮先约电台.mp3',
-    cover: '/art/music/covers/cover-8.png',
+    cover: '/art/music/covers/cover-8.webp',
     duration: 262.74
   },
   {
@@ -103,7 +103,7 @@ export const vinylTracks: VinylTrack[] = [
     cn: 'Vince丷 · 见过夏天P · Ciyo',
     side: 'SIDE A · 09',
     file: '反乌托邦.拼接遗憾.mp3',
-    cover: '/art/music/covers/cover-9.jpg',
+    cover: '/art/music/covers/cover-9.webp',
     duration: 113.74
   },
   {
@@ -112,7 +112,7 @@ export const vinylTracks: VinylTrack[] = [
     cn: '狐妖小红娘 · 竹业篇插曲',
     side: 'SIDE A · 10',
     file: '人间白首..狐妖小红娘.竹业篇插曲10.mp3',
-    cover: '/art/music/covers/cover-10.jpg',
+    cover: '/art/music/covers/cover-10.webp',
     duration: 252.79
   }
   /* 后面的曲位先空着：加歌时在这里补 { title, cn, side, file, cover, duration } */

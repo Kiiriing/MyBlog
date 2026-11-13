@@ -60,12 +60,12 @@ type Props = {
 }
 
 const FALLBACK_ITEMS: PassageItem[] = [
-  { src: '/art/mywork/honor-1.jpg', alt: 'Award ceremony', title: 'Award ceremony' },
-  { src: '/art/mywork/honor-2.jpg', alt: 'Trophy and medal', title: 'Trophy and medal' },
-  { src: '/art/mywork/honor-3.jpg', alt: 'Hackathon night', title: 'Hackathon night' },
-  { src: '/art/mywork/honor-4.jpg', alt: 'Certificate', title: 'Certificate' },
-  { src: '/art/mywork/honor-5.jpg', alt: 'On stage', title: 'On stage' },
-  { src: '/art/mywork/honor-6.jpg', alt: 'Volunteering', title: 'Volunteering' }
+  { src: '/art/mywork/honor-1.webp', alt: 'Award ceremony', title: 'Award ceremony' },
+  { src: '/art/mywork/honor-2.webp', alt: 'Trophy and medal', title: 'Trophy and medal' },
+  { src: '/art/mywork/honor-3.webp', alt: 'Hackathon night', title: 'Hackathon night' },
+  { src: '/art/mywork/honor-4.webp', alt: 'Certificate', title: 'Certificate' },
+  { src: '/art/mywork/honor-5.webp', alt: 'On stage', title: 'On stage' },
+  { src: '/art/mywork/honor-6.webp', alt: 'Volunteering', title: 'Volunteering' }
 ]
 
 /* 与官方一样的确定性随机：同一格永远得到同一个结果 */
