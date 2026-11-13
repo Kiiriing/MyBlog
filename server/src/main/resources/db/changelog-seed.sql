@@ -1,5 +1,15 @@
 -- 更新页历史版本：由 src/data/changelog.ts 导出，外加后续 git 更新补记的版本
 
+insert into changelog_entries (id, version, date_label, occurred_at, title) values (gen_random_uuid(), 'v3.5.0', '2026.11.14 00:05 – 01:45', '2026-11-14T00:05:00+08:00', '边缘缓存、图片瘦身与回源提速');
+insert into changelog_items (entry_id, position, item) values ((select id from changelog_entries where version = 'v3.5.0'), 0, '性能：首页图片全面换成 WebP——首屏 chrome head 1000×1033 PNG 1.42MB → 196KB，六张荣誉照 1920×1920 合计 2.42MB → 308KB，`dist/art` 位图总量 5.6MB → 1.55MB。');
+insert into changelog_items (entry_id, position, item) values ((select id from changelog_entries where version = 'v3.5.0'), 1, '性能：头像 180KB → 23KB，挂牌背面 242KB → 65KB，十张专辑封面约 970KB → 438KB，所有引用同步指向新文件，首屏不再等大图。');
+insert into changelog_items (entry_id, position, item) values ((select id from changelog_entries where version = 'v3.5.0'), 2, '性能：字体改为自托管 8 个 `@font-face`，移除 Google Fonts 外链，正文与标题字体改为预加载，大陆访问少一次第三方阻塞。');
+insert into changelog_items (entry_id, position, item) values ((select id from changelog_entries where version = 'v3.5.0'), 3, '缓存：Cloudflare 新增 7 条缓存规则——`/assets` 与字体 1 年、`/art` 与 `/brand` 30 天、`/sitemap.xml` 与 `/robots.txt` 1 小时，4xx/5xx 不缓存。');
+insert into changelog_items (entry_id, position, item) values ((select id from changelog_entries where version = 'v3.5.0'), 4, '缓存：修复统计接口始终不缓存的两个问题——SPA 规则误匹配无扩展名路径、源站 `Pragma: no-cache` 与 `Expires: 0` 被判为不可缓存；`/api/posts/stats` 现边缘缓存 60 秒。');
+insert into changelog_items (entry_id, position, item) values ((select id from changelog_entries where version = 'v3.5.0'), 5, '缓存：开启 Tiered Cache，最低 TLS 提升到 1.2；实测带哈希资源与图片命中后由边缘直接返回，HTML 与 SPA 路由仍不缓存，发版即时生效。');
+insert into changelog_items (entry_id, position, item) values ((select id from changelog_entries where version = 'v3.5.0'), 6, '服务端：Nginx 增加 upstream keepalive（复用到 Spring Boot 的连接）与 open_file_cache；Spring Boot 开启 JSON gzip，`/api/changelog` 响应 15639 → 7273 字节。');
+insert into changelog_items (entry_id, position, item) values ((select id from changelog_entries where version = 'v3.5.0'), 7, '说明：Cloudflare Free 无法指定大陆接入节点，Argo、Prefetch 等能力不可用；静态资源已基本全部走边缘，剩余延迟来自「边缘 → 源站」回源链路。');
+
 insert into changelog_entries (id, version, date_label, occurred_at, title) values (gen_random_uuid(), 'v3.4.0', '2026.11.13 15:30 – 22:39', '2026-11-13T15:30:00+08:00', '安全加固、性能整修与反馈快捷键');
 insert into changelog_items (entry_id, position, item) values ((select id from changelog_entries where version = 'v3.4.0'), 0, '安全：JWT 密钥不再内置默认值，缺失或强度不足时直接拒绝启动；登录失败按「账号 + IP + 15 分钟」限流，连续 5 次错误后返回 429。');
 insert into changelog_items (entry_id, position, item) values ((select id from changelog_entries where version = 'v3.4.0'), 1, '安全：`X-Forwarded-For` 默认不再信任，只有显式开启代理信任时才解析；新增会话版本号，重置密码后旧 token 立即失效。');
