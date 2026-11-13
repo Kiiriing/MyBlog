@@ -254,6 +254,34 @@
   padding-top: 12px;
 }
 
+/* 通知分页：列表底部的「加载更多」 */
+.inbox__load-more {
+  display: block;
+  width: 100%;
+  margin: 8px 0 4px;
+  padding: 12px 0;
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  background: transparent;
+  color: var(--fg-dim);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease,
+    color 0.3s ease;
+}
+
+.inbox__load-more:hover:not(:disabled) {
+  border-color: var(--fg);
+  color: var(--fg);
+}
+
+.inbox__load-more:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 .inbox__item {
   position: relative;
   width: 100%;

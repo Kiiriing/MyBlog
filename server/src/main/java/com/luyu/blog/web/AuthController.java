@@ -28,9 +28,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
 	private final AuthService authService;
+	private final ClientIp clientIps;
 
-	public AuthController(AuthService authService) {
+	public AuthController(AuthService authService, ClientIp clientIps) {
 		this.authService = authService;
+		this.clientIps = clientIps;
 	}
 
 	/** 获取图片人机验证码（发送邮箱验证码前必须通过） */
@@ -42,7 +44,7 @@ public class AuthController {
 	/** 发送邮箱验证码：注册或重置密码，含人机验证与频率限制 */
 	@PostMapping("/code")
 	public CodeResponse code(@Valid @RequestBody CodeRequest request, HttpServletRequest http) {
-		return authService.sendCode(request, ClientIp.resolve(http));
+		return authService.sendCode(request, clientIps.resolve(http));
 	}
 
 	/** 6 位验证码输完即校验，仅用于前端即时提示，不消费验证码 */
@@ -54,7 +56,7 @@ public class AuthController {
 
 	@PostMapping("/register")
 	public AuthResponse register(@Valid @RequestBody RegisterRequest request, HttpServletRequest http) {
-		return authService.register(request, ClientIp.resolve(http));
+		return authService.register(request, clientIps.resolve(http));
 	}
 
 	@PostMapping("/password/reset")
@@ -65,7 +67,7 @@ public class AuthController {
 
 	@PostMapping("/login")
 	public AuthResponse login(@Valid @RequestBody LoginRequest request, HttpServletRequest http) {
-		return authService.login(request, ClientIp.resolve(http));
+		return authService.login(request, clientIps.resolve(http));
 	}
 
 	@GetMapping("/me")

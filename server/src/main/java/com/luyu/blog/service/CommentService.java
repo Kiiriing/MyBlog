@@ -178,12 +178,26 @@ public class CommentService {
 				.orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "评论不存在"));
 		UUID currentId = principal == null ? null : principal.id();
 
-		List<PostComment> children = comments.findByParent_IdOrderByCreatedAtAsc(commentId).stream()
-				.filter(child -> !child.isDeleted())
+		boolean byLikes = "likes".equalsIgnoreCase(sort);
+		int pageSize = clampSize(size);
+		int offset = Math.max(0, page) * pageSize;
+		long total = comments.countByParent_IdAndDeletedFalse(commentId);
+		List<PostComment> pageRows = byLikes
+				? comments.findRepliesByLikes(commentId, pageSize, offset)
+				: comments.findRepliesByRecent(commentId, pageSize, offset);
+		if (pageRows.isEmpty()) {
+			return new ReplyListDto(List.of(), total, false);
+		}
+
+		List<UUID> ids = pageRows.stream().map(PostComment::getId).toList();
+		Map<UUID, PostComment> detailed = comments.findDetailedByIdIn(ids).stream()
+				.collect(Collectors.toMap(PostComment::getId, comment -> comment));
+		List<PostComment> pageItems = ids.stream()
+				.map(detailed::get)
+				.filter(java.util.Objects::nonNull)
 				.toList();
 
-		Set<UUID> ids = children.stream().map(PostComment::getId).collect(Collectors.toSet());
-		List<CommentLike> likes = ids.isEmpty() ? List.of() : commentLikes.findByComment_IdIn(ids);
+		List<CommentLike> likes = commentLikes.findByComment_IdIn(ids);
 		Map<UUID, Long> likeCounts = likes.stream()
 				.collect(Collectors.groupingBy(like -> like.getComment().getId(), Collectors.counting()));
 		Set<UUID> likedByMe = currentId == null ? Set.of()
@@ -192,14 +206,10 @@ public class CommentService {
 						.map(like -> like.getComment().getId())
 						.collect(Collectors.toSet());
 
-		List<PostComment> sorted = orderReplies(children, replyOrder("likes".equalsIgnoreCase(sort), likeCounts));
-		int pageSize = clampSize(size);
-		int from = Math.min(Math.max(0, page) * pageSize, sorted.size());
-		int to = Math.min(from + pageSize, sorted.size());
-		List<CommentDto> items = sorted.subList(from, to).stream()
+		List<CommentDto> items = orderReplies(pageItems, replyOrder(byLikes, likeCounts)).stream()
 				.map(reply -> toDto(reply, List.of(), 0, currentId, likeCounts, likedByMe))
 				.toList();
-		return new ReplyListDto(items, sorted.size(), to < sorted.size());
+		return new ReplyListDto(items, total, offset + pageRows.size() < total);
 	}
 
 	private Comparator<PostComment> replyOrder(boolean byLikes, Map<UUID, Long> likeCounts) {

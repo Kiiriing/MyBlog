@@ -372,7 +372,8 @@ export class VinylEngine {
   private ensureAudio() {
     if (this.audio) return this.audio
     const audio = new Audio()
-    audio.preload = 'auto'
+    /* 首访只取元数据：避免首页自动播放时立刻下载整首 mp3（单曲数 MB） */
+    audio.preload = 'metadata'
     audio.volume = 1
     audio.addEventListener('loadedmetadata', this.handleDuration)
     audio.addEventListener('durationchange', this.handleDuration)
@@ -408,6 +409,9 @@ export class VinylEngine {
   private startAudio() {
     const audio = this.audio
     if (!audio) return
+
+    /* 真正开始播放时再切换到完整预加载，兼顾首访流量与开声速度 */
+    audio.preload = 'auto'
 
     const ctx = this.ctx
     if (ctx && ctx.state === 'suspended') {

@@ -1,8 +1,10 @@
 package com.luyu.blog.service;
 
+import com.luyu.blog.domain.LoginAttempt;
 import com.luyu.blog.domain.Role;
 import com.luyu.blog.domain.User;
 import com.luyu.blog.domain.VerificationCode;
+import com.luyu.blog.repo.LoginAttemptRepository;
 import com.luyu.blog.repo.UserRepository;
 import com.luyu.blog.security.JwtService;
 import com.luyu.blog.security.UserPrincipal;
@@ -18,10 +20,16 @@ import com.luyu.blog.web.dto.AuthDtos.ResetPasswordRequest;
 import com.luyu.blog.web.dto.AuthDtos.UserDto;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Locale;
 import java.util.Optional;
 
@@ -31,21 +39,34 @@ public class AuthService {
 	private static final String LOGIN_FAILED = "用户名 / 邮箱或密码不正确";
 
 	private final UserRepository users;
+	private final LoginAttemptRepository loginAttempts;
 	private final PasswordEncoder passwordEncoder;
 	private final JwtService jwtService;
 	private final VerificationCodeService verificationCodes;
 	private final CaptchaService captchaService;
 	private final String adminEmail;
+	private final long loginWindowSeconds;
+	private final long loginMaxAttempts;
+	/** 失败计数必须在独立事务里提交，否则会随登录异常一起回滚 */
+	private final TransactionTemplate requiresNew;
 
-	public AuthService(UserRepository users, PasswordEncoder passwordEncoder, JwtService jwtService,
-			VerificationCodeService verificationCodes, CaptchaService captchaService,
-			@Value("${app.seed.admin-email:}") String adminEmail) {
+	public AuthService(UserRepository users, LoginAttemptRepository loginAttempts, PasswordEncoder passwordEncoder,
+			JwtService jwtService, VerificationCodeService verificationCodes, CaptchaService captchaService,
+			PlatformTransactionManager transactionManager,
+			@Value("${app.seed.admin-email:}") String adminEmail,
+			@Value("${app.auth.login-window-minutes:15}") long loginWindowMinutes,
+			@Value("${app.auth.login-max-attempts:5}") long loginMaxAttempts) {
 		this.users = users;
+		this.loginAttempts = loginAttempts;
 		this.passwordEncoder = passwordEncoder;
 		this.jwtService = jwtService;
 		this.verificationCodes = verificationCodes;
 		this.captchaService = captchaService;
 		this.adminEmail = normalize(adminEmail);
+		this.loginWindowSeconds = Math.max(1, loginWindowMinutes) * 60;
+		this.loginMaxAttempts = Math.max(1, loginMaxAttempts);
+		this.requiresNew = new TransactionTemplate(transactionManager);
+		this.requiresNew.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
 	}
 
 	public CaptchaResponse createCaptcha() {
@@ -100,29 +121,53 @@ public class AuthService {
 		return new AuthResponse(jwtService.issue(user), UserDto.from(user));
 	}
 
-	/** 邮箱验证码重置密码；账号可用用户名或邮箱，重置后旧密码立即失效。 */
+	/** 邮箱验证码重置密码；账号可用用户名或邮箱，重置后旧密码与已签发的 token 立即失效。 */
 	@Transactional
 	public void resetPassword(ResetPasswordRequest request) {
 		User user = resolveAccount(request.account());
 		verificationCodes.verify(user.getEmail(), VerificationCode.PURPOSE_RESET_PASSWORD, request.code());
 		user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
+		user.bumpTokenVersion();
 	}
 
 	@Transactional
 	public AuthResponse login(LoginRequest request, String ip) {
 		String account = normalize(request.account());
+		String clientIp = ip == null ? "" : ip;
+		long failures = loginAttempts.countByAccountAndIpAndCreatedAtAfter(account, clientIp,
+				Instant.now().minusSeconds(loginWindowSeconds));
+		if (failures >= loginMaxAttempts) {
+			long waitMinutes = Math.max(1, Duration.ofSeconds(loginWindowSeconds).toMinutes());
+			throw new ApiException(HttpStatus.TOO_MANY_REQUESTS,
+					"登录尝试次数过多，请 " + waitMinutes + " 分钟后再试");
+		}
+
 		Optional<User> found = account.contains("@")
 				? users.findByEmail(account)
 				: users.findByUsernameIgnoreCase(account);
 
-		User user = found
-				.filter(candidate -> passwordEncoder.matches(request.password(), candidate.getPasswordHash()))
-				.orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, LOGIN_FAILED));
+		Optional<User> matched = found
+				.filter(candidate -> passwordEncoder.matches(request.password(), candidate.getPasswordHash()));
+		if (matched.isEmpty()) {
+			requiresNew.executeWithoutResult(
+					status -> loginAttempts.save(new LoginAttempt(account, clientIp)));
+			throw new ApiException(HttpStatus.UNAUTHORIZED, LOGIN_FAILED);
+		}
+
+		User user = matched.get();
+		loginAttempts.deleteByAccountAndIp(account, clientIp);
 
 		// 记录登录 IP：新 IP 登录后，此前 IP 上的会话会失效
-		user.recordLogin(ip);
+		user.recordLogin(clientIp);
 
 		return new AuthResponse(jwtService.issue(user), UserDto.from(user));
+	}
+
+	/** 定期清理过期的登录失败记录，避免表随攻击流量无限增长。 */
+	@Scheduled(fixedDelayString = "${app.auth.login-attempt-cleanup-ms:86400000}")
+	@Transactional
+	public void cleanupLoginAttempts() {
+		loginAttempts.deleteByCreatedAtBefore(Instant.now().minusSeconds(loginWindowSeconds * 2));
 	}
 
 	@Transactional(readOnly = true)

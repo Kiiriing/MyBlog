@@ -9,16 +9,24 @@ type NotificationState = {
   filter: NotificationFilter
   items: NotificationItem[]
   unread: number
+  page: number
+  hasMore: boolean
   loading: boolean
+  loadingMore: boolean
   error: string
 }
+
+const PAGE_SIZE = 20
 
 let state: NotificationState = {
   open: false,
   filter: 'all',
   items: [],
   unread: 0,
+  page: 0,
+  hasMore: false,
   loading: false,
+  loadingMore: false,
   error: ''
 }
 
@@ -93,12 +101,31 @@ export async function refreshNotifications() {
     return
   }
 
-  commit({ loading: true, error: '' })
+  commit({ loading: true, error: '', page: 0, hasMore: false })
   try {
-    const data = await api.notifications(state.filter)
-    commit({ items: data.items, unread: data.unread, loading: false })
+    const data = await api.notifications(state.filter, 0, PAGE_SIZE)
+    commit({ items: data.items, unread: data.unread, hasMore: data.hasMore, loading: false })
   } catch {
     commit({ loading: false, error: '通知加载失败，请稍后再试。' })
+  }
+}
+
+/** 抽屉里的「加载更多」：按页追加，不打断已展开的行 */
+export async function loadMoreNotifications() {
+  if (!getToken() || !state.hasMore || state.loadingMore) return
+
+  commit({ loadingMore: true, error: '' })
+  try {
+    const data = await api.notifications(state.filter, state.page + 1, PAGE_SIZE)
+    commit({
+      items: [...state.items, ...data.items],
+      unread: data.unread,
+      page: state.page + 1,
+      hasMore: data.hasMore,
+      loadingMore: false
+    })
+  } catch {
+    commit({ loadingMore: false, error: '通知加载失败，请稍后再试。' })
   }
 }
 

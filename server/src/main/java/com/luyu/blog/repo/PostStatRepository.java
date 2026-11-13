@@ -20,4 +20,14 @@ public interface PostStatRepository extends JpaRepository<PostStat, String> {
 			on conflict (post_slug) do update set views = post_stats.views + excluded.views
 			""", nativeQuery = true)
 	void addViews(@Param("slug") String slug, @Param("delta") long delta);
+
+	/** 原子自增点赞数，避免并发读-改-写丢更新 */
+	@Modifying(flushAutomatically = true, clearAutomatically = true)
+	@Query("update PostStat s set s.likes = s.likes + :delta where s.postSlug = :slug")
+	int addLikes(@Param("slug") String slug, @Param("delta") long delta);
+
+	/** 原子自增收藏数 */
+	@Modifying(flushAutomatically = true, clearAutomatically = true)
+	@Query("update PostStat s set s.favorites = s.favorites + :delta where s.postSlug = :slug")
+	int addFavorites(@Param("slug") String slug, @Param("delta") long delta);
 }

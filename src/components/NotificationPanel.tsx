@@ -9,6 +9,7 @@ import SwipeRow, { type SwipeAction } from './SwipeRow'
 import FuseButton from './FuseButton'
 import {
   closePanel,
+  loadMoreNotifications,
   markAllRead,
   markRead,
   removeNotification,
@@ -381,6 +382,17 @@ export default function NotificationPanel() {
                   )
                 })
               )}
+
+              {inbox.hasMore ? (
+                <button
+                  className="inbox__load-more mono"
+                  type="button"
+                  onClick={() => void loadMoreNotifications()}
+                  disabled={inbox.loadingMore}
+                >
+                  {inbox.loadingMore ? t('加载中…', 'Loading…') : t('加载更多', 'Load more')}
+                </button>
+              ) : null}
 
               {inbox.error ? (
                 <p className="inbox__hint inbox__hint--error" role="alert">

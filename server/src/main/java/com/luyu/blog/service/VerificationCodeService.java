@@ -5,7 +5,11 @@ import com.luyu.blog.repo.UserRepository;
 import com.luyu.blog.repo.VerificationCodeRepository;
 import com.luyu.blog.web.ApiException;
 import com.luyu.blog.web.dto.AuthDtos.CodeResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -24,11 +28,14 @@ import java.util.Locale;
 @Service
 public class VerificationCodeService {
 
+	private static final Logger log = LoggerFactory.getLogger(VerificationCodeService.class);
+
 	private static final SecureRandom RANDOM = new SecureRandom();
 
 	private final VerificationCodeRepository codes;
 	private final UserRepository users;
 	private final MailService mailService;
+	private final TaskExecutor mailExecutor;
 	private final long ttlMinutes;
 	private final long resendSeconds;
 	private final long maxPerHour;
@@ -38,6 +45,7 @@ public class VerificationCodeService {
 
 	public VerificationCodeService(VerificationCodeRepository codes, UserRepository users, MailService mailService,
 			PlatformTransactionManager transactionManager,
+			@Qualifier("mailExecutor") TaskExecutor mailExecutor,
 			@Value("${app.auth.code-ttl-minutes:10}") long ttlMinutes,
 			@Value("${app.auth.code-resend-seconds:60}") long resendSeconds,
 			@Value("${app.auth.code-max-per-hour:5}") long maxPerHour,
@@ -46,6 +54,7 @@ public class VerificationCodeService {
 		this.codes = codes;
 		this.users = users;
 		this.mailService = mailService;
+		this.mailExecutor = mailExecutor;
 		this.ttlMinutes = ttlMinutes;
 		this.resendSeconds = resendSeconds;
 		this.maxPerHour = maxPerHour;
@@ -87,8 +96,18 @@ public class VerificationCodeService {
 		}
 
 		String code = String.format("%06d", RANDOM.nextInt(1_000_000));
-		mailService.sendCode(email, code, register ? "注册账号" : "重置密码", ttlMinutes);
-		codes.save(new VerificationCode(email, code, scene, ip, now.plusSeconds(ttlMinutes * 60)));
+		VerificationCode record = codes.save(
+				new VerificationCode(email, code, scene, ip, now.plusSeconds(ttlMinutes * 60)));
+
+		/* 先落库再异步发信：请求线程不再被 SMTP 超时阻塞；发信失败则撤销记录，允许立即重试 */
+		mailExecutor.execute(() -> {
+			try {
+				mailService.sendCode(email, code, register ? "注册账号" : "重置密码", ttlMinutes);
+			} catch (RuntimeException ex) {
+				log.warn("验证码邮件发送失败，已撤销本次记录：{}", mask(email), ex);
+				codes.delete(record);
+			}
+		});
 
 		return new CodeResponse(ttlMinutes * 60, resendSeconds, mask(email));
 	}

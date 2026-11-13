@@ -30,8 +30,10 @@ public class NotificationController {
 
 	@GetMapping
 	public NotificationListDto list(@AuthenticationPrincipal UserPrincipal principal,
-			@RequestParam(defaultValue = "all") String filter) {
-		return notificationService.list(principal, filter);
+			@RequestParam(defaultValue = "all") String filter,
+			@RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "20") int size) {
+		return notificationService.list(principal, filter, page, size);
 	}
 
 	@GetMapping("/unread-count")

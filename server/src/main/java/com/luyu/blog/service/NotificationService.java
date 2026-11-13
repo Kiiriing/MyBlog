@@ -15,6 +15,7 @@ import com.luyu.blog.web.dto.NotificationDtos.CreateNotificationRequest;
 import com.luyu.blog.web.dto.NotificationDtos.NotificationDto;
 import com.luyu.blog.web.dto.NotificationDtos.NotificationListDto;
 import com.luyu.blog.web.dto.NotificationDtos.UnreadDto;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,28 +45,26 @@ public class NotificationService {
 	}
 
 	@Transactional(readOnly = true)
-	public NotificationListDto list(UserPrincipal principal, String filter) {
+	public NotificationListDto list(UserPrincipal principal, String filter, int page, int size) {
 		User user = requireUser(principal);
-		List<Notification> visible = visibleFor(user);
-		Map<UUID, NotificationState> stateMap = stateMap(user, visible);
-
+		boolean admin = user.getRole() == Role.ADMIN;
 		boolean unreadOnly = "unread".equalsIgnoreCase(filter);
 		boolean readOnly = "read".equalsIgnoreCase(filter);
+		int pageSize = size <= 0 ? 20 : Math.min(size, 50);
+		int pageIndex = Math.max(0, page);
 
-		List<NotificationDto> items = visible.stream()
+		List<Notification> visible = notifications.findVisiblePage(user, admin, Audience.ALL, Audience.ADMIN,
+				unreadOnly, readOnly, PageRequest.of(pageIndex, pageSize + 1));
+		boolean hasMore = visible.size() > pageSize;
+		List<Notification> pageItems = hasMore ? visible.subList(0, pageSize) : visible;
+		Map<UUID, NotificationState> stateMap = stateMap(user, pageItems);
+
+		List<NotificationDto> items = pageItems.stream()
 				.map(notification -> toDto(notification, stateMap.get(notification.getId())))
-				.filter(item -> !unreadOnly || !item.read())
-				.filter(item -> !readOnly || item.read())
-				.sorted(Comparator
-						.comparing((NotificationDto item) -> item.pinned()).reversed()
-						.thenComparing(NotificationDto::createdAt, Comparator.reverseOrder()))
 				.toList();
 
-		long unread = visible.stream()
-				.filter(notification -> !isRead(stateMap.get(notification.getId())))
-				.count();
-
-		return new NotificationListDto(items, unread);
+		long unread = notifications.countVisibleUnread(user, admin, Audience.ALL, Audience.ADMIN);
+		return new NotificationListDto(items, unread, hasMore);
 	}
 
 	@Transactional(readOnly = true)

@@ -40,7 +40,7 @@ public final class NotificationDtos {
 			String senderName) {
 	}
 
-	public record NotificationListDto(List<NotificationDto> items, long unread) {
+	public record NotificationListDto(List<NotificationDto> items, long unread, boolean hasMore) {
 	}
 
 	public record UnreadDto(long unread) {

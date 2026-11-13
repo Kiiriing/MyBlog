@@ -15,6 +15,31 @@ public interface PostCommentRepository extends JpaRepository<PostComment, UUID> 
 	/** 楼中楼按需分页用 */
 	List<PostComment> findByParent_IdOrderByCreatedAtAsc(UUID parentId);
 
+	long countByParent_IdAndDeletedFalse(UUID parentId);
+
+	/** 楼中楼按时间 SQL 分页，避免把一条评论下的全部回复读进内存 */
+	@Query(value = """
+			select c.* from post_comments c
+			where c.parent_id = :parentId and c.deleted = false
+			order by c.created_at asc, c.id asc
+			limit :limit offset :offset
+			""", nativeQuery = true)
+	List<PostComment> findRepliesByRecent(@Param("parentId") UUID parentId, @Param("limit") int limit,
+			@Param("offset") int offset);
+
+	/** 楼中楼按点赞数 SQL 分页 */
+	@Query(value = """
+			select c.* from post_comments c
+			left join (
+				select l.comment_id, count(*) as cnt from comment_likes l group by l.comment_id
+			) lc on lc.comment_id = c.id
+			where c.parent_id = :parentId and c.deleted = false
+			order by coalesce(lc.cnt, 0) desc, c.created_at asc, c.id asc
+			limit :limit offset :offset
+			""", nativeQuery = true)
+	List<PostComment> findRepliesByLikes(@Param("parentId") UUID parentId, @Param("limit") int limit,
+			@Param("offset") int offset);
+
 	long countByPostSlug(String postSlug);
 
 	long countByPostSlugAndDeletedFalse(String postSlug);

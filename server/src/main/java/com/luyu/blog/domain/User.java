@@ -47,6 +47,10 @@ public class User {
 	@Column(name = "last_login_at")
 	private Instant lastLoginAt;
 
+	/** 会话版本：重置 / 修改密码时自增，旧 token 立即失效 */
+	@Column(name = "token_version", columnDefinition = "bigint default 0")
+	private Long tokenVersion = 0L;
+
 	protected User() {
 	}
 
@@ -93,6 +97,15 @@ public class User {
 
 	public Instant getLastLoginAt() {
 		return lastLoginAt;
+	}
+
+	public long getTokenVersion() {
+		return tokenVersion == null ? 0L : tokenVersion;
+	}
+
+	/** 使已签发的 token 全部失效（下次请求会被强制登出）。 */
+	public void bumpTokenVersion() {
+		this.tokenVersion = getTokenVersion() + 1;
 	}
 
 	/** 记录本次登录的 IP 与时间，写入后旧 IP 的会话即失效。 */

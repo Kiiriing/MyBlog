@@ -24,6 +24,7 @@ export type NotificationItem = {
 export type NotificationList = {
   items: NotificationItem[]
   unread: number
+  hasMore: boolean
 }
 
 export type AuthResponse = {
@@ -200,8 +201,8 @@ export const api = {
       body: JSON.stringify(payload)
     }),
 
-  notifications: (filter: 'all' | 'unread' | 'read' = 'all') =>
-    request<NotificationList>(`/notifications?filter=${filter}`),
+  notifications: (filter: 'all' | 'unread' | 'read' = 'all', page = 0, size = 20) =>
+    request<NotificationList>(`/notifications?filter=${filter}&page=${page}&size=${size}`),
 
   markRead: (id: string) =>
     request<NotificationItem>(`/notifications/${id}/read`, { method: 'POST' }),

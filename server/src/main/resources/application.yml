@@ -8,6 +8,10 @@ spring:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/myblog}
     username: ${DB_USERNAME:myblog}
     password: ${DB_PASSWORD:}
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:15}
+      connection-timeout: 5000
+      leak-detection-threshold: 20000
   jpa:
     open-in-view: false
     hibernate:
@@ -24,9 +28,9 @@ spring:
     properties:
       mail.smtp.auth: true
       mail.smtp.ssl.enable: true
-      mail.smtp.connectiontimeout: 8000
-      mail.smtp.timeout: 8000
-      mail.smtp.writetimeout: 8000
+      mail.smtp.connectiontimeout: 3000
+      mail.smtp.timeout: 5000
+      mail.smtp.writetimeout: 5000
 
 server:
   port: ${SERVER_PORT:8080}
@@ -49,10 +53,20 @@ logging:
 
 app:
   jwt:
-    secret: ${JWT_SECRET:luyu-dev-only-secret-key-please-replace-0123456789}
+    # 必须通过 JWT_SECRET 提供至少 32 字节随机密钥；仓库内不再保留可用默认值。
+    # 本地开发请在 server/application-local.yml 中配置 app.jwt.secret。
+    secret: ${JWT_SECRET:}
     # 3 天免密登录
     ttl-hours: ${JWT_TTL_HOURS:72}
+  network:
+    # 仅当请求确实经过可信反向代理（Nginx 等）时才设为 true；
+    # 直连部署保持 false，避免客户端伪造 X-Forwarded-For 绕过 IP 绑定与限流。
+    trust-forwarded-headers: ${TRUST_FORWARDED_HEADERS:false}
   auth:
+    # 登录失败锁定：同一账号 + IP 在窗口期内失败达到上限后拒绝登录
+    login-window-minutes: ${AUTH_LOGIN_WINDOW_MINUTES:15}
+    login-max-attempts: ${AUTH_LOGIN_MAX_ATTEMPTS:5}
+    login-attempt-cleanup-ms: ${AUTH_LOGIN_CLEANUP_MS:86400000}
     # 验证码有效期（分钟）
     code-ttl-minutes: ${AUTH_CODE_TTL_MINUTES:10}
     # 同一邮箱两次发送的最小间隔（秒）

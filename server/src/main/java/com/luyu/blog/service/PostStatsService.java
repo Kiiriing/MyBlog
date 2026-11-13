@@ -87,31 +87,32 @@ public class PostStatsService {
 	public ReactionDto toggleReaction(UserPrincipal principal, String rawSlug, ReactionKind kind) {
 		String slug = PostSocialSupport.normalizeSlug(rawSlug);
 		User user = PostSocialSupport.requireUser(principal, users);
-		PostStat stat = statOf(slug);
+		statOf(slug);
 
-		var existing = reactions.findByPostSlugAndUser_IdAndKind(slug, user.getId(), kind);
+		boolean exists = reactions.existsByPostSlugAndUser_IdAndKind(slug, user.getId(), kind);
 		boolean active;
-		if (existing.isPresent()) {
-			reactions.delete(existing.get());
-			if (kind == ReactionKind.LIKE) {
-				stat.removeLike();
-			} else {
-				stat.removeFavorite();
-			}
+		long delta;
+		if (exists) {
+			int deleted = reactions.deleteOne(slug, user.getId(), kind.name());
 			active = false;
+			delta = deleted > 0 ? -1 : 0;
 		} else {
-			reactions.save(new PostReaction(slug, user, kind));
-			if (kind == ReactionKind.LIKE) {
-				stat.addLike();
-			} else {
-				stat.addFavorite();
-			}
+			int inserted = reactions.insertIgnore(UUID.randomUUID(), slug, user.getId(), kind.name());
 			active = true;
+			delta = inserted > 0 ? 1 : 0;
 		}
 
-		stats.save(stat);
-		long count = kind == ReactionKind.LIKE ? stat.getLikes() : stat.getFavorites();
-		return new ReactionDto(active, count);
+		if (delta != 0) {
+			if (kind == ReactionKind.LIKE) {
+				stats.addLikes(slug, delta);
+			} else {
+				stats.addFavorites(slug, delta);
+			}
+		}
+
+		PostStat stat = stats.findById(slug).orElse(null);
+		long count = stat == null ? 0 : kind == ReactionKind.LIKE ? stat.getLikes() : stat.getFavorites();
+		return new ReactionDto(active, Math.max(0, count));
 	}
 
 	/* 内部工具 -------------------------------------------------------------- */

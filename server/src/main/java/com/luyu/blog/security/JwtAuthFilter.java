@@ -26,10 +26,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
 	private final JwtService jwtService;
 	private final UserRepository users;
+	private final ClientIp clientIps;
 
-	public JwtAuthFilter(JwtService jwtService, UserRepository users) {
+	public JwtAuthFilter(JwtService jwtService, UserRepository users, ClientIp clientIps) {
 		this.jwtService = jwtService;
 		this.users = users;
+		this.clientIps = clientIps;
 	}
 
 	@Override
@@ -40,10 +42,15 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 		if (header != null && header.startsWith("Bearer ")
 				&& SecurityContextHolder.getContext().getAuthentication() == null) {
 			try {
-				UUID userId = jwtService.parseUserId(header.substring(7));
-				String clientIp = ClientIp.resolve(request);
+				JwtService.ParsedToken token = jwtService.parse(header.substring(7));
+				UUID userId = token.userId();
+				String clientIp = clientIps.resolve(request);
 				users.findById(userId).ifPresent(user -> {
-					if (!ClientIp.same(user.getLastLoginIp(), clientIp)) {
+					if (user.getTokenVersion() != token.tokenVersion()) {
+						log.info("会话版本已变化，要求用户 {} 重新登录", userId);
+						return;
+					}
+					if (!clientIps.same(user.getLastLoginIp(), clientIp)) {
 						log.info("登录 IP 已变化，要求用户 {} 重新登录（{} -> {}）", userId, user.getLastLoginIp(), clientIp);
 						return;
 					}
