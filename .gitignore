@@ -32,3 +32,4 @@ pnpm-debug.log*
 server/application-local.yml
 server/target/
 server/logs/
+CODE_REVIEW_RISK_PERFORMANCE.md
