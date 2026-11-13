@@ -717,3 +717,35 @@ jpa:
 ---
 
 *本报告基于 2026-11-13 的代码快照与实测数据；15 条问题均经两名独立验证者复核确认。*
+
+---
+
+## 十一、修复状态（2026-11-13 更新）
+
+本轮按「P1 + P2 代码级修复」范围处理，commit `9459cee`。
+
+| 编号 | 问题 | 状态 | 落地方式 |
+| --- | --- | --- | --- |
+| R1 | JWT 默认密钥可直接伪造 token | 已修复 | `app.jwt.secret` 移除默认值，启动时校验非空 / 非示例值 / 长度 ≥32 |
+| R2 | 登录无失败限制 | 已修复 | 新增 `login_attempts` 表，账号 + IP + 15 分钟窗口限 5 次，超限返回 429；失败记录走独立事务提交 |
+| R3 | 无条件信任 `X-Forwarded-For` | 已修复 | 默认只用 `remoteAddr`，仅在 `app.network.trust-forwarded-headers=true` 时取代理头最右段 |
+| R4 | 重置密码后旧 token 仍可用 | 已修复 | `users.token_version` + JWT `ver` 声明，校验不一致直接视为未登录 |
+| R5 | token 存 localStorage、无 CSP | 未纳入 | 需改造为 HttpOnly Cookie 与会话策略，属结构性变更，本轮不做 |
+| R6 | 点赞读-改-写导致计数漂移 | 已修复 | 计数改 `update ... set likes = likes + :delta` 原子更新；写入用 `on conflict do nothing`，删除按真实影响行数判断 |
+| R7 | 楼中楼全量加载后内存分页 | 已修复 | 改为 `count + limit/offset` SQL 分页，仅对当前页做关联与排序 |
+| R8 | 通知全量加载 + 内存排序 | 已修复 | JPQL `left join NotificationState` + `Pageable`，返回 `items/unread/hasMore` |
+| R9 | 评论列表 N+1（P3） | 未做 | 优先级最低，留待后续观测后处理 |
+| R10 | 单包 961KB、无路由拆分 | 已修复 | 8 个视图改 `lazy` + `Suspense`；主包降至 866.64KB / gzip 294.18KB，CSS 降至 143.15KB / gzip 28.29KB |
+| R11 | 邮件同步发送阻塞接口 | 已修复 | 新增 `mailExecutor` 线程池，验证码先落库再异步发信，失败删记录；SMTP 超时收敛为 3s/5s/5s |
+| R12 | 无测试与 CI | 未纳入 | 属工程流程建设，本轮不做 |
+| R13 | `ddl-auto=update` 无迁移体系 | 未纳入 | 需引入 Flyway 并基线化现有 schema，本轮不做 |
+| R14 | Hikari 连接池未显式配置 | 已修复 | 显式配置 `maximum-pool-size`、`connection-timeout`、`leak-detection-threshold` |
+| R15 | 音频整包预加载 | 已修复 | 首访 `preload='metadata'`，真正播放前再切 `auto` |
+
+### 回归验证结果
+
+- `mvn -DskipTests compile` 通过；`npm run build` 通过。
+- 接口实测：`/api/posts/{slug}/stats`、`/api/posts/{slug}/comments`、`/api/posts/comments/{id}/replies`、`/api/notifications` 均 200。
+- 限流实测：连续错误登录第 1–5 次 401，第 6 次 429；伪造 `X-Forwarded-For` 后 `login_attempts.request_ip` 仍记录真实地址。
+- 浏览器逐页回归：首页、文章页（评论分页 / 回复展开）、手记列表与标签筛选、作品列表与详情、更新日志、404 兜底、站内信抽屉全部正常，无 console 报错。
+- 未覆盖分支：通知「加载更多」需 >20 条数据才会出现，当前仅 4 条通知，未在浏览器中触发。
