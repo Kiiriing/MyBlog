@@ -33,3 +33,4 @@ server/application-local.yml
 server/target/
 server/logs/
 CODE_REVIEW_RISK_PERFORMANCE.md
+security_best_practices_report.md
