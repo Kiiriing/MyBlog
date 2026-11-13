@@ -256,9 +256,27 @@ server/src/main/java/com/luyu/blog/
 ```nginx
 server {
     listen 80;
-    server_name luyu.me;
+    server_name kiirverse.xyz;
     root /var/www/luyu/dist;
     index index.html;
+
+    # 带哈希的构建产物可以放心长缓存；404 不会带这个头（没加 always），
+    # 避免部署不完整时浏览器把 404 记一年
+    location /assets/ {
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        try_files $uri =404;
+    }
+
+    # 图片、品牌素材与自托管字体（public/fonts）
+    location ~* ^/(art|brand|fonts)/ {
+        add_header Cache-Control "public, max-age=2592000";
+        try_files $uri =404;
+    }
+
+    # 入口 HTML 每次回源校验，保证发版后立刻生效
+    location = /index.html {
+        add_header Cache-Control "no-cache";
+    }
 
     location /api/ {
         proxy_pass http://127.0.0.1:8080;
@@ -275,6 +293,9 @@ server {
 }
 ```
 
+- 字体已自托管在 `public/fonts/`，页面不再请求 `fonts.googleapis.com`（大陆不可达，且是渲染阻塞资源）。
+- 上传顺序建议：先传 `assets/` 与 `fonts/`，最后传 `index.html`。反过来会出现「HTML 引用了服务器上还不存在的 chunk」，访客拿到 404 与空白页。
+- Cloudflare 侧已在 Cache Rules 里配置：`/assets/*` 与字体一年、`/art/*` 与 `/brand/*` 三十天、`/api/*` 与 SPA 路由不缓存，4xx/5xx 不缓存。Nginx 的响应头与之保持一致，回源与边缘不会互相打架。
 - 纯静态托管（Netlify / Vercel）同样需要把未知路径回退到 `index.html`；同时要把 `/api` 指向后端地址。
 - 后端启动前务必设置 `DB_URL` / `DB_USERNAME` / `DB_PASSWORD`、`MAIL_*` 与新的 `JWT_SECRET`（至少 32 字节）；生产环境建议用 systemd / Docker 托管 jar，并通过环境变量注入配置。
 - 日志默认写到 `server/logs/luyu-blog.log`，按天归档、单文件 20MB、保留 30 天、总量上限 1GB；可用 `LOG_BASE` 改路径。
