@@ -12,6 +12,7 @@ import com.luyu.blog.repo.UserRepository;
 import com.luyu.blog.security.UserPrincipal;
 import com.luyu.blog.web.ApiException;
 import com.luyu.blog.web.dto.FeedbackDtos.FeedbackDto;
+import com.luyu.blog.web.dto.FeedbackDtos.FeedbackResult;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,7 +45,7 @@ public class FeedbackService {
 		this.moderation = moderation;
 	}
 
-	public void submit(UserPrincipal principal, String content) {
+	public FeedbackResult submit(UserPrincipal principal, String content) {
 		User author = users.findById(principal.id())
 				.orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "登录状态已失效"));
 
@@ -66,6 +67,8 @@ public class FeedbackService {
 
 		notifications.save(new Notification(NotificationCategory.SYSTEM, Audience.USER, author, null,
 				"反馈已收到", "谢谢你的建议，我会尽快查看并回复。", "/journal"));
+
+		return new FeedbackResult((int) Math.max(0, DAILY_LIMIT - sentToday - 1), DAILY_LIMIT);
 	}
 
 	@Transactional(readOnly = true)

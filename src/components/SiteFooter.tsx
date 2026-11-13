@@ -11,6 +11,21 @@ import { useI18n } from '../store/i18n'
 import CircleButton from './CircleButton'
 import '../styles/components/SiteFooter.css'
 
+/** 记录“今天已用完反馈额度”，按北京时间切日，跨天自动恢复 */
+const FEEDBACK_LIMIT_KEY = 'luyu.feedback.limited'
+
+function todayStamp() {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Shanghai' })
+}
+
+function hasHitDailyLimit() {
+  try {
+    return window.localStorage.getItem(FEEDBACK_LIMIT_KEY) === todayStamp()
+  } catch {
+    return false
+  }
+}
+
 export default function SiteFooter() {
   const clock = useClock()
   const auth = useAuth()
@@ -23,18 +38,29 @@ export default function SiteFooter() {
   const [error, setError] = useState('')
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
+  /* 当天额度用完后锁定表单，刷新页面也保持锁定，北京时间零点自动解除 */
+  const [limited, setLimited] = useState(hasHitDailyLimit)
   const resetTimer = useRef(0)
+
+  const locked = !auth.user || sending || limited
 
   const status = error
     ? error
-    : !auth.user
-      ? t('登录后可以提交反馈与建议。', 'Sign in to send feedback and suggestions.')
-      : sent
-        ? t('已收到反馈 — 回复会出现在站内信里。', 'Feedback received — replies arrive in your inbox.')
-        : t(
-            '关于站点或项目的想法都可以写在这里，每天最多 3 条。',
-            'Anything about the site or the projects. Up to 3 messages per day.'
+    : limited
+      ? sent
+        ? t(
+            '已收到反馈 — 今天的 3 条已经发完，明天再来吧。',
+            'Feedback received — that’s all 3 for today. See you tomorrow.'
           )
+        : t('今天的 3 条反馈已经发完了，明天再来吧。', 'That’s all for today — up to 3 messages per day.')
+      : !auth.user
+        ? t('登录后可以提交反馈与建议。', 'Sign in to send feedback and suggestions.')
+        : sent
+          ? t('已收到反馈 — 回复会出现在站内信里。', 'Feedback received — replies arrive in your inbox.')
+          : t(
+              '关于站点或项目的想法都可以写在这里，每天最多 3 条 · Enter 发送，Shift + Enter 换行。',
+              'Anything about the site or the projects. Up to 3 messages per day · Enter to send, Shift + Enter for a new line.'
+            )
 
   useEffect(() => {
     if (!footer.current || !glow.current) return
@@ -67,7 +93,7 @@ export default function SiteFooter() {
 
   async function submitFeedback(event: React.FormEvent) {
     event.preventDefault()
-    if (!auth.user) return
+    if (!auth.user || sending || limited) return
     if (resetTimer.current) window.clearTimeout(resetTimer.current)
 
     const value = content.trim()
@@ -87,12 +113,29 @@ export default function SiteFooter() {
     setError('')
     setSending(true)
     try {
-      await api.submitFeedback(value)
+      const result = await api.submitFeedback(value)
       setSent(true)
       setContent('')
       resetTimer.current = window.setTimeout(() => setSent(false), 5600)
+      /* 服务端回传当天剩余条数，用完后直接锁定，避免再发请求拿到 429 */
+      if (result.remaining <= 0) {
+        setLimited(true)
+        try {
+          window.localStorage.setItem(FEEDBACK_LIMIT_KEY, todayStamp())
+        } catch {
+          /* 隐私模式下写入失败也不影响本次锁定 */
+        }
+      }
     } catch (err) {
       setSent(false)
+      if (err instanceof ApiError && err.status === 429) {
+        setLimited(true)
+        try {
+          window.localStorage.setItem(FEEDBACK_LIMIT_KEY, todayStamp())
+        } catch {
+          /* 隐私模式下写入失败也不影响本次锁定 */
+        }
+      }
       setError(
         err instanceof ApiError
           ? err.message
@@ -101,6 +144,13 @@ export default function SiteFooter() {
     } finally {
       setSending(false)
     }
+  }
+
+  /** Enter 发送，Shift + Enter 换行；输入法组字中的回车不触发提交 */
+  function onFeedbackKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key !== 'Enter' || event.shiftKey || event.nativeEvent.isComposing) return
+    event.preventDefault()
+    event.currentTarget.form?.requestSubmit()
   }
 
   function backToTop() {
@@ -195,7 +245,8 @@ export default function SiteFooter() {
                   aria-invalid={!!error}
                   aria-describedby="feedback-status"
                   value={content}
-                  disabled={!auth.user || sending}
+                  disabled={locked}
+                  onKeyDown={onFeedbackKeyDown}
                   onChange={(event) => {
                     setContent(event.target.value)
                     setError('')
@@ -206,7 +257,7 @@ export default function SiteFooter() {
                   type="submit"
                   aria-label={t('发送反馈', 'Send feedback')}
                   data-cursor="Send"
-                  disabled={!auth.user || sending}
+                  disabled={locked}
                 >
                   <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <path d="M4 12h15M13 6l6 6-6 6" stroke="currentColor" strokeWidth="1.1" />

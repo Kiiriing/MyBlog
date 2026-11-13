@@ -1,5 +1,13 @@
 -- 更新页历史版本：由 src/data/changelog.ts 导出，外加后续 git 更新补记的版本
 
+insert into changelog_entries (id, version, date_label, occurred_at, title) values (gen_random_uuid(), 'v3.4.0', '2026.11.13 15:30 – 22:39', '2026-11-13T15:30:00+08:00', '安全加固、性能整修与反馈快捷键');
+insert into changelog_items (entry_id, position, item) values ((select id from changelog_entries where version = 'v3.4.0'), 0, '安全：JWT 密钥不再内置默认值，缺失或强度不足时直接拒绝启动；登录失败按「账号 + IP + 15 分钟」限流，连续 5 次错误后返回 429。');
+insert into changelog_items (entry_id, position, item) values ((select id from changelog_entries where version = 'v3.4.0'), 1, '安全：`X-Forwarded-For` 默认不再信任，只有显式开启代理信任时才解析；新增会话版本号，重置密码后旧 token 立即失效。');
+insert into changelog_items (entry_id, position, item) values ((select id from changelog_entries where version = 'v3.4.0'), 2, '性能：点赞 / 收藏改为数据库原子自增与幂等写入，并发点赞不再丢计数；楼中楼与站内信改为 SQL 分页，不再把整表读进内存。');
+insert into changelog_items (entry_id, position, item) values ((select id from changelog_entries where version = 'v3.4.0'), 3, '性能：验证码邮件交给独立线程池异步发送，SMTP 超时收紧到 3–5 秒；数据库连接池改为显式配置并加泄漏检测。');
+insert into changelog_items (entry_id, position, item) values ((select id from changelog_entries where version = 'v3.4.0'), 4, '前端：路由按页面懒加载，首屏主包 961KB → 867KB、样式表 236KB → 143KB；黑胶音频首访只预加载元数据。');
+insert into changelog_items (entry_id, position, item) values ((select id from changelog_entries where version = 'v3.4.0'), 5, '交互：反馈框支持 Enter 发送、Shift + Enter 换行；当天 3 条额度用完后表单自动锁定，不再反复请求并报 429。');
+
 insert into changelog_entries (id, version, date_label, occurred_at, title) values (gen_random_uuid(), 'v3.3.0', '2026.11.12 22:35 – 23:10', '2026-11-12T22:35:00+08:00', '评论区虚拟滚动与细节修补');
 insert into changelog_items (entry_id, position, item) values ((select id from changelog_entries where version = 'v3.3.0'), 0, '评论区改为按屏幕范围加载：只渲染视口附近的评论，未看到的直接卸载 DOM，评论展开到 800 条以上浏览器也不再卡顿。');
 insert into changelog_items (entry_id, position, item) values ((select id from changelog_entries where version = 'v3.3.0'), 1, '移除「加载更多评论」按钮：数据按页预取，未到达的评论用等高占位撑住滚动条，滚动位置与真实内容一致。');

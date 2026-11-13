@@ -3,6 +3,7 @@ package com.luyu.blog.web;
 import com.luyu.blog.security.UserPrincipal;
 import com.luyu.blog.service.FeedbackService;
 import com.luyu.blog.web.dto.FeedbackDtos.FeedbackRequest;
+import com.luyu.blog.web.dto.FeedbackDtos.FeedbackResult;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -24,8 +25,8 @@ public class FeedbackController {
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
-	public void submit(@AuthenticationPrincipal UserPrincipal principal,
+	public FeedbackResult submit(@AuthenticationPrincipal UserPrincipal principal,
 			@Valid @RequestBody FeedbackRequest request) {
-		feedbackService.submit(principal, request.content());
+		return feedbackService.submit(principal, request.content());
 	}
 }

@@ -36,4 +36,8 @@ public final class FeedbackDtos {
 					feedback.getUser().getEmail());
 		}
 	}
+
+	/** 提交结果：remaining 为当天剩余条数，前端据此在额度用完后直接锁定表单 */
+	public record FeedbackResult(int remaining, int limit) {
+	}
 }

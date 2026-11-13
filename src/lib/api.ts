@@ -95,6 +95,12 @@ export type ReactionResult = {
 
 export type CodeScene = 'REGISTER' | 'RESET_PASSWORD'
 
+/** 反馈提交结果：remaining 为当天剩余条数，0 表示今天已用完 */
+export type FeedbackResult = {
+  remaining: number
+  limit: number
+}
+
 /** 图片人机验证码，image 为可直接放进 img.src 的 data URI */
 export type Captcha = {
   id: string
@@ -216,7 +222,7 @@ export const api = {
     request<void>(`/notifications/${id}`, { method: 'DELETE' }),
 
   submitFeedback: (content: string) =>
-    request<void>('/feedback', {
+    request<FeedbackResult>('/feedback', {
       method: 'POST',
       body: JSON.stringify({ content })
     }),
