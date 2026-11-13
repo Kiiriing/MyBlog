@@ -14,10 +14,10 @@ import org.springframework.stereotype.Component;
 import javax.sql.DataSource;
 
 /**
- * 更新页数据为空时导入历史版本记录。
+ * 更新页数据以 {@code db/changelog-seed.sql} 为唯一来源，每次启动都重建。
  *
- * <p>表结构由 Hibernate 的 {@code ddl-auto=update} 创建，这里只负责灌入
- * {@code db/changelog-seed.sql}。只要表里已有任意一条记录就跳过，不会重复导入。
+ * <p>页面没有写入接口，表里只是脚本的镜像，所以直接清空重灌最省事：
+ * 既能把新版本补进去，也不会重复插入。清空顺序遵守外键：先条目后版本。
  */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 1)
@@ -36,14 +36,14 @@ public class ChangelogSeedInitializer implements ApplicationRunner {
 
 	@Override
 	public void run(ApplicationArguments args) {
-		if (count() > 0) {
-			return;
-		}
 		ResourceDatabasePopulator populator = new ResourceDatabasePopulator(
 				new ClassPathResource("db/changelog-seed.sql"));
 		populator.setSqlScriptEncoding("UTF-8");
+
+		jdbc.update("delete from changelog_items");
+		jdbc.update("delete from changelog_entries");
 		populator.execute(dataSource);
-		log.info("更新页记录为空，已导入版本数据：changelog_entries={}", count());
+		log.info("更新页数据已按脚本同步：changelog_entries={}", count());
 	}
 
 	private long count() {
