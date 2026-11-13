@@ -1,0 +1,6 @@
+# 外部配置（优先级高于 jar 内 application.yml）：只补充 JSON 压缩
+server:
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/plain,text/css,application/javascript,image/svg+xml
+    min-response-size: 1024
