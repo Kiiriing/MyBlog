@@ -71,12 +71,36 @@ export default function VinylPlayer() {
   const [volOpen, setVolOpen] = useState(false)
   const [volHover, setVolHover] = useState(false)
   const [tone, setTone] = useState<'dark' | 'paper'>('dark')
-  const [position, setPosition] = useState(0)
   const [trackDuration, setTrackDuration] = useState(vinylTracks[0].duration ?? 0)
 
   const track = vinylTracks[trackIndex]
   /* 真实音频的元数据可能还没到，先用曲目表里的兜底长度撑住进度条 */
   const total = trackDuration || track.duration || 0
+
+  /* 播放进度直接写 DOM：200ms 一次的轮询不再触发 React 重渲染 */
+  const positionRef = useRef(0)
+  const totalRef = useRef(total)
+  const timeRef = useRef<HTMLSpanElement>(null)
+  const rangeRef = useRef<HTMLInputElement>(null)
+
+  const paint = useCallback((seconds: number) => {
+    positionRef.current = seconds
+    const duration = totalRef.current
+    if (timeRef.current) {
+      timeRef.current.textContent = `${clockOf(seconds)} / ${clockOf(duration)}`
+    }
+    const range = rangeRef.current
+    if (!range) return
+    const at = Math.min(seconds, duration || 1)
+    range.value = String(at)
+    range.style.setProperty('--vp-progress', `${duration ? clamp(at / duration, 0, 1) * 100 : 0}%`)
+    range.setAttribute('aria-valuetext', `${clockOf(seconds)} / ${clockOf(duration)}`)
+  }, [])
+
+  useEffect(() => {
+    totalRef.current = total
+    paint(positionRef.current)
+  }, [total, paint])
 
   const getEngine = useCallback(() => {
     if (!engineRef.current) {
@@ -312,10 +336,10 @@ export default function VinylPlayer() {
         shiftTrack(1)
         return
       }
-      setPosition(next)
+      paint(next)
     }, 200)
     return () => window.clearInterval(id)
-  }, [playing, trackIndex, total])
+  }, [playing, trackIndex, total, paint])
 
   /* 频谱 ---------------------------------------------------------------- */
 
@@ -329,12 +353,21 @@ export default function VinylPlayer() {
       })
       return
     }
+    /* 控制条收起时频谱不可见，没必要每帧采样与写样式 */
+    if (!open) return
     if (prefersReducedMotion()) return
 
     let frame = 0
+    let last = 0
     const values = new Float32Array(bars.length)
 
-    const draw = () => {
+    const draw = (now: number) => {
+      /* 频谱柱状图 30fps 已经足够顺滑，主线程开销减半 */
+      if (now - last < 1000 / 30 - 2) {
+        frame = window.requestAnimationFrame(draw)
+        return
+      }
+      last = now
       const bins = engineRef.current?.levels()
       if (bins) {
         const span = Math.min(46, bins.length - 4)
@@ -350,7 +383,7 @@ export default function VinylPlayer() {
 
     frame = window.requestAnimationFrame(draw)
     return () => window.cancelAnimationFrame(frame)
-  }, [playing])
+  }, [playing, open])
 
   /* 点页面其它地方就把控制条合上 */
   useEffect(() => {
@@ -412,7 +445,7 @@ export default function VinylPlayer() {
   function shiftTrack(direction: number) {
     const next = (trackIndex + direction + vinylTracks.length) % vinylTracks.length
     setTrackIndex(next)
-    setPosition(0)
+    paint(0)
     getEngine().setTrack(next)
   }
 
@@ -423,7 +456,7 @@ export default function VinylPlayer() {
   }
 
   function seekTo(value: number) {
-    setPosition(value)
+    paint(value)
     getEngine().seek(value)
   }
 
@@ -513,7 +546,6 @@ export default function VinylPlayer() {
       : open
         ? 'Drag me'
         : 'Tap to open'
-  const progress = total ? clamp(position / total, 0, 1) * 100 : 0
   const muted = volume <= 0.02
   const volShown = volOpen || volHover
 
@@ -580,9 +612,7 @@ export default function VinylPlayer() {
         <div ref={innerRef} className="vinyl-player__panel-inner">
           <div className="vinyl-player__meta mono">
             <span>{track.side}</span>
-            <span className="vinyl-player__time">
-              {clockOf(position)} / {clockOf(total)}
-            </span>
+            <span ref={timeRef} className="vinyl-player__time" />
           </div>
 
           <div ref={titleRef} className="vinyl-player__title">
@@ -593,13 +623,12 @@ export default function VinylPlayer() {
           <label className="vinyl-player__progress">
             <span className="sr-only">{t('播放进度', 'Playback progress')}</span>
             <input
+              ref={rangeRef}
               type="range"
               min={0}
               max={total || 1}
               step={0.1}
-              value={Math.min(position, total || 1)}
-              style={{ '--vp-progress': `${progress}%` } as CSSProperties}
-              aria-valuetext={`${clockOf(position)} / ${clockOf(total)}`}
+              defaultValue={0}
               onChange={(event) => seekTo(Number(event.target.value))}
               onPointerDown={() => {
                 scrubbing.current = true

@@ -21,92 +21,83 @@ const items = [
 
 export default function MarqueeBand() {
   const { t } = useI18n()
-  const band = useRef<HTMLDivElement>(null)
   const track = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const el = track.current
-    if (!el) return
+    /* 横向滚动交给 CSS 动画，由合成线程执行：空闲时主线程完全不参与。
+       这里只保留滚动带来的倾斜，滚动停下后缓动归零，不再常驻 ticker。 */
+    const move = el?.firstElementChild as HTMLElement | null
+    if (!el || !move) return
 
     /* 尊重减少动态：保持静态排版，仍然可读 */
     if (prefersReducedMotion()) return
 
-    const hovered = { value: false }
-    const skew = { value: 0 }
-    let x = 0
-    let lastTime = gsap.ticker.time
-    let lastScroll =
-      typeof window !== 'undefined' ? window.scrollY : 0
-
-    /* 轨道半宽只在尺寸变化时量一次：ticker 里逐帧读 scrollWidth 会反复触发强制布局 */
-    let halfWidth = 0
+    /* 轨道半宽只在尺寸变化时量一次：逐帧读 scrollWidth 会反复触发强制布局 */
     const measure = () => {
-      halfWidth = el.scrollWidth / 2
+      const halfWidth = move.scrollWidth / 2
+      if (halfWidth > 0) move.style.setProperty('--marquee-duration', `${(halfWidth / 74).toFixed(2)}s`)
     }
     measure()
     const observer =
       typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure)
-    observer?.observe(el)
+    observer?.observe(move)
     window.addEventListener('resize', measure)
 
-    /* GSAP ticker 驱动的滚动速度响应：滚动越快，横向速度与倾斜越大 */
-    const tick = (time: number) => {
-      const delta = Math.min(0.05, time - lastTime)
-      lastTime = time
+    const skew = { value: 0 }
+    let lastScroll = window.scrollY
+    let settleTimer = 0
 
+    const write = () => {
+      el.style.transform = Math.abs(skew.value) > 0.02 ? `skewX(${skew.value.toFixed(2)}deg)` : ''
+    }
+    const toSkew = gsap.quickTo(skew, 'value', {
+      duration: 0.35,
+      ease: 'power2.out',
+      onUpdate: write
+    })
+
+    /* 滚动越快，倾斜越大；滚完 140ms 后把倾斜缓动回 0 */
+    const onScroll = () => {
       const scrollY = window.scrollY
       const velocity = scrollY - lastScroll
       lastScroll = scrollY
-
-      const targetSkew = gsap.utils.clamp(-7, 7, velocity * 0.14)
-      skew.value += (targetSkew - skew.value) * Math.min(1, delta * 7)
-
-      const speed =
-        (hovered.value ? 0.4 : 1) * (74 + Math.abs(skew.value) * 6) * delta
-      x -= speed
-
-      while (halfWidth > 0 && x <= -halfWidth) x += halfWidth
-
-      el.style.transform = `translate3d(${x}px, 0, 0) skewX(${skew.value}deg)`
+      if (velocity === 0 && Math.abs(skew.value) < 0.02) return
+      toSkew(gsap.utils.clamp(-7, 7, velocity * 0.14))
+      window.clearTimeout(settleTimer)
+      settleTimer = window.setTimeout(() => toSkew(0), 140)
     }
 
-    const onEnter = () => {
-      hovered.value = true
-    }
-    const onLeave = () => {
-      hovered.value = false
-    }
-
-    band.current?.addEventListener('pointerenter', onEnter)
-    band.current?.addEventListener('pointerleave', onLeave)
-    gsap.ticker.add(tick)
+    window.addEventListener('scroll', onScroll, { passive: true })
 
     return () => {
-      gsap.ticker.remove(tick)
       observer?.disconnect()
       window.removeEventListener('resize', measure)
-      band.current?.removeEventListener('pointerenter', onEnter)
-      band.current?.removeEventListener('pointerleave', onLeave)
+      window.removeEventListener('scroll', onScroll)
+      window.clearTimeout(settleTimer)
+      gsap.killTweensOf(skew)
       el.style.transform = ''
     }
   }, [])
 
   return (
-    <div ref={band} className="marquee theme-paper" aria-hidden="true">
+    <div className="marquee theme-paper" aria-hidden="true">
       <div ref={track} className="marquee__track">
-        {[0, 1].map((copy) => (
-          <span key={copy} style={{ display: 'contents' }}>
-            {items.map((item, i) => (
-              <span
-                key={`${copy}-${i}`}
-                className={`marquee__item${/[\u4e00-\u9fa5]/.test(item) ? ' is-cn' : ''}`}
-              >
-                <span>{item}</span>
-                <i className="marquee__star">✦</i>
-              </span>
-            ))}
-          </span>
-        ))}
+        <div className="marquee__move">
+          {[0, 1].map((copy) => (
+            <span key={copy} style={{ display: 'contents' }}>
+              {items.map((item, i) => (
+                <span
+                  key={`${copy}-${i}`}
+                  className={`marquee__item${/[\u4e00-\u9fa5]/.test(item) ? ' is-cn' : ''}`}
+                >
+                  <span>{item}</span>
+                  <i className="marquee__star">✦</i>
+                </span>
+              ))}
+            </span>
+          ))}
+        </div>
       </div>
       <span className="marquee__label mono">Capabilities / {t('能力', 'Capabilities')}</span>
     </div>

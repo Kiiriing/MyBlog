@@ -944,6 +944,8 @@ export default function Lanyard({
     let raf = 0
     let last = performance.now()
     let time = 0
+    /* 风力只在前几秒吹：之后自然衰减，吊牌才能真正静止下来、停掉渲染循环 */
+    let breezeUntil = 0
     let visible = true
     let alive = true
     let placed = false
@@ -1216,6 +1218,8 @@ export default function Lanyard({
       last = now
       time += dt
       const current = physics()
+      /* 进场后 4s 内保持微风，再用 2s 淡出，之后靠阻尼静止 */
+      if (current.breeze > 0) current.breeze *= clamp((breezeUntil - time) / 2, 0, 1)
       stepSimulation(sim, dt, current, time)
       const body = sim.body
       if (!Number.isFinite(body.position.x + body.position.y + body.position.z + body.quaternion.w)) {
@@ -1230,6 +1234,7 @@ export default function Lanyard({
     const start = () => {
       if (raf || !visible || !alive) return
       sim.calm = 0
+      breezeUntil = time + 4
       last = performance.now()
       raf = requestAnimationFrame(tick)
     }

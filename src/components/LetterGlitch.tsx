@@ -829,6 +829,11 @@ export default function LetterGlitch({
     const frame = (now: number) => {
       raf = 0
       if (!visible || document.hidden) return
+      /* 字符故障场是背景纹理，30fps 足够；主线程与 GPU 成本直接减半 */
+      if (last && now - last < 1000 / 30 - 2) {
+        raf = requestAnimationFrame(frame)
+        return
+      }
       const s = settingsRef.current
       const dt = last ? clamp((now - last) / 1000, 0.0005, 0.05) : 1 / 60
       last = now
@@ -926,7 +931,8 @@ export default function LetterGlitch({
       const s = settingsRef.current
       view.width = Math.max(1, container.clientWidth)
       view.height = Math.max(1, container.clientHeight)
-      view.ratio = Math.min(s.dpr || window.devicePixelRatio || 1, 2)
+      /* 全屏字符场是低频纹理，1.5 倍采样已经够清晰；2 倍时填充率翻倍、显存也翻倍 */
+      view.ratio = Math.min(s.dpr || window.devicePixelRatio || 1, 1.5)
       canvas.width = Math.max(1, Math.round(view.width * view.ratio))
       canvas.height = Math.max(1, Math.round(view.height * view.ratio))
       syncType()

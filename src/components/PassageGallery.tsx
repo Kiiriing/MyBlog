@@ -639,6 +639,8 @@ export default function PassageGallery({
       (entries) => {
         visible = entries.some((entry) => entry.isIntersecting)
         last = performance.now()
+        /* 隧道离屏就停掉渲染循环，不让它每秒空转 60 次 */
+        if (visible) wake()
       },
       { rootMargin: '120px' }
     )
@@ -835,10 +837,10 @@ export default function PassageGallery({
     const cruise = reduced ? 0 : config.speed
 
     function render(now: number) {
-      raf = requestAnimationFrame(render)
+      raf = 0
+      if (!visible || document.hidden) return
       const dt = Math.min(0.05, Math.max(0, (now - last) / 1000))
       last = now
-      if (!visible || document.hidden) return
 
       const state = live.current
 
@@ -884,14 +886,30 @@ export default function PassageGallery({
       program.uniforms.uSpeed.value = moving
 
       renderer.render({ scene: mesh, camera })
+
+      if (!disposed) raf = requestAnimationFrame(render)
     }
-    raf = requestAnimationFrame(render)
+
+    function wake() {
+      if (raf || disposed) return
+      last = performance.now()
+      raf = requestAnimationFrame(render)
+    }
+
+    /* 切回标签页时 IntersectionObserver 不一定再触发，这里补一次唤醒 */
+    const onVisibility = () => {
+      if (!document.hidden) wake()
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+
+    wake()
 
     return () => {
       disposed = true
       cancelAnimationFrame(raf)
       observer.disconnect()
       visibility.disconnect()
+      document.removeEventListener('visibilitychange', onVisibility)
       canvas.removeEventListener('pointermove', onPointerMove)
       canvas.removeEventListener('pointerdown', onPointerDown)
       canvas.removeEventListener('pointerup', onPointerUp)

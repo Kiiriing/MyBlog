@@ -12,7 +12,34 @@
   display: flex;
   width: max-content;
   transform-origin: center;
-  will-change: transform;
+}
+
+/* 横向滚动是纯合成动画：不占 JS 主线程，页面静止时也不消耗 CPU。
+   时长由 MarqueeBand 按轨道半宽 / 74px/s 写入 --marquee-duration */
+.marquee__move {
+  display: flex;
+  width: max-content;
+  animation: marquee-scroll var(--marquee-duration, 46s) linear infinite;
+}
+
+/* 悬停减速：把时长拉长到 2.5 倍，仍然只在合成线程上跑 */
+.marquee:hover .marquee__move {
+  animation-duration: calc(var(--marquee-duration, 46s) * 2.5);
+}
+
+@keyframes marquee-scroll {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee__move {
+    animation: none;
+  }
 }
 
 .marquee__item {
