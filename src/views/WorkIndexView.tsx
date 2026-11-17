@@ -162,8 +162,8 @@ export default function WorkIndexView() {
               </h1>
               <p className="work-index__cn">
                 {t(
-                  '从界面到数据库，四个真正交付过的项目。',
-                  'From interface to database — four projects that actually shipped.'
+                  '从界面到数据库，五个真正交付过的项目。',
+                  'From interface to database — five projects that actually shipped.'
                 )}
               </p>
             </div>
@@ -171,8 +171,8 @@ export default function WorkIndexView() {
             <aside className="work-index__aside">
               <p className="work-index__lede">
                 {t(
-                  '这里收录 2024 年以来的四个项目：企业管理系统、签到考勤、数据可视化大屏 与校企协作。每一个都从一条需求开始，最后跑到真实用户手里。',
-                  'Four projects since 2024: an enterprise management system, attendance tracking, a data visualisation wall and university collaboration. Each started as a single requirement and ended up in real users’ hands.'
+                  '这里收录 2024 年以来的五个项目：企业管理系统、签到考勤、SMT 生产应用、数据可视化大屏 与校企协作。每一个都从一条需求开始，最后跑到真实用户手里。',
+                  'Five projects since 2024: an enterprise management system, attendance tracking, an SMT production dashboard, a data visualisation wall and university collaboration. Each started as a single requirement and ended up in real users’ hands.'
                 )}
               </p>
 
@@ -238,37 +238,52 @@ export default function WorkIndexView() {
 
       <div className="shell work-index__list">
         <div className="work-rows" onMouseLeave={hidePreview}>
-          {filtered.map((work) => (
-            <Link
-              key={work.slug}
-              to={`/work/${work.slug}`}
-              className="work-row"
-              style={{ '--row-accent': work.accent } as React.CSSProperties}
-              data-cursor="Open"
-              onMouseEnter={(event) => showPreview(work, event)}
-              onMouseMove={movePreview}
-            >
-              <span className="work-row__no">{work.index}</span>
+          <div className="work-rows__head mono" aria-hidden="true">
+            <span>No.</span>
+            <span>Project</span>
+            <span>Category</span>
+            <span>Year</span>
+            <span />
+          </div>
 
-              <span className="work-row__thumb" aria-hidden="true">
-                <img src={work.art} alt="" draggable="false" />
-              </span>
+          {filtered.map((work) => {
+            const rowBody = (
+              <>
+                <span className="work-row__no">{work.index}</span>
 
-              <span className="work-row__main">
-                <span className="work-row__title">{work.title}</span>
-                <span className="work-row__cn">{work.cn}</span>
-              </span>
+                <span className="work-row__thumb" aria-hidden="true">
+                  <img src={work.art} alt="" draggable="false" />
+                </span>
 
-              <span className="work-row__cat mono">{work.category}</span>
-              <span className="work-row__year mono">{work.year}</span>
+                <span className="work-row__main">
+                  <span className="work-row__title">{work.title}</span>
+                  <span className="work-row__cn">{work.cn}</span>
+                </span>
 
-              <span className="work-row__arrow" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none">
-                  <path d="M5 19L19 5M9 5h10v10" stroke="currentColor" strokeWidth="1" />
-                </svg>
-              </span>
-            </Link>
-          ))}
+                <span className="work-row__cat mono">{work.category}</span>
+                <span className="work-row__year mono">{work.year}</span>
+
+                <span className="work-row__arrow" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M5 19L19 5M9 5h10v10" stroke="currentColor" strokeWidth="1" />
+                  </svg>
+                </span>
+              </>
+            )
+
+            const rowProps = {
+              className: 'work-row',
+              style: { '--row-accent': work.accent } as React.CSSProperties,
+              onMouseEnter: (event: React.MouseEvent) => showPreview(work, event),
+              onMouseMove: movePreview
+            }
+
+            return (
+              <Link key={work.slug} to={`/work/${work.slug}`} data-cursor="Open" {...rowProps}>
+                {rowBody}
+              </Link>
+            )
+          })}
         </div>
 
         {!filtered.length ? (

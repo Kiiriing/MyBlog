@@ -134,14 +134,18 @@ export default function WorksSection() {
     didDrag.current = false
     startX.current = event.clientX
     startScroll.current = window.scrollY
-    viewport.current?.setPointerCapture?.(event.pointerId)
   }
 
   function onPointerMove(event: React.PointerEvent<HTMLDivElement>) {
     if (!dragging.current) return
     const delta = event.clientX - startX.current
     if (!didDrag.current && Math.abs(delta) < 5) return
-    didDrag.current = true
+    if (!didDrag.current) {
+      // 只有确认是拖拽后才捕获指针；按下即捕获会让 click 落到 viewport，
+      // 卡片（含图片）的点击跳转会被吞掉
+      didDrag.current = true
+      viewport.current?.setPointerCapture?.(event.pointerId)
+    }
     event.preventDefault()
 
     if (!section.current) return
@@ -157,7 +161,9 @@ export default function WorksSection() {
   function onPointerUp(event: React.PointerEvent<HTMLDivElement>) {
     if (!dragging.current) return
     dragging.current = false
-    viewport.current?.releasePointerCapture?.(event.pointerId)
+    if (viewport.current?.hasPointerCapture?.(event.pointerId)) {
+      viewport.current.releasePointerCapture(event.pointerId)
+    }
     window.setTimeout(() => {
       didDrag.current = false
     }, 20)
@@ -248,8 +254,8 @@ export default function WorksSection() {
           <div className="works__head-right">
             <p className="works__intro">
               {t(
-                '四个真正交付过的项目：企业管理系统、签到考勤、20 余张数据大屏与校企协作。 界面、接口、数据库与部署，都是同一条链路。',
-                'Four projects that actually shipped: enterprise management, attendance tracking, 20+ data walls and university collaboration. Interface, API, database and deployment are all one chain.'
+                '五个真正交付过的项目：企业管理系统、签到考勤、SMT 生产应用、20 余张数据大屏与校企协作。 界面、接口、数据库与部署，都是同一条链路。',
+                'Five projects that actually shipped: enterprise management, attendance tracking, an SMT production dashboard, 20+ data walls and university collaboration. Interface, API, database and deployment are all one chain.'
               )}
             </p>
 

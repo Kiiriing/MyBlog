@@ -65,8 +65,8 @@ export const chapters: Chapter[] = [
     act: 'Act II',
     actName: 'Craft',
     actCn: '手艺',
-    caption: 'Four systems, one continuous thread.',
-    captionCn: '四个系统，一条链路。'
+    caption: 'Five systems, one continuous thread.',
+    captionCn: '五个系统，一条链路。'
   },
   {
     index: '05',

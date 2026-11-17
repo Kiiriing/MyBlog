@@ -150,18 +150,14 @@
 
 /* Filters ---------------------------------------------------------------- */
 
+/* 工具栏跟随文档流滚动，不做吸顶，滚过即离开视口 */
 .work-index__filters {
-  position: sticky;
-  top: var(--nav-h);
-  z-index: 30;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 20px;
   padding-block: 13px;
   border-bottom: 1px solid var(--line);
-  background: rgba(5, 5, 6, 0.88);
-  backdrop-filter: blur(16px);
 }
 
 .work-index__filter-list {
@@ -257,6 +253,16 @@
 
 .work-rows {
   border-bottom: 1px solid var(--line);
+}
+
+.work-rows__head {
+  display: grid;
+  grid-template-columns: clamp(64px, 7vw, 108px) minmax(0, 1fr) minmax(150px, 220px) 68px 40px;
+  gap: clamp(12px, 2.4vw, 36px);
+  padding: 0 clamp(10px, 1.4vw, 22px) 10px;
+  color: var(--fg-faint);
+  font-size: 7px;
+  letter-spacing: 0.14em;
 }
 
 .work-row {
@@ -581,6 +587,10 @@
   .work-row {
     grid-template-columns: 66px minmax(0, 1fr) 150px 60px 38px;
   }
+
+  .work-rows__head {
+    grid-template-columns: 66px minmax(0, 1fr) 150px 60px 38px;
+  }
 }
 
 @media (max-width: 860px) {
@@ -636,6 +646,10 @@
     grid-template-columns: 34px 56px minmax(0, 1fr) 32px;
     gap: 12px;
     padding: 16px 8px;
+  }
+
+  .work-rows__head {
+    display: none;
   }
 
   .work-row__thumb {

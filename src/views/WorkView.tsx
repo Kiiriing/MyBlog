@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { getWork, works } from '../data/works'
 import { postsByProject } from '../data/posts'
@@ -37,30 +38,113 @@ function RevealNote({
   )
 }
 
-function RevealGalleryItem({
-  delay,
-  index,
-  item
+function WorkGallery({
+  items
 }: {
-  delay?: number
-  index: number
-  item: { src: string; caption: string }
+  items: { src: string; caption: string; fit?: string; wide?: boolean }[]
 }) {
-  const ref = useReveal<HTMLElement>({ delay })
+  const [index, setIndex] = useState(0)
+  const [armed, setArmed] = useState(false)
+  const stage = useRef<HTMLDivElement>(null)
+  const count = items.length
+  const current = items[Math.min(index, count - 1)]
+
+  /* 截图体积远大于 SVG 素材：滚到画廊附近再挂载，首屏不为 8 张图买单 */
+  useEffect(() => {
+    const node = stage.current
+    if (armed || !node) return
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setArmed(true)
+          io.disconnect()
+        }
+      },
+      { rootMargin: '300px 0px' }
+    )
+    io.observe(node)
+    return () => io.disconnect()
+  }, [armed])
+
+  if (!count) return null
+
+  const go = (step: number) => setIndex((value) => (value + step + count) % count)
+
   return (
-    <figure ref={ref} className="work-gallery__item">
-      <ArtworkFrame
-        src={item.src}
-        alt={item.caption}
-        ratio="4 / 5"
-        parallax={6}
-        imageClass={`work-gallery__img work-gallery__img--${index}`}
-      />
-      <figcaption className="mono">
-        <span>{String(index + 1).padStart(2, '0')}</span>
-        <span>{item.caption}</span>
-      </figcaption>
-    </figure>
+    <div className="work-carousel" role="group" aria-roledescription="carousel" aria-label="项目截图">
+      <div className={`work-carousel__stage${items.length === 1 && items[0].wide ? ' work-carousel__stage--wide' : ''}`} ref={stage}>
+        {armed &&
+          items.map((item, itemIndex) => (
+            <div
+              key={`${item.src}-${itemIndex}`}
+              className={`work-carousel__slide${itemIndex === index ? ' is-active' : ''}`}
+              aria-hidden={itemIndex !== index}
+            >
+              <ArtworkFrame
+                src={item.src}
+                alt={item.caption}
+                ratio="16 / 10"
+                parallax={item.fit === 'contain' ? 0 : 5}
+                eager={itemIndex === 0}
+                imageClass={`work-carousel__img${
+                  item.fit === 'contain' ? ' work-carousel__img--contain' : ` work-carousel__img--${itemIndex}`
+                }`}
+              />
+            </div>
+          ))}
+
+        <span className="work-carousel__counter mono">
+          {String(index + 1).padStart(2, '0')} / {String(count).padStart(2, '0')}
+        </span>
+
+        {count > 1 ? (
+          <div className="work-carousel__nav">
+            <button
+              type="button"
+              className="work-carousel__arrow"
+              aria-label="上一张"
+              onClick={() => go(-1)}
+            >
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M20 12H5M11 6l-6 6 6 6" stroke="currentColor" strokeWidth="1.1" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              className="work-carousel__arrow"
+              aria-label="下一张"
+              onClick={() => go(1)}
+            >
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M4 12h15M13 6l6 6-6 6" stroke="currentColor" strokeWidth="1.1" />
+              </svg>
+            </button>
+          </div>
+        ) : null}
+      </div>
+
+      <div className="work-carousel__foot">
+        <p className="work-carousel__caption mono" aria-live="polite">
+          <span>{String(index + 1).padStart(2, '0')}</span>
+          <span>{current.caption}</span>
+        </p>
+
+        {count > 1 ? (
+          <div className="work-carousel__dots">
+            {items.map((item, itemIndex) => (
+              <button
+                key={`${item.src}-dot-${itemIndex}`}
+                type="button"
+                className={`work-carousel__dot${itemIndex === index ? ' is-active' : ''}`}
+                aria-label={`第 ${itemIndex + 1} 张：${item.caption}`}
+                aria-current={itemIndex === index}
+                onClick={() => setIndex(itemIndex)}
+              />
+            ))}
+          </div>
+        ) : null}
+      </div>
+    </div>
   )
 }
 
@@ -120,7 +204,9 @@ export default function WorkView() {
         }}
       />
       <header className="work-hero">
-        <div className="work-hero__ambient" aria-hidden="true" />
+        <span className="work-hero__ghost" aria-hidden="true">
+          {work.index}
+        </span>
 
         <div className="shell work-hero__head">
           <div className="work-hero__top">
@@ -148,21 +234,6 @@ export default function WorkView() {
               </div>
             </div>
           </div>
-        </div>
-
-        <div className="shell work-hero__cover">
-          <ArtworkFrame
-            src={work.art}
-            alt={t(`${work.title} 项目视觉`, `${work.title} project visual`)}
-            ratio="16 / 9"
-            parallax={6}
-            eager
-          >
-            <div className="work-hero__cover-meta mono">
-              <span>Project {work.index}</span>
-              <span>{work.role}</span>
-            </div>
-          </ArtworkFrame>
         </div>
       </header>
 
@@ -237,6 +308,32 @@ export default function WorkView() {
             </RevealIntro>
           ))}
 
+          {work.projectUrl ? (
+            <a
+              className="work-repo"
+              href={work.projectUrl}
+              target="_blank"
+              rel="noreferrer"
+              data-cursor="GitHub"
+            >
+              <span className="work-repo__badge mono" aria-hidden="true">
+                GH
+              </span>
+              <span className="work-repo__body">
+                <span className="mono work-repo__eyebrow">
+                  Repository / {t('代码仓库', 'Repository')}
+                </span>
+                <strong className="work-repo__name">{work.projectUrl.split('/').slice(-2).join(' / ')}</strong>
+                <span className="work-repo__hint">
+                  {t('查看完整源码与提交记录', 'Browse the full source and commit history')}
+                </span>
+              </span>
+              <span className="work-repo__arrow" aria-hidden="true">
+                ↗
+              </span>
+            </a>
+          ) : null}
+
           <div className="work-notes">
             <div className="work-notes__head">
               <span className="eyebrow">Build notes / {t('实现', 'Build notes')}</span>
@@ -252,14 +349,7 @@ export default function WorkView() {
           </div>
 
           <div className="work-gallery">
-            {work.gallery.map((item, index) => (
-              <RevealGalleryItem
-                key={`${item.src}-${index}`}
-                delay={index * 100}
-                index={index}
-                item={item}
-              />
-            ))}
+            <WorkGallery items={work.gallery} />
           </div>
         </div>
       </section>
@@ -319,7 +409,7 @@ export default function WorkView() {
             </div>
 
             <div className="work-next__visual">
-              <ArtworkFrame src={nextWork.art} alt={`${nextWork.title} 项目预览`} ratio="4 / 5" parallax={4} />
+              <ArtworkFrame src={nextWork.art} alt={`${nextWork.title} 项目预览`} ratio="4 / 5" parallax={4} eager />
             </div>
           </Link>
         </section>
