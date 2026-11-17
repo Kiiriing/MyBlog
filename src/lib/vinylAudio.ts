@@ -26,6 +26,13 @@ export type VinylTrack = {
 
 const MUSIC_DIR = '/art/music/'
 
+/* 页面是否已经发生过真实用户手势：自动播放策略只认这个信号 */
+export function hasUserActivation() {
+  const activation = (navigator as Navigator & { userActivation?: { hasBeenActive: boolean } })
+    .userActivation
+  return Boolean(activation?.hasBeenActive)
+}
+
 export function musicAsset(file: string) {
   /* + 在路径里本身合法，编码成 %2B 后静态服务器会找不到文件（回退成 index.html），
      播放时只剩一个解码错误。这里把 + 还原回去，其余字符仍按 URL 规则转义 */
@@ -231,16 +238,14 @@ export class VinylEngine {
   }
 
   /** 预热音频图：提前建好 AudioContext、媒体源、频谱与底噪（母带增益为 0，不出声）。
-      intro 开始的那一刻只剩 play() 与音量拉起，避免在标题动画启动时再创建音频节点造成卡顿 */
+      intro 开始的那一刻只剩 play() 与音量拉起，避免在标题动画启动时再创建音频节点造成卡顿。
+      没有用户手势时不建上下文、也不 resume：Chrome 会拒绝启动并输出
+      "The AudioContext was not allowed to start"，等真实手势进来再一次性初始化 */
   warm() {
-    this.ensure()
-    const ctx = this.ctx
-    if (!ctx) return
-    if (ctx.state === 'suspended') {
-      void ctx.resume().catch(() => {
-        /* 没有用户手势时上下文会保持 suspended，等 armUnlock 再恢复 */
-      })
+    if (hasUserActivation()) {
+      this.ensure()
     }
+    if (!this.ctx) return
     this.startNoise()
   }
 

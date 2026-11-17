@@ -5,7 +5,7 @@ import { gsap } from '../lib/gsap'
 import { prefersReducedMotion } from '../composables/useSmoothScroll'
 import { useUi } from '../store/ui'
 import { useI18n } from '../store/i18n'
-import { VinylEngine, vinylTracks } from '../lib/vinylAudio'
+import { VinylEngine, hasUserActivation, vinylTracks } from '../lib/vinylAudio'
 import '../styles/components/VinylPlayer.css'
 
 const BAR_COUNT = 10
@@ -125,7 +125,11 @@ export default function VinylPlayer() {
     const engine = getEngine()
     engine.preload()
     const id = window.setTimeout(() => engine.warm(), 320)
-    return () => window.clearTimeout(id)
+    return () => {
+      window.clearTimeout(id)
+      engine.dispose()
+      engineRef.current = null
+    }
   }, [getEngine])
 
   /* 音量槽悬停：指针一进入（喇叭或左侧滑槽）就展开；
@@ -309,6 +313,9 @@ export default function VinylPlayer() {
     /* introDone 就是首页标题动画起笔的时刻：同步开声，不加任何延迟 */
     autoStarted.current = true
     if (userPaused.current) return
+    /* 页面还没有任何用户手势时，浏览器必然拒绝启动音频并输出 AudioContext 警告；
+       这种情况先保持暂停，等用户点一下唱片/播放键再出声 */
+    if (!hasUserActivation()) return
     const engine = getEngine()
     engine.setVolume(volumeRef.current)
     engine.setTrack(0)
